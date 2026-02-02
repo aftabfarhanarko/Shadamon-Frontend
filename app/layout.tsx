@@ -4,7 +4,7 @@ import { LanguageProvider } from "./context/LanguageContext";
 import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
-  title: "Shadamon | Marketing Platform",
+  title: "Shadamon User",
   description: "The ultimate marketing platform",
 };
 

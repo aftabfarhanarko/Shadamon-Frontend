@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, ArrowLeft, MessageCircle } from 'lucide-react';
+import { X, ArrowLeft, MessageCircle, Eye } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { API_BASE_URL } from '../utils/apiConfig';
 import toast from 'react-hot-toast';
@@ -12,20 +12,36 @@ interface LoginModalProps {
     onClose: () => void;
     onSuccess?: () => void;
     onSwitchToRegister: () => void;
+    initialMobile?: string;
 }
 
-export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }: LoginModalProps) {
+export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister, initialMobile }: LoginModalProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         email: '',
         password: ''
     });
+    const [showPassword, setShowPassword] = useState(false);
+
+    React.useEffect(() => {
+        if (isOpen && initialMobile) {
+            setFormData(prev => ({ ...prev, email: initialMobile }));
+        }
+    }, [isOpen, initialMobile]);
 
     if (!isOpen) return null;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+        let value = e.target.value;
+
+        if (e.target.name === 'email') { // 'email' field holds Mobile or Email
+            const isNumeric = /^\d+$/.test(value);
+            if (isNumeric && value.length > 0 && !value.startsWith('0')) {
+                value = '0' + value;
+            }
+        }
+        setFormData(prev => ({ ...prev, [e.target.name]: value }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -50,10 +66,12 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
             if (data.token) {
                 Cookies.set('token', data.token, { expires: 7 });
                 toast.success("Login Successful!");
-                if (onSuccess) onSuccess();
                 onClose();
-                // Instead of router.push, we just refresh the current view or let DashboardLayout handle it
-                window.location.reload();
+                if (onSuccess) {
+                    onSuccess();
+                } else {
+                    window.location.reload();
+                }
             }
         } catch (err: any) {
             toast.error(err.message);
@@ -139,14 +157,14 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
             {/* Modal Container - Anchored to bottom, compact height */}
-            <div className="relative bg-[#F8F9FA] w-full max-w-[420px] rounded-lg overflow-hidden shadow-2xl flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300">
+            <div className="relative bg-[#F8F9FA] w-full max-w-[565px] rounded-lg overflow-hidden shadow-2xl flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300">
 
                 {/* Header Controls - Compact */}
                 <div className="flex items-center justify-between p-3 px-5 shrink-0">
-                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 transition-colors">
+                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-black hover:bg-slate-200 transition-colors">
                         <ArrowLeft className="w-4 h-4 stroke-[2]" />
                     </button>
-                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 transition-colors">
+                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-black hover:bg-slate-200 transition-colors">
                         <X className="w-4 h-4 stroke-[2]" />
                     </button>
                 </div>
@@ -161,7 +179,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
                                 <path
                                     d="M50 0 L10 15 V50 C10 80 50 110 50 110 C50 110 90 80 90 50 V15 L50 0Z"
                                     fill="white"
-                                    stroke="#E5E7EB"
+                                    stroke="#64748b"
                                     strokeWidth="1.5"
                                 />
                                 <path
@@ -182,35 +200,45 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
                                 </div>
                             </div>
                         </div>
-                        <h2 className="text-[18px] font-medium text-slate-800 leading-none">Login</h2>
-                        <p className="text-[12px] text-slate-400 mt-1">If Allready Registered</p>
+                        <h2 className="text-[18px] font-medium text-black leading-none">Login</h2>
+                        <p className="text-[12px] text-black mt-1">If Allready Registered</p>
                     </div>
 
                     {/* Login Form - Tight Spacing */}
                     <form onSubmit={handleSubmit} className="space-y-3 mb-2">
                         <div className="relative">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-[1px] h-4 bg-slate-300" />
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-[1px] h-4 bg-slate-500" />
                             <input
                                 type="text"
                                 name="email"
                                 value={formData.email}
                                 onChange={handleChange}
                                 placeholder="Mobile Number or Email"
-                                className="w-full bg-white border border-slate-200 rounded-md py-2.5 pl-8 pr-4 text-[13px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-300 placeholder:text-slate-400"
+                                className="w-full bg-white border border-slate-500 rounded-md py-2.5 pl-8 pr-4 text-[13px] text-black focus:outline-none focus:ring-1 focus:ring-black placeholder:text-slate-400"
                                 required
                             />
                         </div>
                         <div className="relative">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-[1px] h-4 bg-slate-300" />
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-[1px] h-4 bg-slate-500" />
                             <input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 name="password"
                                 value={formData.password}
                                 onChange={handleChange}
                                 placeholder="Password"
-                                className="w-full bg-white border border-slate-200 rounded-md py-2.5 pl-8 pr-4 text-[13px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-300 placeholder:text-slate-400"
+                                className="w-full bg-white border border-slate-500 rounded-md py-2.5 pl-8 pr-12 text-[13px] text-black focus:outline-none focus:ring-1 focus:ring-black placeholder:text-slate-400"
                                 required
                             />
+                            <div
+                                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-black select-none"
+                                onMouseDown={() => setShowPassword(true)}
+                                onMouseUp={() => setShowPassword(false)}
+                                onMouseLeave={() => setShowPassword(false)}
+                                onTouchStart={() => setShowPassword(true)}
+                                onTouchEnd={() => setShowPassword(false)}
+                            >
+                                <Eye className="w-5 h-5" />
+                            </div>
                         </div>
                         <button
                             type="submit"
@@ -222,15 +250,15 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
                     </form>
 
                     {/* Secondary Actions */}
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 px-1 mb-4">
+                    <div className="flex items-center justify-between text-[11px] text-black px-1 mb-4">
                         <button className="hover:underline">HelpChat</button>
                         <button className="hover:underline">Forgot Password?</button>
                     </div>
 
                     {/* OR Divider */}
                     <div className="relative flex items-center justify-center mb-4">
-                        <div className="absolute inset-x-0 h-[1px] bg-slate-200" />
-                        <span className="relative bg-[#F8F9FA] px-3 text-[11px] font-medium text-slate-400">OR</span>
+                        <div className="absolute inset-x-0 h-[1px] bg-slate-500" />
+                        <span className="relative bg-[#F8F9FA] px-3 text-[11px] font-medium text-black">OR</span>
                     </div>
 
                     {/* Social Buttons - Compact */}
@@ -248,7 +276,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
                         </button>
                         <button
                             onClick={() => handleSocialLogin('google')}
-                            className="w-full bg-white border border-slate-200 text-slate-700 py-2.5 rounded-lg flex items-center px-4 hover:bg-slate-50 transition-all"
+                            className="w-full bg-white border border-slate-500 text-black py-2.5 rounded-lg flex items-center px-4 hover:bg-slate-50 transition-all"
                         >
                             <span className="mr-6">
                                 <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -264,29 +292,27 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
 
                     {/* Bottom Links */}
                     <div className="flex flex-col items-center gap-1.5 pb-2">
-                        <span className="text-[11px] text-slate-400 italic font-medium">New User?</span>
+                        <span className="text-[11px] text-black italic font-medium">New User?</span>
                         <button
                             onClick={onSwitchToRegister}
-                            className="w-[120px] bg-white border border-slate-200 text-slate-700 py-1.5 rounded-md text-[12px] font-medium shadow-sm hover:bg-slate-50"
+                            className="w-[120px] bg-white border border-slate-500 text-black py-1.5 rounded-md text-[12px] font-medium shadow-sm hover:bg-slate-50"
                         >
                             Register
                         </button>
                     </div>
                 </div>
 
-                {/* Footer Controls Overlay */}
-                <div className="mt-auto px-5 py-3 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-400 bg-[#F8F9FA] relative">
-                    <button className="hover:text-slate-600">HelpChat</button>
-                    <button className="hover:text-slate-600">HelpLine</button>
-
-                    {/* Floating Chat Icon - Scaled Down */}
-                    <div className="absolute right-5 -top-12">
-                        <button className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-white shadow-xl hover:scale-105 active:scale-95 transition-all">
+                {/* Floating Chat Icon */}
+                <div className="absolute right-5 bottom-5 z-[210]">
+                    <div className="flex flex-col items-center">
+                        <button className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-white shadow-xl hover:scale-105 active:scale-95 transition-all mb-1">
                             <MessageCircle className="w-5 h-5 fill-white" />
                         </button>
+                        <button className="text-[11px] text-black font-bold">HelpChat</button>
                     </div>
                 </div>
             </div>
         </div>
     );
 }
+

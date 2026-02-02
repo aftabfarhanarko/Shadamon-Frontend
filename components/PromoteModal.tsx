@@ -39,10 +39,17 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
     const [isHighlight, setIsHighlight] = useState(false);
     const [highlightType, setHighlightType] = useState<'Hot Sale' | 'Discount' | 'Urgent'>('Hot Sale');
     const [isPostLevel, setIsPostLevel] = useState(false);
-    const minAmount = 140;
-    const maxAmount = 8435;
+    const [showPremier, setShowPremier] = useState(false);
+    const [premierSettings, setPremierSettings] = useState({
+        verifyBadgePrice: 200,
+        highlightPostPrice: 300,
+        addLabelPrice: 100,
+        freeAdCredit: 200
+    });
+    const [minAmount, setMinAmount] = useState(140);
+    const [maxAmount, setMaxAmount] = useState(8435);
 
-    // Initialize/Reset
+    // Initialize/Reset & Fetch Configs
     useEffect(() => {
         if (isOpen) {
             setPromoteType('call_msg');
@@ -51,8 +58,35 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
             setDurationDays(1);
             setAmount(500);
             updateEndDate(1);
+            fetchConfigs();
         }
     }, [isOpen]);
+
+    const fetchConfigs = async () => {
+        try {
+            const [premierRes, plansRes] = await Promise.all([
+                fetch(`${API_BASE_URL}/api/premier-opportunity`).then(res => res.json()),
+                fetch(`${API_BASE_URL}/api/ads/public/promotion-plans`).then(res => res.json())
+            ]);
+
+            if (premierRes.success && premierRes.data) {
+                setPremierSettings(premierRes.data);
+            }
+
+            if (plansRes.success && plansRes.data && plansRes.data.length > 0) {
+                // Determine min/max from plans if applicable, or just keep default logic?
+                // Assuming plans have 'amount' which is string or number.
+                // Let's find min and max from the plan amounts.
+                const amounts = plansRes.data.map((p: any) => Number(p.amount)).filter((n: number) => !isNaN(n));
+                if (amounts.length > 0) {
+                    setMinAmount(Math.min(...amounts));
+                    setMaxAmount(Math.max(...amounts));
+                }
+            }
+        } catch (error) {
+            console.error("Failed to fetch configs:", error);
+        }
+    };
 
     // Duration Logic
     const updateEndDate = (days: number) => {
@@ -134,7 +168,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
             {/* Modal Container */}
-            <div className="relative bg-[#F4F6F8] w-full max-w-[420px] rounded-lg sm:rounded-lg overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300 shadow-2xl h-[95vh] sm:max-h-[850px] font-sans">
+            <div className="relative bg-[#F4F6F8] w-full max-w-[565px] rounded-lg sm:rounded-lg overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300 shadow-2xl h-[95vh] sm:max-h-[850px] font-sans">
 
                 {/* Header */}
                 <div className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between shrink-0">
@@ -349,10 +383,81 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                             </div>
 
                             {/* Premier Opportunity Dropdown */}
-                            <div className="border border-slate-200 rounded px-3 py-2 flex items-center justify-between cursor-pointer hover:bg-slate-50">
+                            <div
+                                className="border border-slate-200 rounded px-3 py-2 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors"
+                                onClick={() => setShowPremier(!showPremier)}
+                            >
                                 <span className="text-xs font-bold text-slate-700">Premier Opportunity</span>
-                                <ChevronDown className="w-4 h-4 text-slate-400" />
+                                <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform duration-200", showPremier && "rotate-180")} />
                             </div>
+
+                            {/* Premier Options - Collapsible Content */}
+                            {showPremier && (
+                                <div className="space-y-3 pt-2 bg-slate-50 border border-slate-200 border-t-0 -mt-[1px] rounded-b px-3 py-3 animate-in fade-in zoom-in-95 duration-200">
+                                    {/* Verify Badge */}
+                                    <label className="flex items-start gap-2 cursor-pointer group">
+                                        <div className={cn("w-4 h-4 rounded border flex items-center justify-center mt-0.5 transition-colors", isVerifyBadge ? 'bg-brand-600 border-brand-600' : 'border-slate-300 bg-white')}>
+                                            {isVerifyBadge && <Check className="w-3 h-3 text-white" />}
+                                        </div>
+                                        <input type="checkbox" className="hidden" checked={isVerifyBadge} onChange={() => setIsVerifyBadge(!isVerifyBadge)} />
+                                        <span className="text-[11px] font-bold text-slate-700 group-hover:text-slate-900">
+                                            প্রোফাইলে ভেরিফাই ব্যাজ যোগ (+ ${premierSettings.verifyBadgePrice}/বছর)
+                                        </span>
+                                    </label>
+
+                                    {/* Highlight Post */}
+                                    <div>
+                                        <label className="flex items-start gap-2 cursor-pointer group mb-2">
+                                            <div className={cn("w-4 h-4 rounded border flex items-center justify-center mt-0.5 transition-colors", isHighlight ? 'bg-brand-600 border-brand-600' : 'border-slate-300 bg-white')}>
+                                                {isHighlight && <Check className="w-3 h-3 text-white" />}
+                                            </div>
+                                            <input type="checkbox" className="hidden" checked={isHighlight} onChange={() => setIsHighlight(!isHighlight)} />
+                                            <span className="text-[11px] font-bold text-slate-700 group-hover:text-slate-900 flex items-center gap-2">
+                                                পোস্টটি হাইলাইট করুন (+ ${premierSettings.highlightPostPrice})
+                                                <ChevronDown className="w-3 h-3 text-slate-400" />
+                                            </span>
+                                        </label>
+
+                                        {isHighlight && (
+                                            <div className="pl-6 space-y-1.5 mb-2 animate-in slide-in-from-top-2 fade-in">
+                                                {['Hot Sale', 'Discount', 'Urgent'].map((type) => (
+                                                    <label key={type} className="flex items-center gap-2 cursor-pointer">
+                                                        <div className={cn("w-3 h-3 rounded-full border flex items-center justify-center", highlightType === type ? 'border-brand-600' : 'border-slate-300')}>
+                                                            {highlightType === type && <div className="w-1.5 h-1.5 rounded-full bg-brand-600" />}
+                                                        </div>
+                                                        <input
+                                                            type="radio"
+                                                            name="highlightType"
+                                                            className="hidden"
+                                                            checked={highlightType === type}
+                                                            onChange={() => setHighlightType(type as any)}
+                                                        />
+                                                        <span className="text-[10px] text-slate-600">{type}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Post Level */}
+                                    <label className="flex items-start gap-2 cursor-pointer group">
+                                        <div className={cn("w-4 h-4 rounded border flex items-center justify-center mt-0.5 transition-colors", isPostLevel ? 'bg-brand-600 border-brand-600' : 'border-slate-300 bg-white')}>
+                                            {isPostLevel && <Check className="w-3 h-3 text-white" />}
+                                        </div>
+                                        <input type="checkbox" className="hidden" checked={isPostLevel} onChange={() => setIsPostLevel(!isPostLevel)} />
+                                        <span className="text-[11px] font-bold text-slate-700 group-hover:text-slate-900">
+                                            পোস্ট লেভেল যোগ করুন (+ ${premierSettings.addLabelPrice})
+                                        </span>
+                                    </label>
+
+                                    <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-3">
+                                        <span className="text-[10px] font-bold text-slate-800">You Have ${premierSettings.freeAdCredit} Free Ad Credit!</span>
+                                        <button className="bg-[#FF3B30] text-white text-[10px] font-bold px-3 py-1.5 rounded shadow-sm hover:bg-red-600 transition-colors">
+                                            Apply Offer
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -396,78 +501,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                             Message us
                         </button>
 
-                        {/* Premier Opportunity Section */}
-                        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                            <h4 className="font-bold text-slate-900 text-sm mb-3 flex items-center justify-between">
-                                Premier Opportunity
-                                <ChevronDown className="w-4 h-4 text-slate-400" />
-                            </h4>
 
-                            <div className="space-y-3">
-                                {/* Verify Badge */}
-                                <label className="flex items-start gap-2 cursor-pointer group">
-                                    <div className={`w-4 h-4 rounded border flex items-center justify-center mt-0.5 transition-colors ${isVerifyBadge ? 'bg-brand-600 border-brand-600' : 'border-slate-300 bg-white'}`}>
-                                        {isVerifyBadge && <Check className="w-3 h-3 text-white" />}
-                                    </div>
-                                    <input type="checkbox" className="hidden" checked={isVerifyBadge} onChange={() => setIsVerifyBadge(!isVerifyBadge)} />
-                                    <span className="text-[11px] font-bold text-slate-700 group-hover:text-slate-900">
-                                        প্রোফাইলে ভেরিফাই ব্যাজ যোগ (+ $২০০/বছর)
-                                    </span>
-                                </label>
-
-                                {/* Highlight Post */}
-                                <div>
-                                    <label className="flex items-start gap-2 cursor-pointer group mb-2">
-                                        <div className={`w-4 h-4 rounded border flex items-center justify-center mt-0.5 transition-colors ${isHighlight ? 'bg-brand-600 border-brand-600' : 'border-slate-300 bg-white'}`}>
-                                            {isHighlight && <Check className="w-3 h-3 text-white" />}
-                                        </div>
-                                        <input type="checkbox" className="hidden" checked={isHighlight} onChange={() => setIsHighlight(!isHighlight)} />
-                                        <span className="text-[11px] font-bold text-slate-700 group-hover:text-slate-900 flex items-center gap-2">
-                                            পোস্টটি হাইলাইট করুন (+ $৩০০)
-                                            <ChevronDown className="w-3 h-3 text-slate-400" />
-                                        </span>
-                                    </label>
-
-                                    {isHighlight && (
-                                        <div className="pl-6 space-y-1.5 mb-2">
-                                            {['Hot Sale', 'Discount', 'Urgent'].map((type) => (
-                                                <label key={type} className="flex items-center gap-2 cursor-pointer">
-                                                    <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${highlightType === type ? 'border-brand-600' : 'border-slate-300'}`}>
-                                                        {highlightType === type && <div className="w-1.5 h-1.5 rounded-full bg-brand-600" />}
-                                                    </div>
-                                                    <input
-                                                        type="radio"
-                                                        name="highlightType"
-                                                        className="hidden"
-                                                        checked={highlightType === type}
-                                                        onChange={() => setHighlightType(type as any)}
-                                                    />
-                                                    <span className="text-[10px] text-slate-600">{type}</span>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Post Level */}
-                                <label className="flex items-start gap-2 cursor-pointer group">
-                                    <div className={`w-4 h-4 rounded border flex items-center justify-center mt-0.5 transition-colors ${isPostLevel ? 'bg-brand-600 border-brand-600' : 'border-slate-300 bg-white'}`}>
-                                        {isPostLevel && <Check className="w-3 h-3 text-white" />}
-                                    </div>
-                                    <input type="checkbox" className="hidden" checked={isPostLevel} onChange={() => setIsPostLevel(!isPostLevel)} />
-                                    <span className="text-[11px] font-bold text-slate-700 group-hover:text-slate-900">
-                                        পোস্ট লেভেল যোগ করুন (+ $১০০)
-                                    </span>
-                                </label>
-                            </div>
-
-                            <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-                                <span className="text-[10px] font-bold text-slate-800">You Have $200 Free Ad Credit!</span>
-                                <button className="bg-[#FF3B30] text-white text-[10px] font-bold px-3 py-1.5 rounded shadow-sm hover:bg-red-600 transition-colors">
-                                    Apply Offer
-                                </button>
-                            </div>
-                        </div>
                     </div>
 
                 </div>

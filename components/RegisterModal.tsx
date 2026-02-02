@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, ArrowLeft, MessageCircle, ChevronDown, User, Lock } from 'lucide-react';
+import { X, ArrowLeft, MessageCircle, ChevronDown, User, Lock, Eye } from 'lucide-react';
 import { RiMailFill } from 'react-icons/ri';
 import Cookies from 'js-cookie';
 import { API_BASE_URL } from '../utils/apiConfig';
@@ -12,12 +12,15 @@ interface RegisterModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSwitchToLogin: () => void;
+    initialMobile?: string;
+    onSuccess?: (needsVerification: boolean, token?: string) => void;
 }
 
-export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModalProps) {
+export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, initialMobile, onSuccess }: RegisterModalProps) {
     const router = useRouter();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
+    const [isEmailSignup, setIsEmailSignup] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -31,6 +34,15 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
         verifiedBy: 'Not Verified',
         merchantType: 'Free'
     });
+    const [showPassword, setShowPassword] = useState(false);
+
+    React.useEffect(() => {
+        if (isOpen && initialMobile) {
+            setFormData(prev => ({ ...prev, mobile: initialMobile }));
+            // We do NOT skip to step 2 automatically anymore, 
+            // so user sees the mobile number first as requested.
+        }
+    }, [isOpen, initialMobile]);
 
     const handleSocialLogin = (provider: string) => {
         if (provider === 'facebook') {
@@ -106,7 +118,17 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
     if (!isOpen) return null;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+        let value = e.target.value;
+
+        // If mobile field, ensure it starts with 0
+        if (e.target.name === 'mobile') {
+            // Remove non-digit chars for cleaner handling if needed, but for now just check prefix
+            if (value.length > 0 && !value.startsWith('0')) {
+                value = '0' + value;
+            }
+        }
+
+        setFormData(prev => ({ ...prev, [e.target.name]: value }));
     };
 
     const handleContinue = (e: React.FormEvent) => {
@@ -117,6 +139,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
                 return;
             }
             setStep(2);
+            setIsEmailSignup(false);
         } else {
             handleRegister();
         }
@@ -139,9 +162,22 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
             }
 
             if (data.token) {
-                Cookies.set('token', data.token, { expires: 7 });
-                toast.success("Registration Successful!");
-                window.location.reload();
+                // Determine verification need
+                const needsVerification = isEmailSignup || !formData.mobile;
+
+                if (!needsVerification) {
+                    // Only set cookie if no verification needed
+                    Cookies.set('token', data.token, { expires: 7 });
+                    toast.success("Registration Successful!");
+                } else {
+                    toast.success("Please verify your email to complete registration");
+                }
+
+                if (onSuccess) {
+                    onSuccess(needsVerification, data.token);
+                } else {
+                    if (!needsVerification) window.location.reload();
+                }
             }
         } catch (err: any) {
             toast.error(err.message);
@@ -156,17 +192,17 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
             {/* Modal Container - Anchored to bottom, compact height */}
-            <div className="relative bg-[#F8F9FA] w-full max-w-[420px] rounded-lg overflow-hidden shadow-2xl flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300">
+            <div className="relative bg-[#F8F9FA] w-full max-w-[565px] rounded-lg overflow-hidden shadow-2xl flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300">
 
                 {/* Header Controls - Compact */}
                 <div className="flex items-center justify-between p-3 px-5 shrink-0">
                     <button
                         onClick={() => step === 2 ? setStep(1) : onClose()}
-                        className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 transition-colors"
+                        className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-black hover:bg-slate-200 transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4 stroke-[2]" />
                     </button>
-                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 transition-colors">
+                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-black hover:bg-slate-200 transition-colors">
                         <X className="w-4 h-4 stroke-[2]" />
                     </button>
                 </div>
@@ -181,7 +217,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
                                 <path
                                     d="M50 0 L10 15 V50 C10 80 50 110 50 110 C50 110 90 80 90 50 V15 L50 0Z"
                                     fill="white"
-                                    stroke="#E5E7EB"
+                                    stroke="#64748b"
                                     strokeWidth="1.5"
                                 />
                                 <path
@@ -203,26 +239,26 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
                                 </div>
                             </div>
                         </div>
-                        <h2 className="text-[18px] font-medium text-slate-800 leading-none">Register</h2>
-                        <p className="text-[11px] text-slate-400 mt-1">If you are a New User</p>
+                        <h2 className="text-[18px] font-medium text-black leading-none">Register</h2>
+                        <p className="text-[11px] text-black mt-1">If you are a New User</p>
                     </div>
 
                     {/* Register Form */}
                     <form onSubmit={handleContinue} className="space-y-3 mb-3">
                         {/* Mobile Number with +88 */}
-                        <div className="relative flex items-center bg-white border border-slate-200 rounded-md overflow-hidden">
-                            <div className="flex items-center gap-1 px-3 py-2.5 border-r border-slate-100 bg-slate-50/50">
-                                <span className="text-[13px] font-medium text-slate-700">+88</span>
-                                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                        <div className="relative flex items-center bg-white border border-slate-500 rounded-md overflow-hidden">
+                            <div className="flex items-center gap-1 px-3 py-2.5 border-r border-slate-500 bg-slate-50/50">
+                                <span className="text-[13px] font-medium text-black">+88</span>
+                                <ChevronDown className="w-3.5 h-3.5 text-black" />
                             </div>
-                            <div className="absolute left-[65px] top-1/2 -translate-y-1/2 w-[1px] h-4 bg-slate-200" />
+                            <div className="absolute left-[65px] top-1/2 -translate-y-1/2 w-[1px] h-4 bg-slate-500" />
                             <input
                                 type="tel"
                                 name="mobile"
                                 value={formData.mobile}
                                 onChange={handleChange}
                                 placeholder="Enter your mobile number"
-                                className="flex-1 py-2.5 pl-6 pr-4 text-[13px] text-slate-800 focus:outline-none placeholder:text-slate-400"
+                                className="flex-1 py-2.5 pl-6 pr-4 text-[13px] text-black focus:outline-none placeholder:text-slate-400"
                                 required={step === 1}
                             />
                         </div>
@@ -232,8 +268,8 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
                                 {/* Name */}
                                 <div className="relative animate-in slide-in-from-top-2 duration-300">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
-                                        <RiMailFill className="w-4 h-4 text-slate-700" />
-                                        <div className="w-[1px] h-4 bg-slate-200" />
+                                        <RiMailFill className="w-4 h-4 text-black" />
+                                        <div className="w-[1px] h-4 bg-slate-500" />
                                     </div>
                                     <input
                                         type="text"
@@ -241,7 +277,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
                                         value={formData.name}
                                         onChange={handleChange}
                                         placeholder="Full Name"
-                                        className="w-full bg-white border border-slate-200 rounded-md py-2.5 pl-14 pr-4 text-[13px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-300 placeholder:text-slate-400"
+                                        className="w-full bg-white border border-slate-500 rounded-md py-2.5 pl-14 pr-4 text-[13px] text-black focus:outline-none focus:ring-1 focus:ring-black placeholder:text-slate-400"
                                         required
                                     />
                                 </div>
@@ -249,8 +285,8 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
                                 {/* Email */}
                                 <div className="relative animate-in slide-in-from-top-2 duration-300">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
-                                        <RiMailFill className="w-4 h-4 text-slate-700" />
-                                        <div className="w-[1px] h-4 bg-slate-200" />
+                                        <RiMailFill className="w-4 h-4 text-black" />
+                                        <div className="w-[1px] h-4 bg-slate-500" />
                                     </div>
                                     <input
                                         type="email"
@@ -258,26 +294,36 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
                                         value={formData.email}
                                         onChange={handleChange}
                                         placeholder="Email Id"
-                                        className="w-full bg-white border border-slate-200 rounded-md py-2.5 pl-14 pr-4 text-[13px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-300 placeholder:text-slate-400"
-                                        required
+                                        className="w-full bg-white border border-slate-500 rounded-md py-2.5 pl-14 pr-4 text-[13px] text-black focus:outline-none focus:ring-1 focus:ring-black placeholder:text-slate-400"
+                                        required={isEmailSignup || !formData.mobile}
                                     />
                                 </div>
 
                                 {/* Password */}
                                 <div className="relative animate-in slide-in-from-top-2 duration-300">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
-                                        <RiMailFill className="w-4 h-4 text-slate-700" />
-                                        <div className="w-[1px] h-4 bg-slate-200" />
+                                        <RiMailFill className="w-4 h-4 text-black" />
+                                        <div className="w-[1px] h-4 bg-slate-500" />
                                     </div>
                                     <input
-                                        type="password"
+                                        type={showPassword ? "text" : "password"}
                                         name="password"
                                         value={formData.password}
                                         onChange={handleChange}
                                         placeholder="Create a Password for SHADAMON"
-                                        className="w-full bg-white border border-slate-200 rounded-md py-2.5 pl-14 pr-4 text-[13px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-300 placeholder:text-slate-400"
+                                        className="w-full bg-white border border-slate-500 rounded-md py-2.5 pl-14 pr-12 text-[13px] text-black focus:outline-none focus:ring-1 focus:ring-black placeholder:text-slate-400"
                                         required
                                     />
+                                    <div
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-black select-none"
+                                        onMouseDown={() => setShowPassword(true)}
+                                        onMouseUp={() => setShowPassword(false)}
+                                        onMouseLeave={() => setShowPassword(false)}
+                                        onTouchStart={() => setShowPassword(true)}
+                                        onTouchEnd={() => setShowPassword(false)}
+                                    >
+                                        <Eye className="w-5 h-5" />
+                                    </div>
                                 </div>
                             </>
                         )}
@@ -295,8 +341,8 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
                         <>
                             {/* OR Divider */}
                             <div className="relative flex items-center justify-center my-4">
-                                <div className="absolute inset-x-0 h-[1px] bg-slate-200" />
-                                <span className="relative bg-[#F8F9FA] px-3 text-[11px] font-medium text-slate-400">OR</span>
+                                <div className="absolute inset-x-0 h-[1px] bg-slate-500" />
+                                <span className="relative bg-[#F8F9FA] px-3 text-[11px] font-medium text-black">OR</span>
                             </div>
 
                             {/* Social Buttons - Compact */}
@@ -327,11 +373,14 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
                                     <span className="text-[13px]">Continue with Google</span>
                                 </button>
                                 <button
-                                    onClick={() => setStep(2)}
-                                    className="w-full bg-white border border-slate-200 text-slate-700 py-2.5 rounded-lg flex items-center px-4 hover:bg-slate-50 transition-all"
+                                    onClick={() => {
+                                        setIsEmailSignup(true);
+                                        setStep(2);
+                                    }}
+                                    className="w-full bg-white border border-slate-500 text-black py-2.5 rounded-lg flex items-center px-4 hover:bg-slate-50 transition-all"
                                 >
                                     <span className="mr-6">
-                                        <RiMailFill className="w-4 h-4 text-slate-700" />
+                                        <RiMailFill className="w-4 h-4 text-black" />
                                     </span>
                                     <span className="text-[13px]">Continue With Email</span>
                                 </button>
@@ -339,51 +388,37 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
                         </>
                     )}
 
-                    <p className="text-[10px] text-slate-400 text-center mb-6">
-                        By Register for an account you agree to our <span className="text-slate-600 font-medium underline">Term & Condition</span>
+                    <p className="text-[10px] text-black text-center mb-6">
+                        By Register for an account you agree to our <span className="text-black font-medium underline">Term & Condition</span>
                     </p>
 
-                    <div className="flex items-center justify-center gap-2 mb-4 text-[11px] text-slate-400">
-                        <button className="hover:text-slate-600">HelpChat</button>
+                    <div className="flex items-center justify-center gap-2 mb-4 text-[11px] text-black">
+                        <button className="hover:text-black">HelpChat</button>
                         <span>|</span>
-                        <button className="hover:text-slate-600">HelpLine</button>
+                        <button className="hover:text-black">HelpLine</button>
                     </div>
 
                     {/* Bottom Link */}
                     <div className="flex flex-col items-center gap-1.5 pb-2">
-                        <span className="text-[11px] text-slate-500 font-medium">Allready Have a Account?</span>
+                        <span className="text-[11px] text-black font-medium">Allready Have a Account?</span>
                         <button
                             onClick={onSwitchToLogin}
-                            className="w-[140px] bg-white border border-slate-200 text-slate-700 py-2 rounded-md text-[13px] font-medium shadow-sm hover:bg-slate-50 transition-colors"
+                            className="w-[140px] bg-white border border-slate-500 text-black py-2 rounded-md text-[13px] font-medium shadow-sm hover:bg-slate-50 transition-colors"
                         >
                             Login
                         </button>
                     </div>
                 </div>
 
-                {/* Footer Controls Overlay (Hidden when step 2 to match design vibe) */}
-                {step === 1 && (
-                    <div className="mt-auto px-5 py-3 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-400 bg-[#F8F9FA] relative">
-                        <button className="hover:text-slate-600">HelpChat</button>
-                        <button className="hover:text-slate-600">HelpLine</button>
-
-                        {/* Floating Chat Icon */}
-                        <div className="absolute right-5 -top-12">
-                            <button className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-white shadow-xl hover:scale-105 active:scale-95 transition-all">
-                                <MessageCircle className="w-5 h-5 fill-white" />
-                            </button>
-                        </div>
+                {/* Floating Chat Icon */}
+                <div className="absolute right-5 bottom-5 z-[210]">
+                    <div className="flex flex-col items-center">
+                        <button className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-white shadow-xl hover:scale-105 active:scale-95 transition-all mb-1">
+                            <MessageCircle className="w-5 h-5 fill-white" />
+                        </button>
+                        <button className="text-[11px] text-black font-bold">HelpChat</button>
                     </div>
-                )}
-                {step === 2 && (
-                    <div className="mt-auto relative">
-                        <div className="absolute right-5 -top-12">
-                            <button className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-white shadow-xl hover:scale-105 active:scale-95 transition-all">
-                                <MessageCircle className="w-5 h-5 fill-white" />
-                            </button>
-                        </div>
-                    </div>
-                )}
+                </div>
             </div>
         </div>
     );

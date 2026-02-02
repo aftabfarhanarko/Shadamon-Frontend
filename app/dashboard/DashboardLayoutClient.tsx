@@ -18,6 +18,8 @@ import PromoteModal from '../../components/PromoteModal';
 import LoginModal from '../../components/LoginModal';
 import RegisterModal from '../../components/RegisterModal';
 import AccountActivityModal from '../../components/AccountActivityModal';
+import MobileEntryModal from '../../components/MobileEntryModal';
+import VerificationModal from '../../components/VerificationModal';
 import { API_BASE_URL } from '../../utils/apiConfig';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
@@ -51,9 +53,15 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+    const [isMobileEntryModalOpen, setIsMobileEntryModalOpen] = useState(false);
+    const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+    const [initialMobile, setInitialMobile] = useState('');
+    const [tempMobile, setTempMobile] = useState<string>(""); // Store mobile from entry modal
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+    const [accountModalInitialTab, setAccountModalInitialTab] = useState<'Page' | 'Profile' | 'Settings' | 'Post' | 'Activity'>('Page');
     const [viewingUserId, setViewingUserId] = useState<string | undefined>(undefined);
     const [adToPromote, setAdToPromote] = useState<any>(null);
+    const [verificationToken, setVerificationToken] = useState<string | undefined>(undefined);
 
     // Event Listener for opening account modal from children
     useEffect(() => {
@@ -131,8 +139,18 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
         // Auto-open modal if openModal=true or profile=ID is in URL
         const openModal = searchParams.get('openModal');
+        const openUsersProfile = searchParams.get('openUsersProfile');
         const profileId = searchParams.get('profile');
         const token = Cookies.get('token');
+
+        if (openUsersProfile === 'true' && token) {
+            setAccountModalInitialTab('Profile');
+            setIsAccountModalOpen(true);
+            const params = new URLSearchParams(window.location.search);
+            params.delete('openUsersProfile');
+            const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+            window.history.replaceState({}, '', newUrl);
+        }
 
         if (openModal === 'true' && token) {
             setIsPostAdModalOpen(true);
@@ -168,8 +186,9 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     const handleAddAdClick = () => {
         const token = Cookies.get('token');
         if (!token) {
-            setIsLoginModalOpen(true);
+            setIsMobileEntryModalOpen(true);
         } else {
+            setTempMobile(""); // Clear previous temp mobile if user is logged in
             setIsPostAdModalOpen(true);
         }
     };
@@ -178,7 +197,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         e.preventDefault(); // Prevent navigation
         const token = Cookies.get('token');
         if (!token) {
-            setIsLoginModalOpen(true);
+            setIsMobileEntryModalOpen(true);
         } else {
             setIsAccountModalOpen(true);
         }
@@ -188,7 +207,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         <div className="min-h-screen bg-[#F1F5F9] font-sans pb-20 md:pb-0">
             {/* Top Navigation Bar */}
             <header className="fixed top-0 inset-x-0 bg-white border-b border-slate-200 z-50 h-16">
-                <div className="max-w-[1240px] mx-auto px-4 h-full flex items-center">
+                <div className="max-w-[1320px] mx-auto px-4 h-full flex items-center justify-center">
                     {/* Section 1: 300px (Logo & Ad Count) */}
                     <div className="w-[300px] flex-none flex items-center gap-2">
                         {/* Mobile Menu Button */}
@@ -261,6 +280,8 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                             Post Free
                         </button>
                     </div>
+                    {/* Balancing Spacer */}
+                    <div className="w-[70px] flex-none hidden lg:block"></div>
                 </div>
             </header>
 
@@ -301,7 +322,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             </nav>
 
             {/* Main Content Area */}
-            <main className="max-w-[1240px] mx-auto px-4 py-8 mt-12">
+            <main className="max-w-[1320px] mx-auto px-4 py-8 mt-12">
                 {children}
             </main>
 
@@ -421,6 +442,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             <PostAdModal
                 isOpen={isPostAdModalOpen}
                 onClose={() => setIsPostAdModalOpen(false)}
+                initialMobile={tempMobile} // Pass temp mobile
                 onSuccess={(newAd) => {
                     // Dispatch custom event to tell Dashboard to refetch
                     window.dispatchEvent(new Event('refresh-ads'));
@@ -451,6 +473,13 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     setIsLoginModalOpen(false);
                     setIsRegisterModalOpen(true);
                 }}
+                initialMobile={initialMobile}
+                onSuccess={() => {
+                    // Navigate to profile after login by reloading with param
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('openUsersProfile', 'true');
+                    window.location.href = url.toString();
+                }}
             />
 
             <RegisterModal
@@ -460,11 +489,57 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     setIsRegisterModalOpen(false);
                     setIsLoginModalOpen(true);
                 }}
+                initialMobile={initialMobile}
+                onSuccess={(needsVerification = true, token) => {
+                    setIsRegisterModalOpen(false);
+                    if (needsVerification && token) {
+                        setVerificationToken(token);
+                        setIsVerificationModalOpen(true);
+                    } else {
+                        // Direct to profile
+                        const url = new URL(window.location.href);
+                        url.searchParams.set('openUsersProfile', 'true');
+                        window.location.href = url.toString();
+                    }
+                }}
+            />
+
+            <MobileEntryModal
+                isOpen={isMobileEntryModalOpen}
+                onClose={() => setIsMobileEntryModalOpen(false)}
+                onUserExists={(mobile) => {
+                    setTempMobile(mobile);
+                    setIsMobileEntryModalOpen(false);
+                    setIsPostAdModalOpen(true);
+                }}
+                onUserNew={(mobile) => {
+                    setTempMobile(mobile);
+                    setIsMobileEntryModalOpen(false);
+                    setIsPostAdModalOpen(true);
+                }}
+            />
+
+            <VerificationModal
+                isOpen={isVerificationModalOpen}
+                onClose={() => {
+                    setIsVerificationModalOpen(false);
+                    setVerificationToken(undefined);
+                }}
+                verificationToken={verificationToken}
+                onSuccess={() => {
+                    setIsVerificationModalOpen(false);
+                    // Reload to refresh auth state and open profile
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('openUsersProfile', 'true');
+                    window.location.href = url.toString();
+                }}
             />
             <AccountActivityModal
                 isOpen={isAccountModalOpen}
+                initialTab={accountModalInitialTab}
                 onClose={() => {
                     setIsAccountModalOpen(false);
+                    setAccountModalInitialTab('Page'); // Reset to default
                     setViewingUserId(undefined);
                     // Remove profile param from URL
                     const params = new URLSearchParams(window.location.search);

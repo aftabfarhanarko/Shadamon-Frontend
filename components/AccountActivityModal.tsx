@@ -20,11 +20,12 @@ interface AccountActivityModalProps {
     onClose: () => void;
     userId?: string; // If provided, viewing another user. If null, viewing self (logged in user)
     onOpenPostAd?: () => void;
+    initialTab?: 'Page' | 'Profile' | 'Settings' | 'Post' | 'Activity';
 }
 
-export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPostAd }: AccountActivityModalProps) {
+export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPostAd, initialTab = 'Page' }: AccountActivityModalProps) {
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'Page' | 'Profile' | 'Settings' | 'Post' | 'Activity'>('Page');
+    const [activeTab, setActiveTab] = useState<'Page' | 'Profile' | 'Settings' | 'Post' | 'Activity'>(initialTab);
     const [productTab, setProductTab] = useState<'All' | 'Popular'>('All');
     const [expandedSetting, setExpandedSetting] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -54,6 +55,18 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
             fetchCategories();
         }
     }, [activeTab]);
+
+    useEffect(() => {
+        // Check for profile tab request param
+        const params = new URLSearchParams(window.location.search);
+        if (isOpen && params.get('openUsersProfile') === 'true') {
+            setActiveTab('Profile');
+            // Clean up param
+            params.delete('openUsersProfile');
+            const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+            window.history.replaceState({}, '', newUrl);
+        }
+    }, [isOpen]);
 
     const fetchActivityData = async () => {
         try {
@@ -224,9 +237,12 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
 
     useEffect(() => {
         if (isOpen) {
+            if (initialTab) {
+                setActiveTab(initialTab);
+            }
             fetchUserData();
         }
-    }, [isOpen, userId]);
+    }, [isOpen, userId, initialTab]);
 
     const fetchUserData = async () => {
         setLoading(true);
@@ -396,7 +412,7 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
             {/* Modal Container */}
-            <div className="relative bg-[#F4F6F8] w-full max-w-[420px] rounded-lg overflow-hidden flex flex-col animate-in slide-in-from-bottom-full duration-300 shadow-2xl h-[95vh] font-sans">
+            <div className="relative bg-[#F4F6F8] w-full max-w-[565px] rounded-lg overflow-hidden flex flex-col animate-in slide-in-from-bottom-full duration-300 shadow-2xl h-[95vh] font-sans">
 
                 {/* Header */}
                 <div className="bg-white px-3 py-2 border-b border-slate-200 shrink-0">

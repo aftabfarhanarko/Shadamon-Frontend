@@ -77,7 +77,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
             <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px]" onClick={onClose} />
 
             {/* Modal Container */}
-            <div className="relative bg-white w-full max-w-[420px] rounded-lg md:rounded-lg overflow-hidden flex flex-col animate-in slide-in-from-bottom-full duration-300 shadow-2xl h-[95vh] font-sans">
+            <div className="relative bg-white w-full max-w-[565px] rounded-lg md:rounded-lg overflow-hidden flex flex-col animate-in slide-in-from-bottom-full duration-300 shadow-2xl h-[95vh] font-sans">
 
                 {/* 1. Header */}
                 <div className="bg-slate-200 px-1 py-0 flex items-center gap-2 shrink-0">

@@ -177,7 +177,7 @@ export default function DashboardClient() {
     };
 
     return (
-        <div className="flex flex-col lg:flex-row items-start">
+        <div className="flex flex-col lg:flex-row items-start justify-center">
             {/* Left Sidebar - 300px */}
             <div className="hidden lg:block w-[300px] flex-none space-y-4">
 
@@ -368,7 +368,7 @@ export default function DashboardClient() {
             <div className="w-full lg:w-[565px] flex-none space-y-4">
 
                 {/* Secondary Filter Bar */}
-                <div className="bg-white rounded-lg flex divide-x divide-slate-100 overflow-hidden">
+                <div className="bg-white rounded-lg flex divide-x divide-slate-100 overflow-hidden sticky top-20 z-30 shadow-sm">
                     <button className="flex-1 px-4 py-2.5 flex items-center justify-center gap-3 hover:bg-slate-50 transition-colors">
                         <Grid className="w-5 h-5 text-slate-500" />
                         <span className="text-sm text-slate-600">Categorie</span>
@@ -560,9 +560,9 @@ export default function DashboardClient() {
                                                             <div className="flex items-center gap-1 text-[11px] text-slate-500 mb-0.5">
                                                                 <span>{chunk[0].adType === 'Promoted' ? 'Promoted By' : 'Post By'}</span>
                                                                 <span className="font-bold text-black">{chunk[0].user?.name || 'User'}</span>
-                                                                {premiumUsers.some((u: any) => u._id === chunk[0].user?._id && u.merchantType === 'Premium') && (
+                                                                {/* {premiumUsers.some((u: any) => u._id === chunk[0].user?._id && u.merchantType === 'Premium') && (
                                                                     <CheckCircle2 className="w-3 h-3 text-blue-500" />
-                                                                )}
+                                                                )} */}
                                                             </div>
                                                             <h3 className="font-bold text-lg text-slate-800 leading-tight mb-0.5">
                                                                 {chunk[0].headline}
@@ -612,9 +612,9 @@ export default function DashboardClient() {
                                                             <div className="flex items-center gap-1 text-[10px] text-slate-500 mb-0.5">
                                                                 <span>{ad.adType === 'Promoted' ? 'Promoted By' : 'Post By'}</span>
                                                                 <span className="font-bold text-slate-900">{ad.user?.name || 'User'}</span>
-                                                                {premiumUsers.some((u: any) => u._id === ad.user?._id && u.merchantType === 'Premium') && (
+                                                                {/* {premiumUsers.some((u: any) => u._id === ad.user?._id && u.merchantType === 'Premium') && (
                                                                     <CheckCircle2 className="w-2.5 h-2.5 text-blue-500" />
-                                                                )}
+                                                                )} */}
                                                             </div>
                                                             <h4 className="text-sm text-slate-800 truncate mb-0.5">{ad.headline}</h4>
                                                             <div className="text-sm text-slate-900 mb-1">
@@ -797,6 +797,9 @@ export default function DashboardClient() {
                     </div>
                 </div>
             </div>
+
+            {/* Balancing Spacer: 70px (Legacy Left=350, Right=280, Diff=70) */}
+            <div className="hidden lg:block w-[70px] flex-none" />
         </div >
     );
 }

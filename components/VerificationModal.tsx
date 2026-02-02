@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { X, ArrowLeft, Loader2, MessageCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Cookies from 'js-cookie';
 import { API_BASE_URL } from '../utils/apiConfig';
@@ -10,9 +10,10 @@ interface VerificationModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
+    verificationToken?: string;
 }
 
-export default function VerificationModal({ isOpen, onClose, onSuccess }: VerificationModalProps) {
+export default function VerificationModal({ isOpen, onClose, onSuccess, verificationToken }: VerificationModalProps) {
     const [showOtpInput, setShowOtpInput] = useState(false);
     const [otp, setOtp] = useState(["", "", "", "", "", ""]);
     const [verificationLoading, setVerificationLoading] = useState(false);
@@ -37,6 +38,9 @@ export default function VerificationModal({ isOpen, onClose, onSuccess }: Verifi
             setOtp(["", "", "", "", "", ""]);
             setOtpTimer(0);
             setOtpAttempts(0);
+
+            // Auto request OTP
+            handleRequestOtp();
         }
     }, [isOpen]);
 
@@ -49,7 +53,7 @@ export default function VerificationModal({ isOpen, onClose, onSuccess }: Verifi
         }
 
         setVerificationLoading(true);
-        const token = Cookies.get('token');
+        const token = verificationToken || Cookies.get('token');
         try {
             const res = await fetch(`${API_BASE_URL}/api/user/otp/request`, {
                 method: 'POST',
@@ -63,7 +67,7 @@ export default function VerificationModal({ isOpen, onClose, onSuccess }: Verifi
                     onClose();
                 } else {
                     setShowOtpInput(true);
-                    setOtpTimer(30);
+                    setOtpTimer(60);
                     setOtpAttempts(prev => prev + 1);
                     toast.success("OTP sent to your email!");
                 }
@@ -85,7 +89,7 @@ export default function VerificationModal({ isOpen, onClose, onSuccess }: Verifi
         }
 
         setVerificationLoading(true);
-        const token = Cookies.get('token');
+        const token = verificationToken || Cookies.get('token');
         try {
             const res = await fetch(`${API_BASE_URL}/api/user/otp/verify`, {
                 method: 'POST',
@@ -97,7 +101,10 @@ export default function VerificationModal({ isOpen, onClose, onSuccess }: Verifi
             });
             const data = await res.json();
             if (data.success) {
-                toast.success("Verification Successful!");
+                if (verificationToken) {
+                    Cookies.set('token', verificationToken, { expires: 7 });
+                }
+                toast.success("Registration Complete!");
                 onSuccess();
                 onClose();
             } else {
@@ -129,75 +136,115 @@ export default function VerificationModal({ isOpen, onClose, onSuccess }: Verifi
     };
 
     return (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 font-sans">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+        <div className="fixed inset-0 z-[200] flex items-end justify-center">
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
-            <div className="relative bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 transition-colors"
-                >
-                    <X className="w-5 h-5 text-slate-500" />
-                </button>
+            {/* Modal Container */}
+            <div className="relative bg-[#F8F9FA] w-full max-w-[565px] rounded-lg overflow-hidden shadow-2xl flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300">
 
-                <div className="text-center mb-6">
-                    <h2 className="text-xl font-bold text-slate-900">Verification Required</h2>
-                    <p className="text-sm text-slate-500 mt-1">Please verify your account to proceed.</p>
+                {/* Header Controls - Compact */}
+                <div className="flex items-center justify-between p-3 px-5 shrink-0">
+                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-black hover:bg-slate-200 transition-colors">
+                        <ArrowLeft className="w-4 h-4 stroke-[2]" />
+                    </button>
+                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-black hover:bg-slate-200 transition-colors">
+                        <X className="w-4 h-4 stroke-[2]" />
+                    </button>
                 </div>
 
-                <div className="space-y-6">
-                    {!showOtpInput ? (
-                        <div className="text-center">
-                            <button
-                                type="button"
-                                onClick={handleRequestOtp}
-                                disabled={verificationLoading}
-                                className="w-full py-3 bg-brand-600 text-white rounded-xl font-bold hover:bg-brand-700 disabled:opacity-50 transition-all shadow-lg shadow-brand-600/20"
-                            >
-                                {verificationLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Request OTP Code"}
-                            </button>
-                            <p className="text-xs text-slate-400 mt-3">We will send a one-time password to your registered email.</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-6">
-                            <div className="flex justify-center gap-2">
-                                {otp.map((d, i) => (
-                                    <input
-                                        key={i}
-                                        type="text"
-                                        maxLength={1}
-                                        value={d}
-                                        ref={el => { otpInputRefs.current[i] = el; }}
-                                        onChange={e => handleOtpChange(i, e.target.value)}
-                                        onKeyDown={e => handleOtpKeyDown(i, e)}
-                                        className="w-10 h-10 sm:w-12 sm:h-12 border-2 border-slate-200 rounded-xl text-center font-bold text-lg text-slate-800 focus:border-brand-500 focus:outline-none bg-slate-50 focus:bg-white transition-all"
-                                    />
-                                ))}
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={handleVerifyOtp}
-                                disabled={verificationLoading}
-                                className="w-full py-3 bg-brand-600 text-white rounded-xl font-bold hover:bg-brand-700 disabled:opacity-50 transition-all shadow-lg shadow-brand-600/20"
-                            >
-                                {verificationLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Verify & Proceed"}
-                            </button>
-
-                            <div className="text-center">
-                                {otpTimer > 0 ? (
-                                    <p className="text-xs text-slate-500">Resend code in {otpTimer}s</p>
-                                ) : (
-                                    <button
-                                        onClick={handleRequestOtp}
-                                        className="text-xs font-bold text-brand-600 hover:underline"
-                                    >
-                                        Resend Code
-                                    </button>
-                                )}
+                <div className="px-6 pb-4">
+                    {/* Shield Logo - Shrunken */}
+                    <div className="flex flex-col items-center mb-4">
+                        <div className="relative w-[70px] h-[70px] mb-1 flex items-center justify-center">
+                            <svg viewBox="0 0 100 120" className="absolute inset-0 w-full h-full">
+                                <path
+                                    d="M50 0 L10 15 V50 C10 80 50 110 50 110 C50 110 90 80 90 50 V15 L50 0Z"
+                                    fill="white"
+                                    stroke="#64748b"
+                                    strokeWidth="1.5"
+                                />
+                                <path
+                                    d="M50 8 L18 20 V50 C18 75 50 102 50 102 C50 102 82 75 82 50 V20 L50 8Z"
+                                    fill="transparent"
+                                    stroke="#F97316"
+                                    strokeWidth="2.5"
+                                />
+                            </svg>
+                            <div className="relative z-10 bg-gradient-to-b from-orange-400 to-orange-600 w-8 h-8 rounded-md flex items-center justify-center shadow-lg translate-y-[-2px]">
+                                <div className="relative w-4 h-4">
+                                    <div className="absolute inset-0 border-[1.5px] border-white rounded-[1px] mt-0.5" />
+                                    <div className="absolute top-[-3px] left-1/2 -translate-x-1/2 w-3 h-2 border-[1.5px] border-white rounded-t-full" />
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="h-2 w-[1.5px] bg-white rounded-full absolute" />
+                                        <div className="w-[1.5px] h-2 bg-white rounded-full absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 rotate-90" />
+                                        <div className="w-2.5 h-2.5 bg-white rounded-full flex items-center justify-center text-orange-600 text-[8px] font-bold">+</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    )}
+                        <h2 className="text-[18px] font-medium text-black leading-none">Verification</h2>
+                        <p className="text-[12px] text-black mt-1">Verify your email address</p>
+                    </div>
+
+                    <div className="space-y-6 mb-6">
+                        {!showOtpInput ? (
+                            <div className="text-center py-10">
+                                <Loader2 className="w-8 h-8 animate-spin mx-auto text-black mb-4" />
+                                <p className="text-[13px] text-black font-medium">Sending OTP Code...</p>
+                                <p className="text-[11px] text-black mt-1">Please wait while we send a code to your email.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                <div className="flex justify-center gap-2">
+                                    {otp.map((d, i) => (
+                                        <input
+                                            key={i}
+                                            type="text"
+                                            maxLength={1}
+                                            value={d}
+                                            ref={el => { otpInputRefs.current[i] = el; }}
+                                            onChange={e => handleOtpChange(i, e.target.value)}
+                                            onKeyDown={e => handleOtpKeyDown(i, e)}
+                                            className="w-10 h-10 sm:w-12 sm:h-12 border border-slate-500 rounded-lg text-center font-bold text-lg text-black focus:border-black focus:ring-1 focus:ring-black focus:outline-none bg-white transition-all"
+                                        />
+                                    ))}
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={handleVerifyOtp}
+                                    disabled={verificationLoading}
+                                    className="w-full py-3 bg-[#1A1A1A] text-white rounded-lg text-[15px] hover:bg-black transition-all active:scale-[0.98] disabled:opacity-70"
+                                >
+                                    {verificationLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Verify & Proceed"}
+                                </button>
+
+                                <div className="text-center">
+                                    {otpTimer > 0 ? (
+                                        <p className="text-[11px] text-slate-500">Resend code in {otpTimer}s</p>
+                                    ) : (
+                                        <button
+                                            onClick={handleRequestOtp}
+                                            className="text-[11px] font-bold text-black hover:underline"
+                                        >
+                                            Resend Code
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Floating Chat Icon */}
+                <div className="absolute right-5 bottom-5 z-[210]">
+                    <div className="flex flex-col items-center">
+                        <button className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-white shadow-xl hover:scale-105 active:scale-95 transition-all mb-1">
+                            <MessageCircle className="w-5 h-5 fill-white" />
+                        </button>
+                        <button className="text-[11px] text-black font-bold">HelpChat</button>
+                    </div>
                 </div>
             </div>
         </div>
