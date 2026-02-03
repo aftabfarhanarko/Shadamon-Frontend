@@ -46,8 +46,10 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
         addLabelPrice: 100,
         freeAdCredit: 200
     });
-    const [minAmount, setMinAmount] = useState(140);
-    const [maxAmount, setMaxAmount] = useState(8435);
+    const [currentPlan, setCurrentPlan] = useState<any>(null);
+    const [minAmount, setMinAmount] = useState(100);
+    const [maxAmount, setMaxAmount] = useState(5000);
+    const [gapAmount, setGapAmount] = useState(50); // Step for slider
 
     // Initialize/Reset & Fetch Configs
     useEffect(() => {
@@ -56,7 +58,6 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
             setIsAllBangladesh(true);
             setSelectedLocations([]);
             setDurationDays(1);
-            setAmount(500);
             updateEndDate(1);
             fetchConfigs();
         }
@@ -74,13 +75,24 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
             }
 
             if (plansRes.success && plansRes.data && plansRes.data.length > 0) {
-                // Determine min/max from plans if applicable, or just keep default logic?
-                // Assuming plans have 'amount' which is string or number.
-                // Let's find min and max from the plan amounts.
-                const amounts = plansRes.data.map((p: any) => Number(p.amount)).filter((n: number) => !isNaN(n));
-                if (amounts.length > 0) {
-                    setMinAmount(Math.min(...amounts));
-                    setMaxAmount(Math.max(...amounts));
+                // Find plan for current ad's subcategory
+                const plan = plansRes.data.find((p: any) =>
+                    p.subCategories.includes(ad.subCategory)
+                );
+
+                if (plan) {
+                    setCurrentPlan(plan);
+                    const planMax = Number(plan.amount);
+                    const planGap = Number(plan.gapAmount) || 50;
+
+                    setMaxAmount(planMax);
+                    setGapAmount(planGap);
+                    setMinAmount(planGap); // Assuming min is at least one step
+                    setAmount(planGap * 2); // Default to some initial value
+                } else {
+                    // Fallback or use details from all plans if generic?
+                    // For now, keep defaults or log
+                    console.log("No specific plan found for subcategory:", ad.subCategory);
                 }
             }
         } catch (error) {
@@ -118,8 +130,31 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
     };
 
     // ESTIMATION LOGIC
-    const estimatedMinViews = Math.floor(amount * 0.2);
-    const estimatedMaxViews = Math.floor(amount * 0.4);
+    // If plan exists: (amount / planMax) * planValue
+    // We assume plan.minReach is the reach at plan.amount (Max Amount)? 
+    // Wait, usually minReach in DB means "Minimum guaranteed reach". 
+    // Let's use the logic: At Max Amount -> Reach = Plan.reach, MinReach = Plan.minReach
+    // Scale linearly.
+
+    let estimatedMinViews = 0;
+    let estimatedMaxViews = 0;
+
+    if (currentPlan) {
+        const ratio = amount / maxAmount;
+        estimatedMinViews = Math.floor(currentPlan.minReach * ratio);
+        estimatedMaxViews = Math.floor(currentPlan.reach * ratio);
+
+        // Use traffic stats if promoteType is traffic? (Optional enhancement)
+        if (promoteType === 'traffic') {
+            estimatedMinViews = Math.floor(currentPlan.minTraffic * ratio);
+            estimatedMaxViews = Math.floor(currentPlan.traffic * ratio);
+        }
+    } else {
+        estimatedMinViews = Math.floor(amount * 0.2);
+        estimatedMaxViews = Math.floor(amount * 0.4);
+    }
+
+    const viewLabel = promoteType === 'traffic' ? 'Visitors' : 'Views';
 
     const handlePromote = async () => {
         try {
@@ -168,7 +203,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
             {/* Modal Container */}
-            <div className="relative bg-[#F4F6F8] w-full max-w-[565px] rounded-lg sm:rounded-lg overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300 shadow-2xl h-[95vh] sm:max-h-[850px] font-sans">
+            <div className="relative bg-[#F4F6F8] w-full max-w-[565px] rounded-t-lg rounded-b-none overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300 shadow-2xl h-[98vh] sm:h-auto max-h-[98vh] font-sans">
 
                 {/* Header */}
                 <div className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between shrink-0">
@@ -341,7 +376,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                             {/* Estimated Views */}
                             <div className="bg-white border border-slate-200 rounded px-3 py-2">
                                 <p className="text-[10px] text-slate-500">Promotional Performance Estimated</p>
-                                <p className="text-sm font-bold text-slate-800">{estimatedMinViews}-{estimatedMaxViews} Views</p>
+                                <p className="text-sm font-bold text-slate-800">{estimatedMinViews}-{estimatedMaxViews} {viewLabel}</p>
                             </div>
 
                             {/* Budget Slider */}
@@ -361,6 +396,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                             type="range"
                                             min={minAmount}
                                             max={maxAmount}
+                                            step={gapAmount}
                                             value={amount}
                                             onChange={(e) => setAmount(Number(e.target.value))}
                                             className="absolute w-full h-full opacity-0 z-10 cursor-pointer"

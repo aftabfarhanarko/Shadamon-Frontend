@@ -7,7 +7,7 @@ import Cookies from 'js-cookie';
 import { API_BASE_URL } from '../utils/apiConfig';
 import { useLanguage } from '../app/context/LanguageContext';
 import PromoteModal from './PromoteModal';
-import VerificationModal from './VerificationModal';
+
 
 export default function LatestFreeAdPromo() {
     const { t, language } = useLanguage();
@@ -15,7 +15,7 @@ export default function LatestFreeAdPromo() {
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
     const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
-    const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+
 
     useEffect(() => {
         const token = Cookies.get('token');
@@ -59,18 +59,10 @@ export default function LatestFreeAdPromo() {
     if (loading || !latestAd) return null;
 
     const handlePromoteClick = () => {
-        if (user && user.verifiedBy !== 'Not Verified') {
-            setIsPromoteModalOpen(true);
-        } else {
-            setIsVerificationModalOpen(true);
-        }
-    };
-
-    const handleVerificationSuccess = () => {
-        setIsVerificationModalOpen(false);
-        setUser((prev: any) => ({ ...prev, verifiedBy: 'Email Verified' }));
         setIsPromoteModalOpen(true);
     };
+
+
 
     const mainImage = latestAd.images && latestAd.images.length > 0
         ? `${API_BASE_URL}${latestAd.images[0].startsWith('/') ? '' : '/'}${latestAd.images[0]}`
@@ -141,11 +133,7 @@ export default function LatestFreeAdPromo() {
                 ad={latestAd}
             />
 
-            <VerificationModal
-                isOpen={isVerificationModalOpen}
-                onClose={() => setIsVerificationModalOpen(false)}
-                onSuccess={handleVerificationSuccess}
-            />
+
         </>
     );
 }

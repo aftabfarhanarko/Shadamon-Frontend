@@ -71,7 +71,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [tempSubLocations, setTempSubLocations] = useState<string[]>([]);
 
     const [newAdditionalNumber, setNewAdditionalNumber] = useState("");
-    const [newAdditionalType, setNewAdditionalType] = useState("call");
+    const [newAdditionalType, setNewAdditionalType] = useState("whatsapp");
     const [additionalPhones, setAdditionalPhones] = useState<{ number: string, types: string[] }[]>([]);
 
     // OTP State
