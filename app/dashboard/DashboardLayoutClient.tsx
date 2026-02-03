@@ -63,6 +63,8 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     const [adToPromote, setAdToPromote] = useState<any>(null);
     const [verificationToken, setVerificationToken] = useState<string | undefined>(undefined);
 
+    const [mobileEntryReason, setMobileEntryReason] = useState<'post_ad' | 'account'>('post_ad');
+
     // Event Listener for opening account modal from children
     useEffect(() => {
         const handleOpenAccount = (e: CustomEvent) => {
@@ -186,6 +188,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     const handleAddAdClick = () => {
         const token = Cookies.get('token');
         if (!token) {
+            setMobileEntryReason('post_ad');
             setIsMobileEntryModalOpen(true);
         } else {
             setTempMobile(""); // Clear previous temp mobile if user is logged in
@@ -197,6 +200,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         e.preventDefault(); // Prevent navigation
         const token = Cookies.get('token');
         if (!token) {
+            setMobileEntryReason('account');
             setIsMobileEntryModalOpen(true);
         } else {
             setIsAccountModalOpen(true);
@@ -510,12 +514,22 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 onUserExists={(mobile) => {
                     setTempMobile(mobile);
                     setIsMobileEntryModalOpen(false);
-                    setIsPostAdModalOpen(true);
+                    if (mobileEntryReason === 'post_ad') {
+                        setIsPostAdModalOpen(true);
+                    } else {
+                        setInitialMobile(mobile);
+                        setIsLoginModalOpen(true);
+                    }
                 }}
                 onUserNew={(mobile) => {
                     setTempMobile(mobile);
                     setIsMobileEntryModalOpen(false);
-                    setIsPostAdModalOpen(true);
+                    if (mobileEntryReason === 'post_ad') {
+                        setIsPostAdModalOpen(true);
+                    } else {
+                        setInitialMobile(mobile);
+                        setIsRegisterModalOpen(true);
+                    }
                 }}
             />
 
