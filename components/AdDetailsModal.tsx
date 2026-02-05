@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState } from 'react';
-import { ArrowLeft, Maximize2, MapPin, Grid, Eye, Share2, Phone, MessageCircle, FileText, ChevronUp, ChevronDown, Rocket, CheckCircle2, Truck, Undo2, Timer, ExternalLink, ChevronRight, Star } from 'lucide-react';
+import { ArrowLeft, X, Maximize2, MapPin, Grid, Eye, Share2, Phone, MessageCircle, FileText, ChevronUp, ChevronDown, Rocket, CheckCircle2, Truck, Undo2, Timer, ExternalLink, ChevronRight, Star, Bell, Search, Heart, AlertCircle, Contact, UserSquare2, SquareArrowOutUpRight } from 'lucide-react';
 import { FaWhatsapp, FaTelegramPlane } from 'react-icons/fa';
 import { BsChatDotsFill } from 'react-icons/bs';
 import { API_BASE_URL } from '../utils/apiConfig';
 import { formatDistanceToNow } from 'date-fns';
+import { useRef, useEffect } from 'react';
 
 interface AdDetailsModalProps {
     isOpen: boolean;
@@ -18,8 +19,27 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
 
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [showPhone, setShowPhone] = useState(false);
-    const [isShippingOpen, setIsShippingOpen] = useState(true);
+    const [activeTab, setActiveTab] = useState<'details' | 'shipping'>('details');
     const [isExpanded, setIsExpanded] = useState(false);
+    const [isDetailsOpen, setIsDetailsOpen] = useState(true);
+    const [showOptionsPopup, setShowOptionsPopup] = useState(false);
+    const [actionButtons, setActionButtons] = useState<string[]>(['Call', 'Chat']);
+    const popupRef = useRef<HTMLDivElement>(null);
+    const optionsButtonRef = useRef<HTMLButtonElement>(null);
+
+    // Close popup when clicking outside
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (popupRef.current && !popupRef.current.contains(event.target as Node) &&
+                optionsButtonRef.current && !optionsButtonRef.current.contains(event.target as Node)) {
+                setShowOptionsPopup(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
 
     // Real Data States
     const [promotedAds, setPromotedAds] = useState<any[]>([]);
@@ -30,13 +50,25 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
 
     const getImageUrl = (path: string) => {
         if (!path) return '';
-        if (path.startsWith('http') || path.startsWith('data:')) return path;
+        if (path.startsWith('http') || path.startsWith('data:') || path.startsWith('blob:')) return path;
+
+        // Handle raw base64 strings (longer than 200 chars) that might be missing the data: prefix
+        if (path.length > 200 && !path.includes('/') && !path.includes('.')) {
+            let mime = 'image/png';
+            if (path.startsWith('/9j/')) mime = 'image/jpeg';
+            else if (path.startsWith('R0lGOD')) mime = 'image/gif';
+            else if (path.startsWith('UklGR')) mime = 'image/webp';
+            return `data:${mime};base64,${path}`;
+        }
+
         return `${API_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
     };
 
     // Fetch Ads Effect
+    // Fetch Ads Effect and Subcategory Info
     React.useEffect(() => {
         if (isOpen && ad) {
+            // Fetch All Ads
             fetch(`${API_BASE_URL}/api/ads/public/all`)
                 .then(res => res.json())
                 .then(data => {
@@ -53,6 +85,42 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                     }
                 })
                 .catch(err => console.error("Error fetching modal ads:", err));
+
+            // Fetch Subcategories to determine button types
+            fetch(`${API_BASE_URL}/api/categories/sub`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        let buttonTypeRaw = '';
+
+                        // 1. Try to find buttonType directly if subCategory is fully populated object
+                        if (typeof ad.subCategory === 'object' && ad.subCategory?.buttonType) {
+                            buttonTypeRaw = ad.subCategory.buttonType;
+                        }
+                        // 2. Otherwise find in fetched list
+                        else {
+                            const identifier = typeof ad.subCategory === 'object' ? ad.subCategory?._id : ad.subCategory;
+
+                            // Finds match by ID or Name (in case ad store subcategory name)
+                            const matchedSub = data.data.find((s: any) =>
+                                s._id === identifier || s.name === identifier
+                            );
+
+                            if (matchedSub) {
+                                buttonTypeRaw = matchedSub.buttonType;
+                            }
+                        }
+
+                        if (buttonTypeRaw) {
+                            const buttons = buttonTypeRaw.split(',').map((s: string) => s.trim());
+                            setActionButtons(buttons);
+                        } else {
+                            // Fallback default
+                            setActionButtons(['Call', 'Message']);
+                        }
+                    }
+                })
+                .catch(err => console.error("Error fetching subcategories:", err));
         }
     }, [isOpen, ad]);
 
@@ -72,31 +140,34 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
     };
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-end justify-center">
+        <div className="fixed inset-0 z-[999] flex items-start justify-center pt-20">
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px]" onClick={onClose} />
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
             {/* Modal Container */}
-            <div className="relative bg-white w-full max-w-[565px] rounded-lg md:rounded-lg overflow-hidden flex flex-col animate-in slide-in-from-bottom-full duration-300 shadow-2xl h-[95vh] font-sans">
+            <div className="relative bg-white w-full max-w-[565px] rounded-t-lg rounded-b-none overflow-hidden flex flex-col animate-in slide-in-from-bottom-full duration-300 shadow-2xl h-[calc(100vh-80px)] font-sans">
 
                 {/* 1. Header */}
-                <div className="bg-slate-200 px-1 py-0 flex items-center gap-2 shrink-0">
-                    <button onClick={onClose} className="flex items-center gap-1 text-slate-600">
-                        <ArrowLeft className="w-4 h-4" />
-                        <span>Back</span>
+                <div className="flex items-center justify-between p-2 px-4 border-b border-slate-200 bg-white shrink-0">
+                    <div className="flex items-center gap-3">
+                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-black hover:bg-slate-50 rounded-full transition-colors">
+                            <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
+                        </button>
+                        <h2 className="text-[16px] text-black font-medium">Ad Details</h2>
+                    </div>
+                    <button onClick={onClose} className="p-1 hover:bg-slate-50 rounded-full">
+                        <X className="w-5 h-5 text-black" />
                     </button>
-                    {/* Spacer to push potential right actions */}
-                    <div className="flex-1" />
                 </div>
 
                 {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto bg-white no-scrollbar">
+                <div className="flex-1 overflow-y-auto bg-white no-scrollbar pb-32">
 
                     {/* 2. Image Gallery */}
                     <div className="relative w-full aspect-[16/9] bg-slate-900 group">
                         {hasImages ? (
                             <img
-                                src={getImageUrl(images[currentImageIndex])}
+                                src={getImageUrl(images[currentImageIndex]) || undefined}
                                 alt={ad.headline}
                                 className="w-full h-full object-contain cursor-pointer"
                                 onClick={() => setIsExpanded(true)}
@@ -110,9 +181,25 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                         {/* Expand Icon */}
                         <button
                             onClick={() => setIsExpanded(true)}
-                            className="absolute top-4 right-4 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center backdrop-blur-md hover:bg-black/70 transition-colors z-10"
+                            className="absolute top-4 right-4 w-8 h-8 bg-white text-black border-2 border-black rounded-md flex items-center justify-center z-10 shadow-sm hover:bg-slate-50 transition-transform hover:scale-105"
                         >
-                            <Maximize2 className="w-4 h-4" />
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M7 7l-5-5" />
+                                <path d="M2.5 2.5h6" />
+                                <path d="M2.5 2.5v6" />
+
+                                <path d="M17 7l5-5" />
+                                <path d="M21.5 2.5h-6" />
+                                <path d="M21.5 2.5v6" />
+
+                                <path d="M17 17l5 5" />
+                                <path d="M21.5 21.5h-6" />
+                                <path d="M21.5 21.5v-6" />
+
+                                <path d="M7 17l-5 5" />
+                                <path d="M2.5 21.5h6" />
+                                <path d="M2.5 21.5v-6" />
+                            </svg>
                         </button>
 
                         {/* Pagination Dots */}
@@ -146,130 +233,242 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                     <span>{ad.category}</span>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-1 text-orange-500">
+                            <div className="flex items-center gap-1 text-[#0088cc]">
                                 <Eye className="w-3 h-3" />
                                 <span>{ad.views} Views</span>
                             </div>
                         </div>
 
                         {/* 4. Title & Price */}
-                        <h1 className="text-base text-slate-800 leading-snug mb-0.5">
+                        <h1 className="text-base text-slate-800 leading-none mb-0.5">
                             {ad.headline}
                         </h1>
                         <p className="text-xs text-slate-900">
-                            {ad.price ? `$ ${ad.price.toLocaleString()}` : 'Price on ask'}
+                            {ad.price ? `$ ${ad.price.toLocaleString()}` : '0.00'}
                         </p>
 
                         {/* 5. Contact Section */}
-                        <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                        <div className="bg-slate-200 rounded-lg mt-2 mb-2 p-3 border border-slate-100">
                             {/* Phone & Socials */}
-                            <div className="flex items-start justify-between mb-3">
-                                <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 mb-4">
+                                {/* Phone Section */}
+                                <div className="flex items-center gap-2 shrink-0">
                                     <div className="w-8 h-8 rounded-full bg-[#1A202C] flex items-center justify-center text-white shrink-0">
                                         <Phone className="w-4 h-4 fill-white" />
                                     </div>
-                                    <div>
+                                    <div className="flex flex-col leading-none justify-center">
                                         <div className="flex items-center gap-1">
-                                            <span className="font-bold text-slate-800 text-sm">
-                                                {showPhone ? (ad.phone) : '01XXXXXXXX'}
+                                            <span className="text-slate-800 text-sm leading-none">
+                                                {showPhone ? (ad.phone) : '017 XXXXXXXX'}
                                             </span>
-                                            <CheckCircle2 className="w-3 h-3 text-blue-500 fill-white" />
                                         </div>
                                         <button
                                             onClick={() => setShowPhone(!showPhone)}
-                                            className="text-[10px] text-slate-500 hover:text-blue-600 hover:underline"
+                                            className="text-[10px] text-slate-500 hover:text-blue-600 hover:underline text-left mt-0.5"
                                         >
                                             Click to show number
                                         </button>
                                     </div>
                                 </div>
 
+                                {/* Divider */}
+                                <div className="h-6 w-[3px] bg-slate-400 mx-1 shrink-0" />
+
+                                {/* Socials */}
                                 <div className="flex items-center gap-2">
-                                    <div className="h-5 w-[1px] bg-slate-300 mx-1" />
-                                    <button className="w-7 h-7 rounded-full bg-[#25D366] text-white flex items-center justify-center hover:scale-110 transition-transform shadow-sm">
-                                        <FaWhatsapp className="w-4 h-4" />
+                                    <button
+                                        onClick={() => window.open(`https://wa.me/+88${ad.phone}`, '_blank')}
+                                        className="w-8 h-8 rounded-full bg-[#25D366] text-white flex items-center justify-center hover:scale-110 transition-transform shadow-sm shrink-0"
+                                    >
+                                        <FaWhatsapp className="w-5 h-5" />
                                     </button>
-                                    <button className="w-7 h-7 rounded-full bg-[#0088cc] text-white flex items-center justify-center hover:scale-105 transition-transform shadow-sm">
-                                        <FaTelegramPlane className="w-3.5 h-3.5 pr-0.5" />
+
+                                    <div className="h-6 w-[3px] bg-slate-400 mx-1 shrink-0" />
+
+                                    <button
+                                        onClick={() => window.open(`https://t.me/+88${ad.phone}`, '_blank')}
+                                        className="w-8 h-8 rounded-full bg-[#0088cc] text-white flex items-center justify-center hover:scale-105 transition-transform shadow-sm shrink-0"
+                                    >
+                                        <FaTelegramPlane className="w-4 h-4 pr-0.5" />
                                     </button>
-                                    <button className="w-7 h-7 rounded-full bg-[#004c99] text-white flex items-center justify-center hover:scale-105 transition-transform shadow-sm">
-                                        <BsChatDotsFill className="w-3.5 h-3.5 pb-0.5" />
+
+                                    <div className="h-6 w-[3px] bg-slate-400 mx-1 shrink-0" />
+
+                                    <button
+                                        onClick={() => window.open(`tel:${ad.phone}`, '_blank')} // Fallback to call for Imo or leave as is? 
+                                        className="w-8 h-8 rounded-full bg-[#004c99] text-white flex items-center justify-center hover:scale-105 transition-transform shadow-sm shrink-0"
+                                    >
+                                        <BsChatDotsFill className="w-4 h-4 pb-0.5" />
                                     </button>
                                 </div>
                             </div>
 
                             {/* Action Buttons Row */}
-                            <div className="grid grid-cols-4 gap-2">
-                                <button className="col-span-1 bg-[#1A202C] text-white text-xs font-bold py-1.5 rounded-md hover:bg-slate-800 transition-colors">
-                                    Call
-                                </button>
-                                <button className="col-span-1 bg-white border border-slate-200 text-slate-700 text-xs font-bold py-1.5 rounded-md hover:bg-slate-50 transition-colors">
-                                    Chat
-                                </button>
-                                <button className="col-span-1 bg-white border border-slate-200 text-slate-400 flex items-center justify-center py-1.5 rounded-md hover:bg-slate-50 transition-colors">
-                                    <ExternalLink className="w-4 h-4" />
-                                </button>
+                            <div className="grid grid-cols-4 gap-2 relative">
+                                {actionButtons.map((btn, idx) => {
+                                    if (btn === 'Call') {
+                                        return (
+                                            <button
+                                                key={idx}
+                                                onClick={() => window.location.href = `tel:${ad.phone}`}
+                                                className="col-span-1 bg-[#1A202C] text-white text-xs py-2 rounded-md hover:bg-slate-800 transition-colors"
+                                            >
+                                                Call
+                                            </button>
+                                        );
+                                    }
+                                    if (btn === 'Message' || btn === 'Chat') {
+                                        return (
+                                            <button key={idx} className="col-span-1 bg-white border border-slate-500 text-slate-700 text-xs py-2 rounded-md hover:bg-slate-50 transition-colors">
+                                                Chat
+                                            </button>
+                                        );
+                                    }
+                                    if (btn === 'Send CV') {
+                                        return (
+                                            <button key={idx} className="col-span-1 bg-white border border-slate-500 text-slate-700 text-xs py-2 rounded-md hover:bg-slate-50 transition-colors flex items-center justify-center gap-1">
+                                                <FileText className="w-3.5 h-3.5" />
+                                                <span className="truncate">Send CV</span>
+                                            </button>
+                                        );
+                                    }
+                                    return null;
+                                })}
+                                <div className="col-span-1 relative">
+                                    <button
+                                        ref={optionsButtonRef}
+                                        onClick={() => setShowOptionsPopup(!showOptionsPopup)}
+                                        className="col-span-1 flex items-center justify-center h-full"
+                                    >
+                                        <SquareArrowOutUpRight className="w-10 h-10 stroke-[1.5]" color="#64748b" />
+                                    </button>
+
+                                    {/* Options Popup */}
+                                    {showOptionsPopup && (
+                                        <div
+                                            ref={popupRef}
+                                            className="absolute top-0 right-[calc(100%+8px)] w-[280px] bg-[#F8F9FB] rounded-xl shadow-xl border border-slate-200 p-4 z-50 animate-in fade-in zoom-in-95 duration-200"
+                                        >
+                                            {/* Top Row */}
+                                            <div className="grid grid-cols-4 gap-2 mb-4">
+                                                <div className="flex flex-col items-center gap-1 cursor-pointer group">
+                                                    <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-200 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
+                                                        <Bell className="w-5 h-5 text-slate-700 fill-black" />
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-600 font-medium">Notify</span>
+                                                </div>
+                                                <div className="flex flex-col items-center gap-1 cursor-pointer group">
+                                                    <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-200 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
+                                                        <Phone className="w-5 h-5 text-slate-700 fill-black" />
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-600 font-medium whitespace-nowrap">Call Me</span>
+                                                </div>
+                                                <div className="flex flex-col items-center gap-1 cursor-pointer group">
+                                                    <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-200 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
+                                                        <Search className="w-5 h-5 text-slate-700" />
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-600 font-medium">Similar</span>
+                                                </div>
+                                                <div className="flex flex-col items-center gap-1 cursor-pointer group">
+                                                    <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-200 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
+                                                        <Share2 className="w-5 h-5 text-slate-700 fill-black" />
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-600 font-medium">Share</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Bottom Row */}
+                                            <div className="grid grid-cols-4 gap-2">
+                                                <div className="flex flex-col items-center gap-1 cursor-pointer group">
+                                                    <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-200 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
+                                                        <Heart className="w-5 h-5 text-slate-700 fill-black" />
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-600 font-medium">Save</span>
+                                                </div>
+                                                <div className="flex flex-col items-center gap-1 cursor-pointer group">
+                                                    <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-200 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
+                                                        <AlertCircle className="w-5 h-5 text-slate-700" />
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-600 font-medium">Report</span>
+                                                </div>
+                                                <div className="flex flex-col items-center gap-1 cursor-pointer group">
+                                                    <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-200 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
+                                                        <UserSquare2 className="w-5 h-5 text-slate-700" />
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-600 font-medium">Post ID</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Arrow pointer roughly pointing to button */}
+                                            <div className="absolute top-4 -right-1.5 w-3 h-3 bg-[#F8F9FB] border-t border-r border-slate-200 rotate-45"></div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
-                        {/* 6. Tabs & Content */}
-                        <div className="">
-                            <div className="flex items-center justify-between mb-2 border-b border-slate-200">
-                                <div className="flex items-center gap-4">
-                                    <button className="pb-1.5 border-b-2 border-slate-900 font-bold text-xs text-slate-900">
+                        <div className="mb-4">
+                            {/* Tabs Header */}
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => {
+                                            setActiveTab('details');
+                                            setIsDetailsOpen(true);
+                                        }}
+                                        className={`px-3 py-1.5 text-xs font-bold border rounded-md transition-all ${activeTab === 'details' ? 'border-slate-400 text-slate-800 bg-white shadow-sm' : 'border-transparent text-slate-400 hover:bg-slate-50'}`}
+                                    >
                                         Details
                                     </button>
-                                    <button className="pb-1.5 border-b-2 border-transparent font-bold text-xs text-slate-500 hover:text-slate-800 transition-colors">
+                                    <button
+                                        onClick={() => {
+                                            setActiveTab('shipping');
+                                            setIsDetailsOpen(true);
+                                        }}
+                                        className={`px-3 py-1.5 text-xs font-bold border rounded-md transition-all ${activeTab === 'shipping' ? 'border-slate-400 text-slate-800 bg-white shadow-sm' : 'border-transparent text-slate-400 hover:bg-slate-50'}`}
+                                    >
                                         Shipping & Safety
                                     </button>
                                 </div>
-                                <button onClick={() => setIsShippingOpen(!isShippingOpen)}>
-                                    <ChevronUp className={`w-4 h-4 text-slate-400 transition-transform ${isShippingOpen ? '' : 'rotate-180'}`} />
+                                <button onClick={() => setIsDetailsOpen(!isDetailsOpen)}>
+                                    <ChevronUp className={`w-4 h-4 text-slate-400 transition-transform ${isDetailsOpen ? '' : 'rotate-180'}`} />
                                 </button>
                             </div>
 
-                            {/* Description */}
-                            <div className="text-xs text-slate-500 leading-relaxed mb-4">
-                                <p className="line-clamp-3">
-                                    {ad.description}
-                                </p>
-                            </div>
-
-                            {/* Shipping & Safety Section */}
-                            {isShippingOpen && (
-                                <div className="animate-in slide-in-from-top-2 duration-200">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <h3 className="font-bold text-sm text-slate-800">Shipping & Safety</h3>
-                                        <button>
-                                            <ChevronUp className="w-4 h-4 text-slate-800" />
-                                        </button>
-                                    </div>
-
-                                    <ul className="space-y-3">
-                                        <li className="flex items-start gap-3">
-                                            <Truck className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
-                                            <span className="text-xs text-slate-600 font-medium">This merchant can ship to BD</span>
-                                        </li>
-                                        <li className="flex items-start gap-3">
-                                            <Undo2 className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
-                                            <span className="text-xs text-slate-600 font-medium leading-tight">
-                                                You can return new and unused items wsed items within 30 days
-                                            </span>
-                                        </li>
-                                        <li className="flex items-start gap-3">
-                                            <Timer className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
-                                            <div className="text-xs text-slate-600 font-medium leading-tight">
-                                                <span>You can cancel within 30 minutes of merchant</span>
+                            {/* Tab Content */}
+                            {isDetailsOpen && (
+                                <div className="animate-in slide-in-from-top-2 duration-200 min-h-[80px]">
+                                    {activeTab === 'details' ? (
+                                        <div className="text-xs text-slate-500 leading-relaxed">
+                                            <p>{ad.description}</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3 pt-1">
+                                            <div className="flex items-start gap-3">
+                                                <Truck className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+                                                <span className="text-xs text-slate-600 font-medium">This merchant can ship to BD</span>
                                             </div>
-                                        </li>
-                                    </ul>
+                                            <div className="flex items-start gap-3">
+                                                <Undo2 className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+                                                <span className="text-xs text-slate-600 font-medium leading-tight">
+                                                    You can return new and unused items within 30 days
+                                                </span>
+                                            </div>
+                                            <div className="flex items-start gap-3">
+                                                <Timer className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+                                                <div className="text-xs text-slate-600 font-medium leading-tight">
+                                                    <span>You can cancel within 30 minutes of merchant</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
 
                         {/* 7. Promote Button (Moved inside scroll) */}
                         <div className="mt-4 mb-4">
-                            <button className="w-full bg-[#F6AD55] text-black text-sm rounded-lg py-2 flex flex-col items-center justify-center transition-colors shadow-sm active:scale-[0.99]">
+                            <button className="w-full bg-[#0088cc] text-white text-sm rounded-lg py-2 flex flex-col items-center justify-center transition-colors shadow-sm hover:bg-[#0077b5] active:scale-[0.99]">
                                 Promote This Post
                             </button>
                         </div>
@@ -337,29 +536,52 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                         )}
                         <div className="h-px bg-slate-200 w-full mb-1" />
                         {/* 9. Seller Information */}
-                        <div className=" border-t border-b border-slate-100 py-4">
-                            <div className="flex items-center justify-between mb-1">
-                                <span className="text-xs text-slate-500">Seller Information</span>
-                                <button className="text-xs text-slate-600 hover:text-blue-600">Visit Shop</button>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-slate-100 overflow-hidden border border-slate-200">
+                        <div className="border-t border-b border-slate-100 py-3">
+                            <div className="flex items-center gap-4">
+                                {/* Avatar */}
+                                <div className="w-14 h-14 rounded-full bg-slate-100 overflow-hidden border border-slate-200 shrink-0">
                                     {(ad as any).user?.storeLogo ? (
-                                        <img src={(ad as any).user.storeLogo} alt="Seller" className="w-full h-full object-cover" />
+                                        <img
+                                            src={getImageUrl((ad as any).user?.storeLogo)}
+                                            alt="Seller"
+                                            className="w-full h-full object-cover"
+                                        />
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center font-bold text-slate-400">
-                                            {(ad as any).user?.storeName?.charAt(0)}
+                                        <div className="w-full h-full bg-red-600 flex items-center justify-center text-white text-xl font-bold">
+                                            {(ad as any).user?.storeName?.charAt(0) || 'S'}
                                         </div>
                                     )}
                                 </div>
-                                <div>
-                                    <h4 className="font-bold text-slate-900 text-sm">{(ad as any).user?.storeName}</h4>
-                                    <div className="text-[10px] text-slate-500 mb-1">{(ad as any).user?.followers}</div>
+
+                                {/* Info Column */}
+                                <div className="flex-1 flex flex-col pt-0.5">
+                                    <span className="text-[10px] text-slate-500 leading-none mb-0.5">Seller Information</span>
+
+                                    <h4 className="font-bold text-slate-900 text-sm leading-tight mb-0.5">
+                                        {(ad as any).user?.storeName || 'Store Name'}
+                                    </h4>
+
+                                    <div className="text-[11px] text-slate-500 leading-none mb-1">
+                                        {(ad as any).user?.followers || 0} Follower
+                                    </div>
+
                                     <div className="flex items-center gap-0.5">
-                                        {[1, 2, 3, 4, 5].map(s => <Star key={s} className="w-3 h-3 fill-blue-500 text-blue-500" />)}
-                                        <span className="text-[10px] text-slate-400 ml-1">{(ad as any).user?.ratings}</span>
+                                        {[1, 2, 3, 4, 5].map((s) => (
+                                            <Star
+                                                key={s}
+                                                className={`w-3 h-3 ${s <= Math.round((ad as any).user?.rating || 4) ? 'fill-[#0088cc] text-[#0088cc]' : 'fill-slate-200 text-slate-200'}`}
+                                            />
+                                        ))}
+                                        <span className="text-[10px] text-slate-400 ml-1">
+                                            ({(ad as any).user?.ratingCount || 9})
+                                        </span>
                                     </div>
                                 </div>
+
+                                {/* Visit Shop Button */}
+                                <button className="text-xs text-slate-600 hover:text-[#0088cc] whitespace-nowrap self-center pr-2">
+                                    Visit Shop
+                                </button>
                             </div>
                         </div>
                         <div className="h-px bg-slate-200 w-full mb-1" />
@@ -371,7 +593,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                 <div className="space-y-3">
                                     {similarAds.slice(0, 5).map((sad) => (
                                         <div key={sad._id} className="flex gap-3 bg-white border border-slate-100 rounded-lg overflow-hidden shadow-sm p-2 pt-0 cursor-pointer" onClick={() => window.location.href = `/dashboard?ad=${sad._id}`}>
-                                            <div className="w-24 h-20 bg-slate-100 rounded bg-cover bg-center shrink-0" style={{ backgroundImage: `url(${getImageUrl(sad.images?.[0] || '')})` }} />
+                                            <div className="w-24 h-20 bg-slate-100 rounded bg-cover bg-center shrink-0" style={{ backgroundImage: getImageUrl(sad.images?.[0]) ? `url(${getImageUrl(sad.images?.[0])})` : undefined }} />
                                             <div className="flex-1 min-w-0 flex flex-col justify-center">
                                                 <h4 className="text-xs text-slate-800 line-clamp-2 mb-1">{sad.headline}</h4>
                                                 <div className="flex items-center gap-3 text-[10px] text-slate-500 mb-1">
@@ -407,7 +629,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                     <div className="flex items-center justify-between px-4 py-4 text-white">
                         <span className="text-sm font-medium">{currentImageIndex + 1} / {images.length}</span>
                         <button onClick={() => setIsExpanded(false)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
-                            <ChevronDown className="w-6 h-6" />
+                            <X className="w-6 h-6" />
                         </button>
                     </div>
 
@@ -421,7 +643,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
 
                         {hasImages && (
                             <img
-                                src={getImageUrl(images[currentImageIndex])}
+                                src={getImageUrl(images[currentImageIndex]) || undefined}
                                 alt="Expanded View"
                                 className="max-w-full max-h-full object-contain"
                             />
@@ -443,7 +665,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                 className={`w-12 h-12 rounded overflow-hidden flex-shrink-0 border-2 transition-all ${currentImageIndex === idx ? 'border-white opacity-100' : 'border-transparent opacity-50 hover:opacity-100'
                                     }`}
                             >
-                                <img src={getImageUrl(img)} className="w-full h-full object-cover" />
+                                <img src={getImageUrl(img) || undefined} className="w-full h-full object-cover" />
                             </button>
                         ))}
                     </div>

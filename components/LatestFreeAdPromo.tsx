@@ -5,6 +5,7 @@ import { ArrowRight, Grid, MapPin, Zap, Clock } from 'lucide-react';
 import { RiLockFill } from 'react-icons/ri';
 import Cookies from 'js-cookie';
 import { API_BASE_URL } from '../utils/apiConfig';
+import { getImageUrl } from '../utils/imageUrl';
 import { useLanguage } from '../app/context/LanguageContext';
 import PromoteModal from './PromoteModal';
 
@@ -65,7 +66,7 @@ export default function LatestFreeAdPromo() {
 
 
     const mainImage = latestAd.images && latestAd.images.length > 0
-        ? `${API_BASE_URL}${latestAd.images[0].startsWith('/') ? '' : '/'}${latestAd.images[0]}`
+        ? getImageUrl(latestAd.images[0])
         : null;
 
     return (
@@ -81,33 +82,24 @@ export default function LatestFreeAdPromo() {
                 </div>
 
                 {/* 2. Main Image Section */}
-                <div className="relative aspect-[16/9] bg-slate-100 mx-1 rounded-lg overflow-hidden mt-1">
+                <div className="relative aspect-[16/9] bg-slate-900 mx-1 rounded-lg overflow-hidden mt-1">
                     {mainImage ? (
                         <img
                             src={mainImage}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain"
                             alt="Preview"
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-300 font-bold uppercase">No Image</div>
                     )}
 
-                    {/* Top Pill Buttons (Centred) */}
-                    <div className="absolute top-4 inset-x-0 flex items-center justify-center gap-3">
-                        <button onClick={() => window.location.reload()} className="bg-[#0066CC] text-white flex items-center gap-2 px-4 py-2 rounded-full text-[13px]">
-                            <span>↑</span> New posts
-                        </button>
-                        <button onClick={() => window.location.reload()} className="bg-[#0066CC] text-white flex items-center gap-2 px-4 py-2 rounded-full text-[13px]">
-                            <span>↻</span> Refresh
-                        </button>
-                    </div>
 
-                    {/* Bottom Left Title/Price Overlay */}
-                    <div className="absolute bottom-6 left-6 flex">
-                        <div className="w-1 bg-white mr-3 self-stretch rounded-full" />
-                        <div className="text-white drop-shadow-lg">
-                            <h2 className="text-[22px] leading-tight">{latestAd.headline}</h2>
-                            <p className="text-[18px] mt-1">$ {latestAd.price || '0.00'}</p>
+
+                    <div className="absolute bottom-4 left-4 flex">
+                        <div className="w-1 bg-white mr-2 self-stretch rounded-full" />
+                        <div className="text-white drop-shadow-md">
+                            <h2 className="text-[18px] leading-tight font-medium">{latestAd.headline}</h2>
+                            <p className="text-[14px] mt-0">$ {latestAd.price || '0.00'}</p>
                         </div>
                     </div>
                 </div>
@@ -115,12 +107,12 @@ export default function LatestFreeAdPromo() {
                 {/* 3. Promotion Footer */}
                 <div className="px-5 py-2 flex items-center justify-between">
                     <div className="flex flex-col">
-                        <span className="text-[15px] text-slate-700">Want More Customer Responce?</span>
-                        <span className="text-[17px] text-slate-900">Promote this Post</span>
+                        <span className="text-[12px] text-slate-600">Want More Customer Response?</span>
+                        <span className="text-[14px] text-slate-900 font-medium">Promote this Post</span>
                     </div>
                     <button
                         onClick={handlePromoteClick}
-                        className="bg-[#F6C358] text-slate-900 px-6 py-2.5 rounded-lg text-[14px]"
+                        className="bg-[#0088cc] text-white px-6 py-2.5 rounded-lg text-[14px] hover:bg-[#0077b5] transition-colors"
                     >
                         Promote Post
                     </button>

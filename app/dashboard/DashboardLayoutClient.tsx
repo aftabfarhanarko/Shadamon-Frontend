@@ -76,8 +76,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             if (userId) {
                 const params = new URLSearchParams(window.location.search);
                 params.set('profile', userId);
-                const newUrl = `${window.location.pathname}?${params.toString()}`;
-                window.history.pushState({}, '', newUrl);
+                router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
             }
         };
 
@@ -150,16 +149,14 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             setIsAccountModalOpen(true);
             const params = new URLSearchParams(window.location.search);
             params.delete('openUsersProfile');
-            const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
-            window.history.replaceState({}, '', newUrl);
+            router.replace(`${window.location.pathname}?${params.toString()}`, { scroll: false });
         }
 
         if (openModal === 'true' && token) {
             setIsPostAdModalOpen(true);
-            const params = new URLSearchParams(searchParams.toString());
+            const params = new URLSearchParams(window.location.search);
             params.delete('openModal');
-            const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
-            window.history.replaceState({}, '', newUrl);
+            router.replace(`${window.location.pathname}?${params.toString()}`, { scroll: false });
         }
 
         if (profileId) {
@@ -208,15 +205,15 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     };
 
     return (
-        <div className="min-h-screen bg-[#F1F5F9] font-sans pb-20 md:pb-0">
+        <div className="h-screen bg-[#F1F5F9] font-sans overflow-hidden flex flex-col">
             {/* Top Navigation Bar */}
-            <header className="fixed top-0 inset-x-0 bg-white border-b border-slate-200 z-50 h-16">
+            <header className="flex-none bg-white border-b border-slate-200 z-50 h-16 w-full">
                 <div className="max-w-[1320px] mx-auto px-4 h-full flex items-center justify-center">
                     {/* Section 1: 300px (Logo & Ad Count) */}
                     <div className="w-[300px] flex-none flex items-center gap-2">
                         {/* Mobile Menu Button */}
                         <button
-                            className="md:hidden p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                            className="md:hidden p-2 -ml-2 text-black hover:bg-slate-100 rounded-full transition-colors"
                             onClick={() => setIsMobileMenuOpen(true)}
                         >
                             <Menu className="w-6 h-6" />
@@ -226,8 +223,8 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                             <span className="text-3xl font-bold text-[#1A202C] tracking-tighter">shadamon</span>
                             <div className="hidden lg:flex items-center border-l border-slate-300 pl-2 h-8 self-center">
                                 <div className="flex flex-col -space-y-1">
-                                    <span className="text-sm font-bold text-slate-700">{totalAds.toLocaleString()}</span>
-                                    <span className="text-xs text-slate-600 tracking-tight">Product</span>
+                                    <span className="text-sm font-bold text-black">{totalAds.toLocaleString()}</span>
+                                    <span className="text-xs text-black tracking-tight">Product</span>
                                 </div>
                             </div>
                         </Link>
@@ -242,7 +239,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                             <input
                                 type="text"
                                 placeholder="Search"
-                                className="flex-1 bg-transparent px-4 py-2 outline-none text-sm text-slate-700 placeholder-slate-400"
+                                className="flex-1 bg-transparent px-4 py-2 outline-none text-sm text-black placeholder-slate-400"
                             />
                             <button className="bg-[#1A202C] text-white px-6 py-2 text-xs hover:bg-slate-800 transition-colors tracking-wider">
                                 Search
@@ -259,7 +256,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                             </button>
                             <button className="w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all relative">
                                 <RiMailFill className="w-5 h-5" />
-                                <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#E53E3E] text-white text-[10px] flex items-center justify-center rounded-full border-2 border-white">23</span>
+                                <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#0088cc] text-white text-[10px] flex items-center justify-center rounded-full border-2 border-white">23</span>
                             </button>
 
                             <Link
@@ -296,7 +293,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     <span className="text-[10px] font-bold">{t('home')}</span>
                 </Link>
 
-                <button className="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-slate-600">
+                <button className="flex flex-col items-center gap-1 p-2 text-black hover:text-black">
                     <Search className="w-6 h-6" />
                     <span className="text-[10px] font-medium">{t('search_nav')}</span>
                 </button>
@@ -310,7 +307,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     </button>
                 </div>
 
-                <Link href="/dashboard/inbox" className="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-slate-600">
+                <Link href="/dashboard/inbox" className="flex flex-col items-center gap-1 p-2 text-black hover:text-black">
                     <Inbox className="w-6 h-6" />
                     <span className="text-[10px] font-medium">{t('inbox')}</span>
                 </Link>
@@ -318,7 +315,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 <Link
                     href="/dashboard/profile"
                     onClick={handleAccountClick}
-                    className="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-slate-600 transition-all"
+                    className="flex flex-col items-center gap-1 p-2 text-black hover:text-black transition-all"
                 >
                     <User className="w-6 h-6" />
                     <span className="text-[10px] font-medium">{t('account')}</span>
@@ -326,7 +323,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             </nav>
 
             {/* Main Content Area */}
-            <main className="max-w-[1320px] mx-auto px-4 py-8 mt-12">
+            <main className="flex-1 w-full max-w-[1320px] mx-auto px-4 pt-4 pb-0 overflow-hidden">
                 {children}
             </main>
 
@@ -342,10 +339,10 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     {/* Sidebar Content */}
                     <div className="absolute inset-y-0 left-0 w-[80%] max-w-sm bg-white shadow-2xl flex flex-col animate-in slide-in-from-left duration-300">
                         <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                            <span className="font-bold text-lg text-slate-800">Menu</span>
+                            <span className="font-bold text-lg text-black">Menu</span>
                             <button
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className="p-2 -mr-2 text-slate-500 hover:bg-slate-200 rounded-full"
+                                className="p-2 -mr-2 text-black hover:bg-slate-200 rounded-full"
                             >
                                 <X className="w-6 h-6" />
                             </button>
@@ -354,7 +351,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                         <div className="flex-1 overflow-y-auto p-4 space-y-6">
                             {/* Categories */}
                             <div className="space-y-3">
-                                <div className="flex items-center gap-2 text-slate-800 font-bold border-b border-slate-100 pb-2">
+                                <div className="flex items-center gap-2 text-black font-bold border-b border-slate-100 pb-2">
                                     <Grid className="w-5 h-5 text-brand-600" />
                                     <h3>{t('category')}</h3>
                                 </div>
@@ -363,13 +360,13 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                         <div key={cat._id}>
                                             <button
                                                 onClick={() => toggleCategory(cat._id)}
-                                                className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 text-slate-700 transition-colors text-sm font-medium"
+                                                className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 text-black transition-colors text-sm font-medium"
                                             >
                                                 <span>{cat.name}</span>
                                                 {cat.subcategories.length > 0 && (
                                                     expandedCategory === cat._id
-                                                        ? <ChevronDown className="w-4 h-4 text-slate-400" />
-                                                        : <ChevronRight className="w-4 h-4 text-slate-400" />
+                                                        ? <ChevronDown className="w-4 h-4 text-black" />
+                                                        : <ChevronRight className="w-4 h-4 text-black" />
                                                 )}
                                             </button>
                                             {expandedCategory === cat._id && cat.subcategories.length > 0 && (
@@ -377,7 +374,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                                     {cat.subcategories.map(sub => (
                                                         <button
                                                             key={sub._id}
-                                                            className="block w-full text-left py-1.5 text-xs text-slate-500 hover:text-brand-600"
+                                                            className="block w-full text-left py-1.5 text-xs text-black hover:text-brand-600"
                                                             onClick={() => setIsMobileMenuOpen(false)}
                                                         >
                                                             {sub.name}
@@ -392,7 +389,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
                             {/* Locations */}
                             <div className="space-y-3">
-                                <div className="flex items-center gap-2 text-slate-800 font-bold border-b border-slate-100 pb-2">
+                                <div className="flex items-center gap-2 text-black font-bold border-b border-slate-100 pb-2">
                                     <MapPin className="w-5 h-5 text-brand-600" />
                                     <h3>{t('location')}</h3>
                                 </div>
@@ -401,13 +398,13 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                         <div key={loc._id}>
                                             <button
                                                 onClick={() => toggleLocation(loc._id)}
-                                                className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 text-slate-700 transition-colors text-sm font-medium"
+                                                className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 text-black transition-colors text-sm font-medium"
                                             >
                                                 <span>{loc.name}</span>
                                                 {loc.subLocations.length > 0 && (
                                                     expandedLocation === loc._id
-                                                        ? <ChevronDown className="w-4 h-4 text-slate-400" />
-                                                        : <ChevronRight className="w-4 h-4 text-slate-400" />
+                                                        ? <ChevronDown className="w-4 h-4 text-black" />
+                                                        : <ChevronRight className="w-4 h-4 text-black" />
                                                 )}
                                             </button>
                                             {expandedLocation === loc._id && loc.subLocations.length > 0 && (
@@ -415,7 +412,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                                     {loc.subLocations.map(sub => (
                                                         <button
                                                             key={sub._id}
-                                                            className="block w-full text-left py-1.5 text-xs text-slate-500 hover:text-brand-600"
+                                                            className="block w-full text-left py-1.5 text-xs text-black hover:text-brand-600"
                                                             onClick={() => setIsMobileMenuOpen(false)}
                                                         >
                                                             {sub.name}
@@ -433,7 +430,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                         <div className="p-4 border-t border-slate-100 bg-slate-50">
                             <button
                                 onClick={handleLogout}
-                                className="w-full flex items-center justify-center gap-2 p-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all font-bold text-sm"
+                                className="w-full flex items-center justify-center gap-2 p-2.5 bg-white border border-slate-200 text-black rounded-xl hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all font-bold text-sm"
                             >
                                 <LogOut className="w-4 h-4" />
                                 <span>{t('logout')}</span>
@@ -555,11 +552,9 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     setIsAccountModalOpen(false);
                     setAccountModalInitialTab('Page'); // Reset to default
                     setViewingUserId(undefined);
-                    // Remove profile param from URL
                     const params = new URLSearchParams(window.location.search);
                     params.delete('profile');
-                    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
-                    window.history.pushState({}, '', newUrl);
+                    router.replace(`${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`, { scroll: false });
                 }}
                 userId={viewingUserId}
                 onOpenPostAd={() => {

@@ -1,14 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, MapPin, Target, MessageCircle, Phone, ArrowRight, Minus, Plus, TrendingUp, AlertCircle, Camera, Gift, Edit2, ChevronDown, HelpCircle, PhoneCall, Check } from 'lucide-react';
+import { X, Calendar, MapPin, Target, MessageCircle, Phone, ArrowRight, Minus, Plus, TrendingUp, AlertCircle, Camera, Gift, Edit2, ChevronDown, HelpCircle, PhoneCall, Check, ArrowLeft, Triangle, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../app/context/LanguageContext';
 import { API_BASE_URL } from '../utils/apiConfig';
+import { getImageUrl } from '../utils/imageUrl';
 import Cookies from 'js-cookie';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { format } from 'date-fns';
+import AdDetailsModal from './AdDetailsModal';
 
 // Helper for class merging
 function cn(...inputs: ClassValue[]) {
@@ -40,16 +42,22 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
     const [highlightType, setHighlightType] = useState<'Hot Sale' | 'Discount' | 'Urgent'>('Hot Sale');
     const [isPostLevel, setIsPostLevel] = useState(false);
     const [showPremier, setShowPremier] = useState(false);
-    const [premierSettings, setPremierSettings] = useState({
-        verifyBadgePrice: 200,
-        highlightPostPrice: 300,
-        addLabelPrice: 100,
-        freeAdCredit: 200
+    const [premierSettings, setPremierSettings] = useState<any>({
+        verifyBadgePrice: 500,
+        verifyBadgeDuration: 365,
+        highlightPostPrice: 600,
+        labels: [],
+        freeAdCredits: []
     });
+    const [selectedLabel, setSelectedLabel] = useState<any>(null);
     const [currentPlan, setCurrentPlan] = useState<any>(null);
     const [minAmount, setMinAmount] = useState(100);
     const [maxAmount, setMaxAmount] = useState(5000);
     const [gapAmount, setGapAmount] = useState(50); // Step for slider
+    const [showManualPayment, setShowManualPayment] = useState(false);
+    const [isEditingBudget, setIsEditingBudget] = useState(false);
+    const [activeSection, setActiveSection] = useState<'promoteType' | 'location' | null>(null);
+    const [selectedDetailAd, setSelectedDetailAd] = useState<any>(null);
 
     // Initialize/Reset & Fetch Configs
     useEffect(() => {
@@ -59,6 +67,9 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
             setSelectedLocations([]);
             setDurationDays(1);
             updateEndDate(1);
+            setShowManualPayment(false);
+            setIsEditingBudget(false);
+            setActiveSection(null);
             fetchConfigs();
         }
     }, [isOpen]);
@@ -75,9 +86,9 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
             }
 
             if (plansRes.success && plansRes.data && plansRes.data.length > 0) {
-                // Find plan for current ad's subcategory
+                // Find plan for current ad's category
                 const plan = plansRes.data.find((p: any) =>
-                    p.subCategories.includes(ad.subCategory)
+                    p.categories && p.categories.includes(ad.category)
                 );
 
                 if (plan) {
@@ -141,20 +152,25 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
 
     if (currentPlan) {
         const ratio = amount / maxAmount;
-        estimatedMinViews = Math.floor(currentPlan.minReach * ratio);
-        estimatedMaxViews = Math.floor(currentPlan.reach * ratio);
+        estimatedMinViews = Math.floor(currentPlan.minReach * ratio * durationDays);
+        estimatedMaxViews = Math.floor(currentPlan.reach * ratio * durationDays);
 
         // Use traffic stats if promoteType is traffic? (Optional enhancement)
         if (promoteType === 'traffic') {
-            estimatedMinViews = Math.floor(currentPlan.minTraffic * ratio);
-            estimatedMaxViews = Math.floor(currentPlan.traffic * ratio);
+            estimatedMinViews = Math.floor(currentPlan.minTraffic * ratio * durationDays);
+            estimatedMaxViews = Math.floor(currentPlan.traffic * ratio * durationDays);
         }
     } else {
-        estimatedMinViews = Math.floor(amount * 0.2);
-        estimatedMaxViews = Math.floor(amount * 0.4);
+        estimatedMinViews = Math.floor(amount * 0.2 * durationDays);
+        estimatedMaxViews = Math.floor(amount * 0.4 * durationDays);
     }
 
     const viewLabel = promoteType === 'traffic' ? 'Visitors' : 'Views';
+
+    const totalAmount = (amount * durationDays) +
+        (isVerifyBadge ? Number(premierSettings.verifyBadgePrice || 0) : 0) +
+        (isHighlight ? Number(premierSettings.highlightPostPrice || 0) : 0) +
+        (isPostLevel && selectedLabel ? Number(selectedLabel.price || 0) : 0);
 
     const handlePromote = async () => {
         try {
@@ -164,8 +180,15 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                 targetLocations: isAllBangladesh ? ['All Bangladesh'] : selectedLocations,
                 promoteDuration: durationDays,
                 promoteEndDate: endDate,
-                promoteBudget: amount,
-                estimatedReach: `${estimatedMinViews}-${estimatedMaxViews}`
+                promoteBudget: amount * durationDays, // Sending total ad budget
+                dailyBudget: amount,
+                estimatedReach: `${estimatedMinViews}-${estimatedMaxViews}`,
+                isVerifyBadge,
+                isHighlight,
+                highlightType: isHighlight ? highlightType : null,
+                isPostLevel,
+                selectedLabel: isPostLevel ? selectedLabel?.name : null,
+                totalAmount
             };
 
             const response = await fetch(`${API_BASE_URL}/api/ads/${ad._id}/promote`, {
@@ -195,52 +218,54 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
 
     if (!isOpen || !ad) return null;
 
-    const mainImage = ad.images && ad.images.length > 0 ? `${API_BASE_URL}${ad.images[0]}` : "https://via.placeholder.com/150";
+    const mainImage = (ad.images && ad.images.length > 0 ? getImageUrl(ad.images[0]) : null) || "https://via.placeholder.com/150";
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-end justify-center">
+        <div className="fixed inset-0 z-[999] flex items-start justify-center pt-20">
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
             {/* Modal Container */}
-            <div className="relative bg-[#F4F6F8] w-full max-w-[565px] rounded-t-lg rounded-b-none overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300 shadow-2xl h-[98vh] sm:h-auto max-h-[98vh] font-sans">
+            <div className="relative bg-[#F4F6F8] w-full max-w-[565px] rounded-t-lg rounded-b-none overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300 shadow-2xl h-[calc(100vh-80px)] font-sans">
 
                 {/* Header */}
-                <div className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between shrink-0">
-                    <h2 className="text-[16px] text-black">Promote Ad</h2>
-                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 transition-colors">
-                        <X className="w-4 h-4 stroke-[2]" />
+                <div className="flex items-center justify-between p-2 px-4 border-b border-slate-400 bg-white shrink-0">
+                    <div className="flex items-center gap-3">
+                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-black hover:bg-slate-50 rounded-full transition-colors">
+                            <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
+                        </button>
+                        <h2 className="text-[16px] text-black font-medium">Promote Ad</h2>
+                    </div>
+                    <button onClick={onClose} className="p-1 hover:bg-slate-50 rounded-full">
+                        <X className="w-5 h-5 text-black" />
                     </button>
                 </div>
 
                 {/* Content - Scrollable */}
-                <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-3 space-y-3 pb-20">
+                <div className="flex-1 overflow-y-auto no-scrollbar p-3 space-y-3 pb-24 bg-white">
 
                     {/* 1. Notifications Stack */}
-                    <div className="space-y-2">
-                        {/* Policy Violation - Red */}
+                    {/* <div className="space-y-2">
                         <div className="bg-[#F0FDF4] rounded-lg p-2 flex gap-2 items-start">
                             <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center shrink-0 mt-0.5">
                                 <Minus className="w-3 h-3 text-white" />
                             </div>
                             <p className="text-[11px] text-slate-700 leading-tight">
-                                This Post run is off for <span className="font-bold text-red-500">Policy Violation</span>. You Can Edit & submit it early as possible. Or, For help <span className="text-orange-500 font-bold cursor-pointer">Contact us</span>
+                                This Post run is off for <span className="font-bold text-red-500">Policy Violation</span>. You Can Edit & submit it early as possible. Or, For help <span className="text-blue-500 font-bold cursor-pointer">Contact us</span>
                             </p>
                         </div>
 
-                        {/* Free Post Access - Orange */}
                         <div className="bg-[#F0FDF4] rounded-lg p-2 flex gap-2 items-start">
-                            <div className="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                            <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center shrink-0 mt-0.5">
                                 <Camera className="w-3 h-3 text-white" />
                             </div>
                             <p className="text-[11px] text-slate-700 leading-tight">
-                                This post is Creat but not Publish. Because, Your <span className="font-bold text-orange-500">FREE POST ACCESS</span> is over. If You Promote, it will Publish & Promot.
+                                This post is Creat but not Publish. Because, Your <span className="font-bold text-blue-500">FREE POST ACCESS</span> is over. If You Promote, it will Publish & Promot.
                             </p>
                         </div>
 
-                        {/* Potential Customer - Yellow */}
                         <div className="bg-[#F0FDF4] rounded-lg p-2 flex gap-2 items-start">
-                            <div className="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                            <div className="w-5 h-5 bg-[#0088cc] rounded-full flex items-center justify-center shrink-0 mt-0.5">
                                 <TrendingUp className="w-3 h-3 text-white" />
                             </div>
                             <p className="text-[11px] text-slate-700 leading-tight">
@@ -248,7 +273,6 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                             </p>
                         </div>
 
-                        {/* Ad Free Voucher - Green */}
                         <div className="bg-[#F0FDF4] border border-green-100 rounded-lg p-2 flex gap-2 items-start">
                             <div className="w-5 h-5 bg-green-600 rounded-full flex items-center justify-center shrink-0 mt-0.5">
                                 <Gift className="w-3 h-3 text-white" />
@@ -257,10 +281,10 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                 You Get $100 Ad Free boucher. Promote this Post. <span className="font-bold">Valid Till Today</span>
                             </p>
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* 2. Ad Preview Card (Stats) */}
-                    <div className="bg-white rounded-lg p-2 shadow-sm border border-slate-200">
+                    {/* <div className="bg-white rounded-lg p-2 shadow-sm border border-slate-400">
                         <div className="flex gap-3 mb-2">
                             <div className="w-20 h-16 rounded overflow-hidden shrink-0 relative">
                                 <img src={mainImage} className="w-full h-full object-cover" alt="ad" />
@@ -268,7 +292,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h4 className="font-bold text-xs text-black truncate mb-1">{ad.headline}</h4>
-                                <div className="text-[10px] text-black leading-tight space-y-0.5 border-b border-slate-100 pb-1 mb-1">
+                                <div className="text-[10px] text-black leading-tight space-y-0.5 border-b border-slate-300 pb-1 mb-1">
                                     <div className="flex justify-between">
                                         <span>Publish {ad.createdAt ? format(new Date(ad.createdAt), 'dd.MM.yyyy') : format(new Date(), 'dd.MM.yyyy')}</span>
                                     </div>
@@ -283,83 +307,191 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                 </div>
                                 <div className="flex items-center gap-2 mt-1">
                                     <span className="bg-[#0088cc] text-white px-1.5 py-0.5 rounded text-[9px] font-bold">AD On</span>
-                                    <button className="border border-slate-300 px-2 py-0.5 rounded text-[9px] font-bold hover:bg-slate-50">Edit</button>
+                                    <button className="border border-slate-400 px-2 py-0.5 rounded text-[9px] font-bold hover:bg-slate-50">Edit</button>
                                 </div>
                             </div>
                         </div>
                         <button className="w-full bg-[#4285F4] text-white text-xs py-1.5 rounded font-medium shadow-sm hover:bg-blue-600 transition-colors">
                             Promote / Learning / Promoting
                         </button>
-                    </div>
+                    </div> */}
 
                     {/* 3. Ad Config Card */}
-                    <div className="bg-white rounded-lg p-3 shadow-sm border border-slate-200">
+                    <div className="bg-white rounded-lg p-0">
                         <div className="flex gap-3 mb-3">
                             <div className="w-24 h-16 rounded overflow-hidden shrink-0 relative">
                                 <img src={mainImage} className="w-full h-full object-cover" alt="ad" />
-                                <div className="absolute bottom-1 left-1 w-3 h-3 bg-white rounded-full border border-slate-300"></div>
-                                <div className="absolute top-1 left-1 bg-white px-1 py-0.5 rounded text-[8px] text-black shadow-sm">See Live</div>
+                                <div className="absolute bottom-1 left-1 w-3 h-3 bg-white rounded-full border border-slate-400"></div>
+                                <button
+                                    onClick={() => setSelectedDetailAd(ad)}
+                                    className="absolute top-1 left-1 bg-white/90 text-[8px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm text-slate-700 hover:bg-white"
+                                >
+                                    See Live <ExternalLink className="w-2 h-2" />
+                                </button>
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-xs text-black truncate mb-1">{ad.headline}</h4>
+                                <h4 className="text-xs text-black truncate ">{ad.headline}</h4>
+                                <div className="text-[11px] text-black truncate">
+                                    {ad.category || 'Category'}, {ad.location || 'Location'}
+                                </div>
                                 <div className="text-[10px] text-black leading-tight">
                                     <div>Publish {ad.createdAt ? format(new Date(ad.createdAt), 'dd.MM.yyyy') : format(new Date(), 'dd.MM.yyyy')}</div>
                                     <div>Duration {format(new Date(), 'dd.MM.yyyy')} to {endDate ? format(new Date(endDate), 'dd.MM.yyyy') : '...'}</div>
-                                    <div className="font-bold text-slate-700">Promote Amount ${amount}</div>
+                                    <div className="text-slate-700">Promote Amount ${amount}</div>
                                 </div>
-                                <div className="font-bold text-xs text-slate-900 mt-1">View : 55214</div>
+                                <div className="text-xs text-slate-900 mt-1">View : 55214</div>
                             </div>
                         </div>
 
                         {/* Controls */}
                         <div className="space-y-3">
                             {/* Inputs Row */}
+                            {/* Inputs Row */}
                             <div className="grid grid-cols-2 gap-2">
                                 {/* Promote Type */}
-                                <div className="bg-slate-50 border border-slate-200 rounded px-2 py-1.5 flex items-center justify-between">
+                                <div
+                                    className={cn("bg-slate-50 border rounded px-2 py-1.5 flex items-center justify-between cursor-pointer transition-colors", activeSection === 'promoteType' ? 'border-[#0088cc] bg-blue-50/10' : 'border-slate-400')}
+                                    onClick={() => setActiveSection(activeSection === 'promoteType' ? null : 'promoteType')}
+                                >
                                     <div className="flex flex-col">
-                                        <span className="text-[9px] text-slate-500 font-bold">Promote Type</span>
-                                        <span className="text-[11px] font-bold text-slate-700">{promoteType === 'call_msg' ? 'Call & Message' : 'Visit Traffic'}</span>
+                                        <span className="text-[9px] text-slate-500">Promote Type</span>
+                                        <span className="text-[11px] text-slate-700">{promoteType === 'call_msg' ? 'Call & Message' : 'Visit Traffic'}</span>
                                     </div>
-                                    <button onClick={() => setPromoteType(promoteType === 'call_msg' ? 'traffic' : 'call_msg')} className="text-slate-400 hover:text-slate-600">
-                                        <Edit2 className="w-3 h-3" />
-                                    </button>
+                                    <Edit2 className={cn("w-3 h-3 transition-colors", activeSection === 'promoteType' ? 'text-[#0088cc]' : 'text-slate-400')} />
                                 </div>
                                 {/* Location */}
-                                <div className="bg-slate-50 border border-slate-200 rounded px-2 py-1.5 flex items-center justify-between">
+                                <div
+                                    className={cn("bg-slate-50 border rounded px-2 py-1.5 flex items-center justify-between cursor-pointer transition-colors", activeSection === 'location' ? 'border-[#0088cc] bg-blue-50/10' : 'border-slate-400')}
+                                    onClick={() => setActiveSection(activeSection === 'location' ? null : 'location')}
+                                >
                                     <div className="flex flex-col">
-                                        <span className="text-[9px] text-slate-500 font-bold">Location Priority</span>
-                                        <span className="text-[11px] font-bold text-slate-700 truncate max-w-[80px]">
+                                        <span className="text-[9px] text-slate-500">Location Priority</span>
+                                        <span className="text-[11px] text-slate-700 truncate max-w-[80px]">
                                             {isAllBangladesh ? 'All Bangladesh' : selectedLocations.join(', ') || 'Select'}
                                         </span>
                                     </div>
-                                    <button onClick={() => setIsAllBangladesh(!isAllBangladesh)} className="text-slate-400 hover:text-slate-600">
-                                        <Edit2 className="w-3 h-3" />
-                                    </button>
+                                    <Edit2 className={cn("w-3 h-3 transition-colors", activeSection === 'location' ? 'text-[#0088cc]' : 'text-slate-400')} />
                                 </div>
                             </div>
 
+                            {/* Expanded Section Content */}
+                            {activeSection && (
+                                <div className="bg-white border border-slate-300 rounded p-3 animate-in slide-in-from-top-2 fade-in duration-200">
+                                    {activeSection === 'promoteType' && (
+                                        <div className="space-y-2">
+                                            <p className="text-[10px] font-bold text-slate-500 mb-2">Promote Type</p>
+                                            <div className="flex gap-4">
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <div className={cn("w-3 h-3 rounded-full border flex items-center justify-center", promoteType === 'call_msg' ? 'border-[#0088cc]' : 'border-slate-300')}>
+                                                        {promoteType === 'call_msg' && <div className="w-1.5 h-1.5 rounded-full bg-[#0088cc]" />}
+                                                    </div>
+                                                    <input
+                                                        type="radio"
+                                                        name="promoteType"
+                                                        className="hidden"
+                                                        checked={promoteType === 'call_msg'}
+                                                        onChange={() => setPromoteType('call_msg')}
+                                                    />
+                                                    <span className="text-[11px] text-slate-700">Call & Message</span>
+                                                </label>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <div className={cn("w-3 h-3 rounded-full border flex items-center justify-center", promoteType === 'traffic' ? 'border-[#0088cc]' : 'border-slate-300')}>
+                                                        {promoteType === 'traffic' && <div className="w-1.5 h-1.5 rounded-full bg-[#0088cc]" />}
+                                                    </div>
+                                                    <input
+                                                        type="radio"
+                                                        name="promoteType"
+                                                        className="hidden"
+                                                        checked={promoteType === 'traffic'}
+                                                        onChange={() => setPromoteType('traffic')}
+                                                    />
+                                                    <span className="text-[11px] text-slate-700">Traffic</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {activeSection === 'location' && (
+                                        <div className="space-y-2">
+                                            <p className="text-[10px] font-bold text-slate-500 mb-2">Location Priority</p>
+
+                                            {/* All Bangladesh Option */}
+                                            <label className="flex items-center gap-2 cursor-pointer mb-2">
+                                                <div className={cn("w-3 h-3 rounded-full border flex items-center justify-center", isAllBangladesh ? 'border-[#0088cc]' : 'border-slate-300')}>
+                                                    {isAllBangladesh && <div className="w-1.5 h-1.5 rounded-full bg-[#0088cc]" />}
+                                                </div>
+                                                <input
+                                                    type="checkbox"
+                                                    className="hidden"
+                                                    checked={isAllBangladesh}
+                                                    onChange={() => {
+                                                        setIsAllBangladesh(true);
+                                                        setSelectedLocations([]);
+                                                    }}
+                                                />
+                                                <span className="text-[11px] font-medium text-slate-800">All Bangladesh</span>
+                                            </label>
+
+                                            {/* Divisions Grid */}
+                                            <div className="grid grid-cols-3 gap-2">
+                                                {DIVISIONS.map((division) => {
+                                                    const isSelected = selectedLocations.includes(division);
+                                                    return (
+                                                        <label key={division} className="flex items-center gap-2 cursor-pointer">
+                                                            <div className={cn("w-3 h-3 rounded-full border flex items-center justify-center", isSelected ? 'border-[#0088cc]' : 'border-slate-300')}>
+                                                                {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-[#0088cc]" />}
+                                                            </div>
+                                                            <input
+                                                                type="checkbox"
+                                                                className="hidden"
+                                                                checked={isSelected}
+                                                                onChange={() => {
+                                                                    const newLocs = isSelected
+                                                                        ? selectedLocations.filter(l => l !== division)
+                                                                        : [...selectedLocations, division];
+
+                                                                    setSelectedLocations(newLocs);
+                                                                    if (newLocs.length > 0) {
+                                                                        setIsAllBangladesh(false);
+                                                                    } else {
+                                                                        // Optional: Revert to All BD if empty? Or just let it be empty?
+                                                                        // User said "first option All BD... these can be multiple select"
+                                                                        // Usually clear selections fallback to All BD or error. Let's keep it consistent.
+                                                                        setIsAllBangladesh(newLocs.length === 0);
+                                                                    }
+                                                                }}
+                                                            />
+                                                            <span className="text-[10px] text-slate-600">{division}</span>
+                                                        </label>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Duration & Date Row */}
                             <div className="flex items-center gap-2">
-                                <div className="flex-1 bg-white border border-slate-200 rounded px-2 py-1 flex items-center justify-between">
+                                <div className="flex-1 bg-white border border-slate-400 rounded px-2 py-1 flex items-center justify-between">
                                     <div className="flex flex-col">
                                         <span className="text-[8px] text-slate-400">Duration</span>
                                         <span className="text-[12px] font-bold text-slate-800">{durationDays} Days</span>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        <button onClick={() => handleDurationChange('dec')} className="w-5 h-5 rounded-full border border-slate-300 flex items-center justify-center hover:bg-slate-50">
-                                            <Minus className="w-3 h-3 text-slate-500" />
+                                        <button onClick={() => handleDurationChange('dec')} className="w-5 h-5 rounded-full border border-slate-500 flex items-center justify-center hover:bg-slate-50">
+                                            <Minus className="w-4 h-4 text-slate-500" />
                                         </button>
-                                        <button onClick={() => handleDurationChange('inc')} className="w-5 h-5 rounded-full border border-slate-300 flex items-center justify-center hover:bg-slate-50">
-                                            <Plus className="w-3 h-3 text-slate-500" />
+                                        <button onClick={() => handleDurationChange('inc')} className="w-5 h-5 rounded-full border border-slate-500 flex items-center justify-center hover:bg-slate-50">
+                                            <Plus className="w-4 h-4 text-slate-500" />
                                         </button>
                                     </div>
                                 </div>
-                                <div className="flex-1 bg-white border border-slate-200 rounded px-2 py-1 flex items-center gap-2">
+                                <div className="flex-1 bg-white border border-slate-400 rounded px-2 py-1 flex items-center gap-2">
                                     <Calendar className="w-4 h-4 text-slate-400" />
                                     <div className="flex flex-col flex-1 relative">
                                         <span className="text-[8px] text-slate-400">End date</span>
-                                        <div className="text-[11px] font-bold text-slate-800">
+                                        <div className="text-[11px] text-slate-800">
                                             {endDate ? format(new Date(endDate), 'MMM d, yyyy') : 'Select Date'}
                                         </div>
                                         <input
@@ -374,21 +506,38 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                             </div>
 
                             {/* Estimated Views */}
-                            <div className="bg-white border border-slate-200 rounded px-3 py-2">
+                            <div className="bg-white border border-slate-400 rounded px-2 py-2">
                                 <p className="text-[10px] text-slate-500">Promotional Performance Estimated</p>
                                 <p className="text-sm font-bold text-slate-800">{estimatedMinViews}-{estimatedMaxViews} {viewLabel}</p>
                             </div>
 
                             {/* Budget Slider */}
-                            <div className="pt-2">
+                            <div className="p-2 pt-0 pl-2 pr-3">
                                 <div className="flex items-center gap-1 mb-2">
-                                    <span className="text-sm font-bold text-slate-800">Budget</span>
+                                    <span className="text-sm text-slate-800">Daily Budget</span>
                                 </div>
-                                <div className="flex flex-col items-center mb-4">
-                                    <div className="flex items-center gap-1 text-2xl font-black text-orange-500 mb-2">
+                                <div className="flex flex-col items-center mb-1">
+                                    <div className="flex items-center justify-center gap-1 text-2xl font-black text-[#0088cc] mb-2">
                                         <span className="text-sm pt-1">$</span>
-                                        {amount}
-                                        <Edit2 className="w-3 h-3 text-slate-400 ml-1 cursor-pointer" />
+                                        {isEditingBudget ? (
+                                            <input
+                                                type="number"
+                                                value={amount}
+                                                onChange={(e) => {
+                                                    const val = Number(e.target.value);
+                                                    if (val <= maxAmount) setAmount(val);
+                                                }}
+                                                onBlur={() => setIsEditingBudget(false)}
+                                                autoFocus
+                                                className="w-[80px] bg-transparent border-none outline-none text-2xl font-black text-[#0088cc] p-0 focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-center"
+                                            />
+                                        ) : (
+                                            <span>{amount}</span>
+                                        )}
+                                        <Edit2
+                                            className="w-3 h-3 text-slate-400 ml-1 cursor-pointer"
+                                            onClick={() => setIsEditingBudget(true)}
+                                        />
                                     </div>
 
                                     <div className="w-full relative h-1 bg-slate-200 rounded-full mb-6">
@@ -402,11 +551,11 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                             className="absolute w-full h-full opacity-0 z-10 cursor-pointer"
                                         />
                                         <div
-                                            className="absolute left-0 top-0 h-full bg-orange-400 rounded-full"
+                                            className="absolute left-0 top-0 h-full bg-[#0088cc] rounded-full"
                                             style={{ width: `${((amount - minAmount) / (maxAmount - minAmount)) * 100}%` }}
                                         ></div>
                                         <div
-                                            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-orange-500 rounded-full border-2 border-white shadow-sm pointer-events-none"
+                                            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-[#0088cc] rounded-full border-2 border-white shadow-sm pointer-events-none"
                                             style={{ left: `${((amount - minAmount) / (maxAmount - minAmount)) * 100}%` }}
                                         ></div>
                                     </div>
@@ -420,19 +569,19 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
 
                             {/* Premier Opportunity Dropdown */}
                             <div
-                                className="border border-slate-200 rounded px-3 py-2 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors"
+                                className="px-3 py-2 flex items-center border-t border-slate-400 cursor-pointer hover:bg-slate-50 transition-colors"
                                 onClick={() => setShowPremier(!showPremier)}
                             >
-                                <span className="text-xs font-bold text-slate-700">Premier Opportunity</span>
-                                <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform duration-200", showPremier && "rotate-180")} />
+                                <span className="text-xs font-bold text-slate-700 pr-2">Premier Opportunity</span>
+                                <Triangle className={cn("w-3 h-3 text-black fill-black transition-transform duration-200 rotate-180", showPremier && "rotate-0")} />
                             </div>
 
                             {/* Premier Options - Collapsible Content */}
                             {showPremier && (
-                                <div className="space-y-3 pt-2 bg-slate-50 border border-slate-200 border-t-0 -mt-[1px] rounded-b px-3 py-3 animate-in fade-in zoom-in-95 duration-200">
+                                <div className="space-y-3 pt-2 bg-slate-50 -mt-[1px] rounded-b px-3 py-3 animate-in fade-in zoom-in-95 duration-200">
                                     {/* Verify Badge */}
                                     <label className="flex items-start gap-2 cursor-pointer group">
-                                        <div className={cn("w-4 h-4 rounded border flex items-center justify-center mt-0.5 transition-colors", isVerifyBadge ? 'bg-brand-600 border-brand-600' : 'border-slate-300 bg-white')}>
+                                        <div className={cn("w-4 h-4 rounded border flex items-center justify-center mt-0.5 transition-colors", isVerifyBadge ? 'bg-[#0088cc] border-[#0088cc]' : 'border-slate-400 bg-white')}>
                                             {isVerifyBadge && <Check className="w-3 h-3 text-white" />}
                                         </div>
                                         <input type="checkbox" className="hidden" checked={isVerifyBadge} onChange={() => setIsVerifyBadge(!isVerifyBadge)} />
@@ -442,65 +591,92 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                     </label>
 
                                     {/* Highlight Post */}
+                                    <label className="flex items-start gap-2 cursor-pointer group">
+                                        <div className={cn("w-4 h-4 rounded border flex items-center justify-center mt-0.5 transition-colors", isHighlight ? 'bg-[#0088cc] border-[#0088cc]' : 'border-slate-400 bg-white')}>
+                                            {isHighlight && <Check className="w-3 h-3 text-white" />}
+                                        </div>
+                                        <input type="checkbox" className="hidden" checked={isHighlight} onChange={() => setIsHighlight(!isHighlight)} />
+                                        <span className="text-[11px] font-bold text-slate-700 group-hover:text-slate-900">
+                                            পোস্টটি হাইলাইট করুন (+ ${premierSettings.highlightPostPrice})
+                                        </span>
+                                    </label>
+
+                                    {/* Post Level / Labels */}
                                     <div>
                                         <label className="flex items-start gap-2 cursor-pointer group mb-2">
-                                            <div className={cn("w-4 h-4 rounded border flex items-center justify-center mt-0.5 transition-colors", isHighlight ? 'bg-brand-600 border-brand-600' : 'border-slate-300 bg-white')}>
-                                                {isHighlight && <Check className="w-3 h-3 text-white" />}
+                                            <div className={cn("w-4 h-4 rounded border flex items-center justify-center mt-0.5 transition-colors", isPostLevel ? 'bg-[#0088cc] border-[#0088cc]' : 'border-slate-400 bg-white')}>
+                                                {isPostLevel && <Check className="w-3 h-3 text-white" />}
                                             </div>
-                                            <input type="checkbox" className="hidden" checked={isHighlight} onChange={() => setIsHighlight(!isHighlight)} />
+                                            <input type="checkbox" className="hidden" checked={isPostLevel} onChange={() => setIsPostLevel(!isPostLevel)} />
                                             <span className="text-[11px] font-bold text-slate-700 group-hover:text-slate-900 flex items-center gap-2">
-                                                পোস্টটি হাইলাইট করুন (+ ${premierSettings.highlightPostPrice})
-                                                <ChevronDown className="w-3 h-3 text-slate-400" />
+                                                পোস্ট লেভেল যোগ করুন
+                                                <Triangle className={cn("w-3 h-3 text-black fill-black transition-transform duration-200 rotate-180", isPostLevel && "rotate-0")} />
                                             </span>
                                         </label>
 
-                                        {isHighlight && (
+                                        {isPostLevel && premierSettings.labels && premierSettings.labels.length > 0 && (
                                             <div className="pl-6 space-y-1.5 mb-2 animate-in slide-in-from-top-2 fade-in">
-                                                {['Hot Sale', 'Discount', 'Urgent'].map((type) => (
-                                                    <label key={type} className="flex items-center gap-2 cursor-pointer">
-                                                        <div className={cn("w-3 h-3 rounded-full border flex items-center justify-center", highlightType === type ? 'border-brand-600' : 'border-slate-300')}>
-                                                            {highlightType === type && <div className="w-1.5 h-1.5 rounded-full bg-brand-600" />}
+                                                {premierSettings.labels.map((label: any) => (
+                                                    <label key={label._id} className="flex items-center gap-2 cursor-pointer">
+                                                        <div className={cn("w-3 h-3 rounded-full border flex items-center justify-center", selectedLabel?._id === label._id ? 'border-[#0088cc]' : 'border-slate-400')}>
+                                                            {selectedLabel?._id === label._id && <div className="w-1.5 h-1.5 rounded-full bg-[#0088cc]" />}
                                                         </div>
                                                         <input
                                                             type="radio"
-                                                            name="highlightType"
+                                                            name="selectedLabel"
                                                             className="hidden"
-                                                            checked={highlightType === type}
-                                                            onChange={() => setHighlightType(type as any)}
+                                                            checked={selectedLabel?._id === label._id}
+                                                            onChange={() => setSelectedLabel(label)}
                                                         />
-                                                        <span className="text-[10px] text-slate-600">{type}</span>
+                                                        <span className="text-[10px] text-slate-600">{label.name} (+ ${label.price})</span>
                                                     </label>
                                                 ))}
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* Post Level */}
-                                    <label className="flex items-start gap-2 cursor-pointer group">
-                                        <div className={cn("w-4 h-4 rounded border flex items-center justify-center mt-0.5 transition-colors", isPostLevel ? 'bg-brand-600 border-brand-600' : 'border-slate-300 bg-white')}>
-                                            {isPostLevel && <Check className="w-3 h-3 text-white" />}
+                                    {/* Free Ad Credits Offers */}
+                                    {premierSettings.freeAdCredits && premierSettings.freeAdCredits.filter((c: any) => c.status).length > 0 && (
+                                        <div className="space-y-2 mt-4 pt-2 border-t border-slate-200">
+                                            <h4 className="text-[10px] font-bold text-emerald-600 uppercase">Available Offers</h4>
+                                            {premierSettings.freeAdCredits
+                                                .filter((c: any) => {
+                                                    if (!c.status) return false;
+                                                    // Only show 'all' type or 'category' if it matches
+                                                    if (c.forType === 'all') return true;
+                                                    if (c.forType === 'category' && c.forValue === ad.category) return true;
+                                                    if (c.forType === 'product' && c.forValue === ad._id) return true;
+                                                    return false;
+                                                })
+                                                .map((offer: any, idx: number) => (
+                                                    <div key={idx} className="flex items-center justify-between bg-white border border-emerald-100 p-2 rounded">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[10px] font-bold text-slate-800">
+                                                                ${offer.amount} Free Ad Credit ({offer.forValue === 'All' ? 'All Ads' : offer.forValue})
+                                                            </span>
+                                                            {offer.endDate && (
+                                                                <span className="text-[8px] text-slate-500">Valid till: {format(new Date(offer.endDate), 'dd MMM, yyyy')}</span>
+                                                            )}
+                                                        </div>
+                                                        <button
+                                                            onClick={() => toast.success(`Offer $${offer.amount} Applied!`)}
+                                                            className="bg-[#FF3B30] text-white text-[9px] font-bold px-2 py-1 rounded shadow-sm hover:bg-red-600 transition-colors"
+                                                        >
+                                                            Apply
+                                                        </button>
+                                                    </div>
+                                                ))}
                                         </div>
-                                        <input type="checkbox" className="hidden" checked={isPostLevel} onChange={() => setIsPostLevel(!isPostLevel)} />
-                                        <span className="text-[11px] font-bold text-slate-700 group-hover:text-slate-900">
-                                            পোস্ট লেভেল যোগ করুন (+ ${premierSettings.addLabelPrice})
-                                        </span>
-                                    </label>
-
-                                    <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-3">
-                                        <span className="text-[10px] font-bold text-slate-800">You Have ${premierSettings.freeAdCredit} Free Ad Credit!</span>
-                                        <button className="bg-[#FF3B30] text-white text-[10px] font-bold px-3 py-1.5 rounded shadow-sm hover:bg-red-600 transition-colors">
-                                            Apply Offer
-                                        </button>
-                                    </div>
+                                    )}
                                 </div>
                             )}
                         </div>
                     </div>
 
                     {/* 4. Payment Action */}
-                    <div className="mt-2 rounded-lg overflow-hidden flex shadow-lg">
+                    <div className="mt-2 rounded-lg overflow-hidden flex">
                         <div className="bg-[#B8CCF2] w-1/3 flex items-center justify-center p-3">
-                            <span className="text-sm font-bold text-slate-800">Total : ${amount}</span>
+                            <span className="text-sm font-bold text-slate-800">Total : ${totalAmount}</span>
                         </div>
                         <button
                             onClick={handlePromote}
@@ -514,26 +690,33 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                     </p>
 
                     {/* 5. Support & Manual Pay */}
-                    <div className="mt-6 pt-4 border-t border-slate-200 space-y-4">
+                    <div className="mt-6 pt-4 border-t border-slate-400 space-y-4">
                         <div className="flex justify-between px-4 text-[11px] text-slate-500 font-medium">
                             <span className="cursor-pointer hover:text-slate-800">HelpChat</span>
-                            <span className="cursor-pointer hover:text-slate-800">Pay Manual</span>
+                            <span
+                                className={cn("cursor-pointer transition-colors", showManualPayment ? "text-blue-600 font-bold" : "hover:text-slate-800")}
+                                onClick={() => setShowManualPayment(!showManualPayment)}
+                            >
+                                Pay Manual
+                            </span>
                             <span className="cursor-pointer hover:text-slate-800">Helpline</span>
                         </div>
 
-                        <div className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
-                            <h4 className="font-bold text-sm text-slate-800 mb-1">Manual Payment</h4>
-                            <p className="text-[11px] text-slate-600 mb-2">
-                                যে প্যাকেজটি কিনতে চান, সমপরিমান টাকা পাঠিয়ে
-                                জুট কম কে সরাণরি।
-                            </p>
-                            <div className="space-y-0.5 text-xs text-slate-700">
-                                <div><span className="font-bold">বিকাশ নাম্বার:</span> 0173 266 1224</div>
-                                <div><span className="font-bold">রকেট নাম্বার:</span> 0173 266 1224-3</div>
+                        {showManualPayment && (
+                            <div className="bg-white p-3 rounded-lg border border-slate-300 shadow-sm animate-in fade-in slide-in-from-top-1">
+                                <h4 className="font-bold text-sm text-slate-800 mb-1">Manual Payment</h4>
+                                <p className="text-[11px] text-slate-600 mb-2">
+                                    যে প্যাকেজটি কিনতে চান, সমপরিমান টাকা পাঠিয়ে
+                                    জুট কম কে সরাণরি।
+                                </p>
+                                <div className="space-y-0.5 text-xs text-slate-700">
+                                    <div><span className="font-bold">বিকাশ নাম্বার:</span> 0173 266 1224</div>
+                                    <div><span className="font-bold">রকেট নাম্বার:</span> 0173 266 1224-3</div>
+                                </div>
                             </div>
-                        </div>
+                        )}
 
-                        <button className="w-full bg-[#FFB82E] text-slate-900 font-bold py-3 rounded-lg shadow-sm hover:bg-[#FFA500] transition-colors mb-6">
+                        <button className="w-full bg-[#0088cc] text-white font-bold py-3 rounded-lg shadow-sm hover:bg-[#0077b5] transition-colors mb-6">
                             Message us
                         </button>
 
@@ -542,6 +725,13 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
 
                 </div>
             </div>
+            {selectedDetailAd && (
+                <AdDetailsModal
+                    isOpen={!!selectedDetailAd}
+                    onClose={() => setSelectedDetailAd(null)}
+                    ad={selectedDetailAd}
+                />
+            )}
         </div>
     );
 }

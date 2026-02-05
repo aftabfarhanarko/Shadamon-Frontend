@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, ArrowLeft, Plus, ChevronDown, Check, Trash2, Loader2, Camera, Search } from 'lucide-react';
+import { X, ArrowLeft, Plus, ChevronDown, Check, Trash2, Loader2, Camera, Search, MessageCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import Cookies from 'js-cookie';
 import { API_BASE_URL } from '../utils/apiConfig';
+import { getImageUrl } from '../utils/imageUrl';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs));
@@ -24,17 +25,34 @@ interface SubItem {
     _id: string;
     name: string;
     slug: string;
+    image?: string;
+    icon?: string;
+    priceBoxShow?: boolean;
+    priceBoxName?: string;
+    features?: Feature[];
+}
+
+interface Feature {
+    _id: string;
+    name: string;
+    inputType: string;
+    buttonType: string;
+    boxFadeName?: string;
+    buttonItemNames: string[];
 }
 
 interface Category {
     _id: string;
     name: string;
+    image?: string;
+    icon?: string;
     subcategories: SubItem[];
 }
 
 interface Location {
     _id: string;
     name: string;
+    image?: string;
     subLocations: SubItem[];
 }
 
@@ -51,6 +69,8 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [password, setPassword] = useState("");
     const [name, setName] = useState("");
     const [hidePhone, setHidePhone] = useState(false);
+    const [price, setPrice] = useState("");
+    const [priceType, setPriceType] = useState("Negotiable");
     const [hasReadRules, setHasReadRules] = useState(true);
     const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
 
@@ -63,9 +83,10 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [selectedSubLocation, setSelectedSubLocation] = useState("");
 
     // Wizard State
-    const [view, setView] = useState<'form' | 'category' | 'category-sub' | 'location' | 'location-sub' | 'loading'>('loading');
+    const [view, setView] = useState<'form' | 'category' | 'category-sub' | 'location' | 'location-sub' | 'features' | 'loading'>('loading');
     const [searchQuery, setSearchQuery] = useState("");
     const [tempCategory, setTempCategory] = useState<string>("");
+    const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
     const [tempSubCategory, setTempSubCategory] = useState<string>("");
     const [tempLocation, setTempLocation] = useState<string>("");
     const [tempSubLocations, setTempSubLocations] = useState<string[]>([]);
@@ -73,6 +94,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [newAdditionalNumber, setNewAdditionalNumber] = useState("");
     const [newAdditionalType, setNewAdditionalType] = useState("whatsapp");
     const [additionalPhones, setAdditionalPhones] = useState<{ number: string, types: string[] }[]>([]);
+    const [featureValues, setFeatureValues] = useState<Record<string, any>>({});
 
     // OTP State
     const [showOtpVerification, setShowOtpVerification] = useState(false);
@@ -97,6 +119,8 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 setSelectedSubCategory(editAd.subCategory || "");
                 setSelectedLocation(editAd.location || "");
                 setSelectedSubLocation(editAd.subLocation || "");
+                setPrice(editAd.price ? String(editAd.price) : "");
+                setPriceType(editAd.priceType || "Negotiable");
                 setExistingImages(editAd.images || []);
                 setHasReadRules(true);
                 setView('form');
@@ -107,6 +131,8 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 setDescription("");
                 setAdditionalPhones([]);
                 setHidePhone(false);
+                setPrice("");
+                setPriceType("Negotiable");
                 setImages([]);
                 setExistingImages([]);
                 setHasReadRules(true);
@@ -224,7 +250,16 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         }
         setSelectedLocation(tempLocation);
         setSelectedSubLocation(tempSubLocations.join(', '));
-        setView('form');
+
+        // Check if current subcategory has features
+        const currentCat = categories.find(c => c.name === selectedCategory);
+        const currentSub = currentCat?.subcategories.find(s => s.name === selectedSubCategory);
+
+        if (currentSub?.features && currentSub.features.length > 0) {
+            setView('features');
+        } else {
+            setView('form');
+        }
     };
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -334,6 +369,9 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             formData.append('hidePhone', String(hidePhone));
             formData.append('additionalPhones', JSON.stringify(additionalPhones));
             formData.append('remainingImages', JSON.stringify(existingImages));
+            formData.append('features', JSON.stringify(featureValues));
+            formData.append('price', price);
+            formData.append('priceType', priceType);
 
             images.forEach((file) => {
                 formData.append('images', file);
@@ -406,10 +444,10 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-end justify-center">
+        <div className="fixed inset-0 z-[200] flex items-start justify-center pt-20">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
-            <div className="relative bg-[#F4F6F8] w-full max-w-[565px] rounded-lg overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300 shadow-2xl h-[98vh] sm:h-auto max-h-[98vh]">
+            <div className="relative bg-[#F4F6F8] w-full max-w-[565px] rounded-t-lg rounded-b-none overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300 shadow-2xl h-[calc(100vh-80px)]">
 
                 {view === 'loading' && (
                     <div className="flex-1 flex items-center justify-center min-h-[400px]">
@@ -421,7 +459,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                     <div className="flex flex-col h-full bg-white">
                         <div className="p-3 border-b border-slate-100 flex items-center gap-3">
                             <button onClick={() => setView('form')}><ArrowLeft className="w-5 h-5 text-slate-600" /></button>
-                            <h2 className="text-[16px] font-bold text-slate-800">Pick a Category</h2>
+                            <h2 className="text-[16px] text-slate-800">Pick a Category</h2>
                         </div>
                         <div className="p-3 bg-slate-50">
                             <div className="bg-white rounded-lg border border-slate-200 flex items-center px-3 py-2 gap-2">
@@ -438,54 +476,65 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                         <div className="flex-1 overflow-y-auto">
                             <div className="divide-y divide-slate-100">
                                 {categories.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())).map(cat => (
-                                    <button
-                                        key={cat._id}
-                                        onClick={() => {
-                                            setTempCategory(cat.name);
-                                            setSearchQuery("");
-                                            setView('category-sub');
-                                        }}
-                                        className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            {/* Icon placeholder - in real app, add icon to category schema */}
-                                            <div className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center text-slate-400 text-xs">
-                                                {cat.name[0]}
+                                    <div key={cat._id} className="flex flex-col bg-white">
+                                        <button
+                                            onClick={() => setExpandedCategory(expandedCategory === cat._id ? null : cat._id)}
+                                            className={cn(
+                                                "w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors",
+                                                expandedCategory === cat._id && "bg-slate-50"
+                                            )}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded shrink-0 flex items-center justify-center p-0.5">
+                                                    {(cat.icon || cat.image) ? (
+                                                        <img src={getImageUrl(cat.icon || cat.image || "") || ''} alt="" className="w-full h-full object-contain" />
+                                                    ) : (
+                                                        <div className="w-full h-full bg-slate-100 rounded flex items-center justify-center text-slate-400 text-xs font-bold">
+                                                            {cat.name[0]}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <span className="text-sm font-medium text-slate-700">{cat.name}</span>
                                             </div>
-                                            <span className="text-sm font-medium text-slate-700">{cat.name}</span>
-                                        </div>
-                                        <ChevronDown className="w-4 h-4 text-slate-400 -rotate-90" />
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
+                                            <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", expandedCategory === cat._id && "rotate-180")} />
+                                        </button>
 
-                {view === 'category-sub' && (
-                    <div className="flex flex-col h-full bg-white">
-                        <div className="p-3 border-b border-slate-100 flex items-center gap-3">
-                            <button onClick={() => setView('category')}><ArrowLeft className="w-5 h-5 text-slate-600" /></button>
-                            <h2 className="text-[16px] font-bold text-slate-800">{tempCategory}</h2>
-                        </div>
-                        <div className="flex-1 overflow-y-auto">
-                            <button onClick={() => {
-                                setSelectedCategory(tempCategory);
-                                setSelectedSubCategory(""); // All
-                                setView('location');
-                            }} className="w-full text-left p-4 text-sm font-bold text-slate-800 border-b border-slate-100 hover:bg-slate-50">
-                                Go to all ads in {tempCategory}
-                            </button>
-                            <div className="divide-y divide-slate-100">
-                                {categories.find(c => c.name === tempCategory)?.subcategories.map(sub => (
-                                    <button
-                                        key={sub._id}
-                                        onClick={() => handleCategorySelect(tempCategory, sub.name)}
-                                        className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors pl-8"
-                                    >
-                                        <span className="text-sm text-slate-600">{sub.name}</span>
-                                        <ChevronDown className="w-4 h-4 text-slate-400 -rotate-90" />
-                                    </button>
+                                        {/* Subcategories Accordion */}
+                                        {expandedCategory === cat._id && (
+                                            <div className="bg-slate-50 border-t border-slate-100">
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedCategory(cat.name);
+                                                        setSelectedSubCategory(""); // All
+                                                        setView('location');
+                                                    }}
+                                                    className="w-full text-left p-3 pl-14 text-xs font-medium text-slate-800 hover:bg-slate-100 flex items-center gap-2"
+                                                >
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Go to all ads in {cat.name}
+                                                </button>
+                                                {cat.subcategories.map(sub => (
+                                                    <button
+                                                        key={sub._id}
+                                                        onClick={() => {
+                                                            setSelectedCategory(cat.name);
+                                                            setSelectedSubCategory(sub.name);
+                                                            setView('location');
+                                                        }}
+                                                        className="w-full flex items-center gap-3 p-3 pl-14 hover:bg-slate-100 transition-colors text-left"
+                                                    >
+                                                        {(sub.image || sub.icon) ? (
+                                                            <div className="w-5 h-5 rounded overflow-hidden shrink-0">
+                                                                <img src={getImageUrl(sub.image || sub.icon || "") || ''} className="w-full h-full object-cover" />
+                                                            </div>
+                                                        ) : (
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0"></span> // Bullet
+                                                        )}
+                                                        <span className="text-sm text-slate-600">{sub.name}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 ))}
                             </div>
                         </div>
@@ -495,8 +544,8 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 {view === 'location' && (
                     <div className="flex flex-col h-full bg-white">
                         <div className="p-3 border-b border-slate-100 flex items-center gap-3">
-                            <button onClick={() => setView('category-sub')}><ArrowLeft className="w-5 h-5 text-slate-600" /></button>
-                            <h2 className="text-[16px] font-bold text-slate-800">Pick a Location</h2>
+                            <button onClick={() => setView('category')}><ArrowLeft className="w-5 h-5 text-slate-600" /></button>
+                            <h2 className="text-[16px] text-slate-800">Pick a Location</h2>
                         </div>
                         <div className="p-3 bg-slate-50">
                             <div className="bg-white rounded-lg border border-slate-200 flex items-center px-3 py-2 gap-2">
@@ -523,8 +572,12 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                         className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors"
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">
-                                                <div className="w-2 h-2 rounded-full bg-slate-400"></div>
+                                            <div className="w-6 h-6 rounded shrink-0 flex items-center justify-center overflow-hidden">
+                                                {loc.image ? (
+                                                    <img src={getImageUrl(loc.image) || ''} alt="" className="w-full h-full object-contain" />
+                                                ) : (
+                                                    <div className="w-2 h-2 rounded-full bg-slate-400"></div>
+                                                )}
                                             </div>
                                             <span className="text-sm font-medium text-slate-700">{loc.name}</span>
                                         </div>
@@ -540,14 +593,19 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                     <div className="flex flex-col h-full bg-white">
                         <div className="p-3 border-b border-slate-100 flex items-center gap-3">
                             <button onClick={() => setView('location')}><ArrowLeft className="w-5 h-5 text-slate-600" /></button>
-                            <h2 className="text-[16px] font-bold text-slate-800">{tempLocation}</h2>
+                            <h2 className="text-[16px] text-slate-800">{tempLocation}</h2>
                         </div>
                         <div className="flex-1 overflow-y-auto">
                             <div className="p-4 border-b border-slate-100">
-                                <h3 className="font-bold text-sm mb-2">Select Areas (Multi-select)</h3>
+                                <h3 className="text-sm mb-2">Select Areas (Multi-select)</h3>
                                 <div className="space-y-2">
                                     {locations.find(l => l.name === tempLocation)?.subLocations.map(sub => (
                                         <label key={sub._id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer border border-transparent hover:border-slate-100">
+                                            {sub.image && (
+                                                <div className="w-5 h-5 shrink-0 rounded overflow-hidden">
+                                                    <img src={getImageUrl(sub.image) || ''} alt="" className="w-full h-full object-cover" />
+                                                </div>
+                                            )}
                                             <input
                                                 type="checkbox"
                                                 checked={tempSubLocations.includes(sub.name)}
@@ -569,7 +627,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                         <div className="p-4 border-t border-slate-200 bg-slate-50">
                             <button
                                 onClick={handleLocationSelect}
-                                className="w-full bg-black text-white py-3 rounded-lg font-bold"
+                                className="w-full bg-black text-white py-3 rounded-lg"
                             >
                                 Continue with {tempSubLocations.length} locations
                             </button>
@@ -577,9 +635,81 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                     </div>
                 )}
 
+
+
+                {view === 'features' && (
+                    <div className="flex flex-col h-full bg-white">
+                        <div className="p-3 border-b border-slate-100 flex items-center gap-3">
+                            <button onClick={() => setView('location')}><ArrowLeft className="w-5 h-5 text-slate-600" /></button>
+                            <h2 className="text-[16px] text-slate-800">Add Details</h2>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                            {categories.find(c => c.name === selectedCategory)?.subcategories.find(s => s.name === selectedSubCategory)?.features?.map((feature) => (
+                                <div key={feature._id} className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-800 block">{feature.name}</label>
+
+                                    {feature.buttonType === 'Radio' && (
+                                        <div className="flex flex-wrap gap-3">
+                                            {feature.buttonItemNames.map((item) => (
+                                                <label key={item} className="flex items-center gap-2 cursor-pointer">
+                                                    <div className={cn("w-4 h-4 rounded-full border flex items-center justify-center transition-colors", featureValues[feature.name] === item ? 'border-black' : 'border-slate-300')}>
+                                                        {featureValues[feature.name] === item && <div className="w-2 h-2 rounded-full bg-black" />}
+                                                    </div>
+                                                    <input
+                                                        type="radio"
+                                                        name={feature.name}
+                                                        className="hidden"
+                                                        checked={featureValues[feature.name] === item}
+                                                        onChange={() => setFeatureValues(prev => ({ ...prev, [feature.name]: item }))}
+                                                    />
+                                                    <span className="text-sm text-slate-700">{item}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {feature.buttonType === 'Box' && feature.buttonItemNames.length === 1 && (
+                                        <input
+                                            type={feature.inputType === 'Number' ? 'number' : 'text'}
+                                            placeholder={feature.boxFadeName || feature.buttonItemNames[0]}
+                                            value={featureValues[feature.name] || ''}
+                                            onChange={(e) => setFeatureValues(prev => ({ ...prev, [feature.name]: e.target.value }))}
+                                            className="w-full border border-slate-300 rounded px-3 py-2 text-sm outline-none focus:border-black transition-colors"
+                                        />
+                                    )}
+
+                                    {feature.buttonType === 'Box' && feature.buttonItemNames.length > 1 && (
+                                        <div className="relative">
+                                            <select
+                                                value={featureValues[feature.name] || ''}
+                                                onChange={(e) => setFeatureValues(prev => ({ ...prev, [feature.name]: e.target.value }))}
+                                                className="w-full appearance-none border border-slate-300 rounded px-3 py-2 text-sm outline-none focus:border-black bg-white transition-colors"
+                                            >
+                                                <option value="" disabled>Select {feature.name}</option>
+                                                {feature.buttonItemNames.map(item => (
+                                                    <option key={item} value={item}>{item}</option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="p-4 border-t border-slate-200 bg-slate-50">
+                            <button
+                                onClick={() => setView('form')}
+                                className="w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-slate-800 transition-colors"
+                            >
+                                Continue
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {view === 'form' && (
                     <>
-                        <div className="flex items-center justify-between p-2 px-4 border-b border-slate-500 bg-white shrink-0">
+                        <div className="flex items-center justify-between p-2 px-4 border-b border-slate-200 bg-white shrink-0">
                             <div className="flex items-center gap-3">
                                 <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-black hover:bg-slate-50 rounded-full transition-colors">
                                     <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
@@ -591,7 +721,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto no-scrollbar px-3 pt-2 space-y-2 pb-5">
+                        <div className="flex-1 overflow-y-auto no-scrollbar px-3 pt-2 space-y-2 pb-40">
                             {/* Summary Card REMOVED */}
 
                             {loadingData ? (
@@ -717,6 +847,84 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                             />
                                             <p className="text-[10px] text-black mt-2 px-1 leading-tight">*A nice & Detail Description Might Help your Product Sell Faster</p>
                                         </div>
+
+                                        {(() => {
+                                            const subCat = categories
+                                                .find(c => c.name === selectedCategory)
+                                                ?.subcategories.find(s => s.name === selectedSubCategory);
+
+                                            if (!subCat || !subCat.priceBoxShow) return null;
+
+                                            return (
+                                                <div className="bg-slate-100 rounded-lg border border-slate-500 flex items-center overflow-hidden h-10 px-3">
+                                                    <div className="flex-1 flex items-center pr-2">
+                                                        <span className="text-[13px] text-slate-800 pr-2 border-r border-slate-300 whitespace-nowrap">
+                                                            {subCat.priceBoxName || "দাম"}
+                                                        </span>
+                                                        <input
+                                                            type="number"
+                                                            placeholder={`${subCat.priceBoxName || "দাম"} লিখুন`}
+                                                            value={price}
+                                                            onChange={(e) => setPrice(e.target.value)}
+                                                            className="w-full bg-transparent pl-2 text-[13px] text-black placeholder:text-slate-400 focus:outline-none"
+                                                        />
+                                                    </div>
+                                                    <div className="relative h-full flex items-center pl-2 border-l border-slate-300">
+                                                        <select
+                                                            value={priceType}
+                                                            onChange={(e) => setPriceType(e.target.value)}
+                                                            className="bg-transparent text-[12px] text-slate-700 font-medium pr-6 focus:outline-none appearance-none cursor-pointer"
+                                                        >
+                                                            <option value="Negotiable">আলোচনা সাপেক্ষে</option>
+                                                            <option value="Fixed">ফিক্সড</option>
+                                                        </select>
+                                                        <ChevronDown className="absolute right-0 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+
+                                    {/* Category & Location Selection Section */}
+                                    <div className="bg-white rounded-lg border border-slate-500 p-3 shadow-sm font-sans space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-4 text-[13px] text-slate-600 font-medium">
+                                                <div className="flex items-center gap-1 cursor-pointer hover:text-black transition-colors" onClick={() => setView('category')}>
+                                                    <span className={selectedCategory ? "text-black font-bold" : "text-slate-400"}>
+                                                        {selectedCategory || 'Category'}
+                                                    </span>
+                                                    <ChevronDown className="w-3 h-3 text-slate-400" />
+                                                </div>
+                                                <div className="flex items-center gap-1 cursor-pointer hover:text-black transition-colors" onClick={() => setView('category')}>
+                                                    <span className={selectedLocation ? "text-black font-bold" : "text-slate-400"}>
+                                                        {selectedLocation || 'Location'}
+                                                    </span>
+                                                    <ChevronDown className="w-3 h-3 text-slate-400" />
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => setView('category')}
+                                                className="text-[12px] text-[#0088cc] font-bold hover:underline"
+                                            >
+                                                Change
+                                            </button>
+                                        </div>
+
+                                        <div className="flex flex-col gap-1 border-t border-slate-100 pt-2">
+                                            <span className="text-[11px] text-slate-400 font-bold tracking-tight">ফিচারস</span>
+                                            {Object.keys(featureValues).length > 0 ? (
+                                                <div className="flex flex-wrap gap-2 pt-1">
+                                                    {Object.entries(featureValues).map(([key, value]) => (
+                                                        <div key={key} className="bg-slate-50 border border-slate-200 px-2 py-0.5 rounded text-[10px] text-slate-600 flex items-center gap-1">
+                                                            <span className="font-bold">{key}:</span>
+                                                            <span>{String(value)}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <span className="text-[10px] text-slate-300 italic px-1">No features selected</span>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div className="bg-white rounded-lg border border-slate-500 p-3.5 space-y-2 shadow-sm font-sans">
@@ -730,7 +938,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                             />
                                         </div>
 
-                                        <div className="flex items-center gap-2 border-b border-slate-50 pb-1">
+                                        <div className="flex items-center gap-2 border-b border-slate-500 pb-1">
                                             <div className="flex items-center justify-center w-4 h-4 rounded-full bg-cyan-400 text-white shrink-0">
                                                 <Check className="w-2.5 h-2.5 stroke-[4]" />
                                             </div>
@@ -739,7 +947,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                 value={phone}
                                                 readOnly
                                                 placeholder="Phone Number"
-                                                className="flex-1 text-[14px] font-bold text-black tracking-wide focus:outline-none bg-transparent placeholder:text-slate-300 opacity-80 cursor-not-allowed"
+                                                className="flex-1 text-[14px] text-black tracking-wide focus:outline-none bg-transparent cursor-not-allowed"
                                             />
                                             {additionalPhones.length > 0 && (
                                                 <button
@@ -783,7 +991,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                 ))}
                                             </div>
 
-                                            <div className="flex items-center gap-2 pt-2 pb-2">
+                                            <div className="flex items-center gap-2 pt-2 pb-0">
                                                 <div className="relative flex-1">
                                                     <input
                                                         type="tel"
@@ -810,6 +1018,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                         <option value="whatsapp">WhatsApp</option>
                                                         <option value="telegram">Telegram</option>
                                                         <option value="imo">Imo</option>
+                                                        <option value="none">None</option>
                                                     </select>
                                                     <ChevronDown className="absolute right-1 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                                                 </div>
@@ -823,7 +1032,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                 </button>
                                             </div>
 
-                                            <label className="flex items-center gap-2 cursor-pointer pt-1">
+                                            <label className="flex items-center gap-2 cursor-pointer pt-0">
                                                 <input
                                                     type="checkbox"
                                                     className="w-3.5 h-3.5 rounded border-slate-300 text-slate-800 focus:ring-0"
@@ -834,61 +1043,49 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                             </label>
                                         </div>
 
-                                        {/* Category & Location Selection Row */}
-                                        <div className="flex items-center justify-between border-t border-slate-200 pt-3 mt-1">
-                                            <div className="flex items-center gap-4 text-[13px] text-slate-600 font-medium">
-                                                <div className="flex items-center gap-1 cursor-pointer" onClick={() => setView('category')}>
-                                                    {selectedCategory ? (
-                                                        <span className="text-black font-bold truncate max-w-[100px]">{selectedCategory}</span>
-                                                    ) : (
-                                                        <span>Category</span>
-                                                    )}
-                                                    <ChevronDown className="w-3.5 h-3.5" />
-                                                </div>
-                                                <div className="flex items-center gap-1 cursor-pointer" onClick={() => setView('category')}> {/* Clicking location also goes to start of wizard? User said 'at first category page...' so yes start at category */}
-                                                    {selectedLocation ? (
-                                                        <span className="text-black font-bold truncate max-w-[100px]">{selectedLocation}</span>
-                                                    ) : (
-                                                        <span>Location</span>
-                                                    )}
-                                                    <ChevronDown className="w-3.5 h-3.5" />
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={() => setView('category')}
-                                                className="text-[11px] text-[#0088cc] font-bold hover:underline"
-                                            >
-                                                Change
-                                            </button>
-                                        </div>
+                                    </div>
 
-                                        <div className="pt-2">
-                                            <button
-                                                type="button"
-                                                onClick={handleSubmit}
-                                                disabled={loading}
-                                                className="w-full bg-[#1A1A1A] text-white py-3.5 rounded-lg text-[13px] font-bold tracking-widest active:scale-[0.98] transition-all disabled:opacity-50"
-                                            >
-                                                {loading ? "POSTING..." : "POST AD"}
-                                            </button>
-                                            <label className="flex items-center gap-2 mt-3 cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    className="w-3.5 h-3.5 rounded-sm border-slate-300 text-slate-800 focus:ring-0"
-                                                    checked={hasReadRules}
-                                                    onChange={(e) => setHasReadRules(e.target.checked)}
-                                                />
-                                                <span className="text-[10px] text-slate-500 font-medium leading-none">
-                                                    I have read and accept the <span className="text-cyan-500 underline">Terms and Conditions</span>
-                                                </span>
-                                            </label>
-                                        </div>
+                                    {/* Submission Section */}
+                                    <div className="pt-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleSubmit}
+                                            disabled={loading || (images.length === 0 && existingImages.length === 0) || !headline.trim() || !description.trim() || !phone.trim() || (!isUserLoggedIn && !password.trim())}
+                                            className={cn(
+                                                "w-full py-3.5 rounded-lg text-[13px] font-bold tracking-widest active:scale-[0.98] transition-all",
+                                                (loading || (images.length === 0 && existingImages.length === 0) || !headline.trim() || !description.trim() || !phone.trim() || (!isUserLoggedIn && !password.trim()))
+                                                    ? "bg-slate-300 text-slate-500 cursor-not-allowed"
+                                                    : "bg-[#1A1A1A] text-white hover:bg-black"
+                                            )}
+                                        >
+                                            {loading ? "POSTING..." : "POST AD"}
+                                        </button>
+                                        <label className="flex items-center gap-2 mt-3 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                className="w-3.5 h-3.5 rounded-sm border-slate-300 text-slate-800 focus:ring-0"
+                                                checked={hasReadRules}
+                                                onChange={(e) => setHasReadRules(e.target.checked)}
+                                            />
+                                            <span className="text-[10px] text-slate-500 font-medium leading-none">
+                                                I have read and accept the <span className="text-cyan-500 underline">Terms and Conditions</span>
+                                            </span>
+                                        </label>
                                     </div>
                                 </>
                             )}
                         </div>
                     </>
                 )}
+                {/* Floating Chat Icon */}
+                <div className="absolute right-5 bottom-20 z-[210]">
+                    <div className="flex flex-col items-center">
+                        <button className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-white shadow-xl hover:scale-105 active:scale-95 transition-all mb-1">
+                            <MessageCircle className="w-5 h-5 fill-white" />
+                        </button>
+                        <button className="text-[11px] text-black font-bold">HelpChat</button>
+                    </div>
+                </div>
             </div>
         </div>
     );

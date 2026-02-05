@@ -136,24 +136,27 @@ export default function VerificationModal({ isOpen, onClose, onSuccess, verifica
     };
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-end justify-center">
+        <div className="fixed inset-0 z-[200] flex items-start justify-center pt-20">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
             {/* Modal Container */}
-            <div className="relative bg-[#F8F9FA] w-full max-w-[565px] rounded-lg overflow-hidden shadow-2xl flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300">
+            <div className="relative bg-[#F8F9FA] w-full max-w-[565px] rounded-t-lg rounded-b-none overflow-hidden shadow-2xl flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300 h-[calc(100vh-20px)]">
 
                 {/* Header Controls - Compact */}
-                <div className="flex items-center justify-between p-3 px-5 shrink-0">
-                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-black hover:bg-slate-200 transition-colors">
-                        <ArrowLeft className="w-4 h-4 stroke-[2]" />
-                    </button>
-                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-black hover:bg-slate-200 transition-colors">
-                        <X className="w-4 h-4 stroke-[2]" />
+                <div className="flex items-center justify-between p-2 px-4 border-b border-slate-200 bg-white shrink-0">
+                    <div className="flex items-center gap-3">
+                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-black hover:bg-slate-50 rounded-full transition-colors">
+                            <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
+                        </button>
+                        <h2 className="text-[16px] text-black font-medium">Verification</h2>
+                    </div>
+                    <button onClick={onClose} className="p-1 hover:bg-slate-50 rounded-full">
+                        <X className="w-5 h-5 text-black" />
                     </button>
                 </div>
 
-                <div className="px-6 pb-4">
+                <div className="flex-1 overflow-y-auto no-scrollbar px-6 pb-32">
                     {/* Shield Logo - Shrunken */}
                     <div className="flex flex-col items-center mb-4">
                         <div className="relative w-[70px] h-[70px] mb-1 flex items-center justify-center">
@@ -238,7 +241,7 @@ export default function VerificationModal({ isOpen, onClose, onSuccess, verifica
                 </div>
 
                 {/* Floating Chat Icon */}
-                <div className="absolute right-5 bottom-5 z-[210]">
+                <div className="absolute right-5 bottom-20 z-[210]">
                     <div className="flex flex-col items-center">
                         <button className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-white shadow-xl hover:scale-105 active:scale-95 transition-all mb-1">
                             <MessageCircle className="w-5 h-5 fill-white" />
