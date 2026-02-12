@@ -5,6 +5,8 @@ import { ArrowLeft, X, Maximize2, MapPin, Grid, Eye, Share2, Phone, MessageCircl
 import { FaWhatsapp, FaTelegramPlane } from 'react-icons/fa';
 import { BsChatDotsFill } from 'react-icons/bs';
 import { API_BASE_URL } from '../utils/apiConfig';
+// Use centralized url helper
+import { getImageUrl } from '../utils/imageUrl';
 import { formatDistanceToNow } from 'date-fns';
 import { useRef, useEffect } from 'react';
 
@@ -23,6 +25,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
     const [isExpanded, setIsExpanded] = useState(false);
     const [isDetailsOpen, setIsDetailsOpen] = useState(true);
     const [showOptionsPopup, setShowOptionsPopup] = useState(false);
+    const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [actionButtons, setActionButtons] = useState<string[]>(['Call', 'Chat']);
     const popupRef = useRef<HTMLDivElement>(null);
     const optionsButtonRef = useRef<HTMLButtonElement>(null);
@@ -48,23 +51,13 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
     const images = ad.images || [];
     const hasImages = images.length > 0;
 
-    const getImageUrl = (path: string) => {
-        if (!path) return '';
-        if (path.startsWith('http') || path.startsWith('data:') || path.startsWith('blob:')) return path;
+    // Reset states when ad changes
+    useEffect(() => {
+        setIsDescriptionExpanded(false);
+        setCurrentImageIndex(0);
+        setShowPhone(false);
+    }, [ad?._id]);
 
-        // Handle raw base64 strings (longer than 200 chars) that might be missing the data: prefix
-        if (path.length > 200 && !path.includes('/') && !path.includes('.')) {
-            let mime = 'image/png';
-            if (path.startsWith('/9j/')) mime = 'image/jpeg';
-            else if (path.startsWith('R0lGOD')) mime = 'image/gif';
-            else if (path.startsWith('UklGR')) mime = 'image/webp';
-            return `data:${mime};base64,${path}`;
-        }
-
-        return `${API_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
-    };
-
-    // Fetch Ads Effect
     // Fetch Ads Effect and Subcategory Info
     React.useEffect(() => {
         if (isOpen && ad) {
@@ -125,7 +118,6 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
     }, [isOpen, ad]);
 
     const nextImage = (e: React.MouseEvent) => {
-        // ... existing nextImage logic ...
         e.stopPropagation();
         if (hasImages) {
             setCurrentImageIndex((prev) => (prev + 1) % images.length);
@@ -171,6 +163,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                 alt={ad.headline}
                                 className="w-full h-full object-contain cursor-pointer"
                                 onClick={() => setIsExpanded(true)}
+                                loading="lazy"
                             />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center text-slate-500 bg-slate-100">
@@ -183,23 +176,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                             onClick={() => setIsExpanded(true)}
                             className="absolute top-4 right-4 w-8 h-8 bg-white text-black border-2 border-black rounded-md flex items-center justify-center z-10 shadow-sm hover:bg-slate-50 transition-transform hover:scale-105"
                         >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M7 7l-5-5" />
-                                <path d="M2.5 2.5h6" />
-                                <path d="M2.5 2.5v6" />
-
-                                <path d="M17 7l5-5" />
-                                <path d="M21.5 2.5h-6" />
-                                <path d="M21.5 2.5v6" />
-
-                                <path d="M17 17l5 5" />
-                                <path d="M21.5 21.5h-6" />
-                                <path d="M21.5 21.5v-6" />
-
-                                <path d="M7 17l-5 5" />
-                                <path d="M2.5 21.5h6" />
-                                <path d="M2.5 21.5v-6" />
-                            </svg>
+                            <Maximize2 className="w-4 h-4" />
                         </button>
 
                         {/* Pagination Dots */}
@@ -235,7 +212,8 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                             </div>
                             <div className="flex items-center gap-1 text-[#0088cc]">
                                 <Eye className="w-3 h-3" />
-                                <span>{ad.views} Views</span>
+                                <span className="mr-1">{ad.deliveryCount || 0} Delivered</span>
+                                <span>{ad.views || 0} Views</span>
                             </div>
                         </div>
 
@@ -347,7 +325,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                     {showOptionsPopup && (
                                         <div
                                             ref={popupRef}
-                                            className="absolute top-0 right-[calc(100%+8px)] w-[280px] bg-[#F8F9FB] rounded-xl shadow-xl border border-slate-200 p-4 z-50 animate-in fade-in zoom-in-95 duration-200"
+                                            className="absolute top-0 right-[calc(100%+8px)] w-[280px] bg-[#F8F9FB] rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.15)] border border-slate-200 p-4 z-50 animate-in fade-in zoom-in-95 duration-200"
                                         >
                                             {/* Top Row */}
                                             <div className="grid grid-cols-4 gap-2 mb-4">
@@ -439,8 +417,38 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                             {isDetailsOpen && (
                                 <div className="animate-in slide-in-from-top-2 duration-200 min-h-[80px]">
                                     {activeTab === 'details' ? (
-                                        <div className="text-xs text-slate-500 leading-relaxed">
-                                            <p>{ad.description}</p>
+                                        <div className="space-y-3">
+                                            {ad.features && Object.keys(ad.features).length > 0 && (
+                                                <div className="grid grid-cols-3 gap-x-3 gap-y-1 mt-2 mb-2 p-0 pt-1 rounded-lg">
+                                                    {Object.entries(ad.features).map(([key, value]) => (
+                                                        <div key={key} className="flex items-center gap-1.5 min-w-0">
+                                                            <span className="text-xs text-black whitespace-nowrap shrink-0">{key}:</span>
+                                                            <span className="text-xs text-black truncate">{String(value)}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            <div className="text-xs text-slate-500 leading-relaxed relative">
+                                                <p className={`whitespace-pre-wrap ${!isDescriptionExpanded ? 'line-clamp-2' : ''}`}>
+                                                    {ad.description}
+                                                    {isDescriptionExpanded && (
+                                                        <button
+                                                            onClick={() => setIsDescriptionExpanded(false)}
+                                                            className="ml-2 text-xs font-bold text-black hover:underline"
+                                                        >
+                                                            See less
+                                                        </button>
+                                                    )}
+                                                </p>
+                                                {!isDescriptionExpanded && (
+                                                    <button
+                                                        onClick={() => setIsDescriptionExpanded(true)}
+                                                        className="absolute bottom-0 right-0 bg-white pl-1 text-xs font-bold text-black"
+                                                    >
+                                                        ...See more
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     ) : (
                                         <div className="space-y-3 pt-1">
@@ -488,9 +496,11 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                             onClick={() => window.location.href = `/dashboard?ad=${pad._id}`}
                                         >
                                             <div className="relative h-40 bg-slate-100">
-                                                <div
-                                                    className="w-full h-full bg-cover bg-center"
-                                                    style={{ backgroundImage: `url(${getImageUrl(pad.images?.[0] || '')})` }}
+                                                <img
+                                                    src={getImageUrl(pad.images?.[0] || '')}
+                                                    alt={pad.headline}
+                                                    className="w-full h-full object-cover"
+                                                    loading="lazy"
                                                 />
                                                 {/* Top Left Badge */}
                                                 <div className="absolute top-2 left-2 bg-teal-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm shadow-sm">
@@ -539,12 +549,19 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                         <div className="border-t border-b border-slate-100 py-3">
                             <div className="flex items-center gap-4">
                                 {/* Avatar */}
-                                <div className="w-14 h-14 rounded-full bg-slate-100 overflow-hidden border border-slate-200 shrink-0">
+                                <div
+                                    className="w-14 h-14 rounded-full bg-slate-100 overflow-hidden border border-slate-200 shrink-0 cursor-pointer hover:scale-105 transition-transform"
+                                    onClick={() => {
+                                        onClose();
+                                        window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: (ad as any).user?._id } }));
+                                    }}
+                                >
                                     {(ad as any).user?.storeLogo ? (
                                         <img
                                             src={getImageUrl((ad as any).user?.storeLogo)}
                                             alt="Seller"
                                             className="w-full h-full object-cover"
+                                            loading="lazy"
                                         />
                                     ) : (
                                         <div className="w-full h-full bg-red-600 flex items-center justify-center text-white text-xl font-bold">
@@ -557,7 +574,13 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                 <div className="flex-1 flex flex-col pt-0.5">
                                     <span className="text-[10px] text-slate-500 leading-none mb-0.5">Seller Information</span>
 
-                                    <h4 className="font-bold text-slate-900 text-sm leading-tight mb-0.5">
+                                    <h4
+                                        className="font-bold text-slate-900 text-sm leading-tight mb-0.5 cursor-pointer hover:text-blue-600 hover:underline"
+                                        onClick={() => {
+                                            onClose();
+                                            window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: (ad as any).user?._id } }));
+                                        }}
+                                    >
                                         {(ad as any).user?.storeName || 'Store Name'}
                                     </h4>
 
@@ -579,7 +602,13 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                 </div>
 
                                 {/* Visit Shop Button */}
-                                <button className="text-xs text-slate-600 hover:text-[#0088cc] whitespace-nowrap self-center pr-2">
+                                <button
+                                    className="text-xs text-slate-600 hover:text-[#0088cc] whitespace-nowrap self-center pr-2 font-bold"
+                                    onClick={() => {
+                                        onClose();
+                                        window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: (ad as any).user?._id } }));
+                                    }}
+                                >
                                     Visit Shop
                                 </button>
                             </div>
@@ -593,7 +622,16 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                 <div className="space-y-3">
                                     {similarAds.slice(0, 5).map((sad) => (
                                         <div key={sad._id} className="flex gap-3 bg-white border border-slate-100 rounded-lg overflow-hidden shadow-sm p-2 pt-0 cursor-pointer" onClick={() => window.location.href = `/dashboard?ad=${sad._id}`}>
-                                            <div className="w-24 h-20 bg-slate-100 rounded bg-cover bg-center shrink-0" style={{ backgroundImage: getImageUrl(sad.images?.[0]) ? `url(${getImageUrl(sad.images?.[0])})` : undefined }} />
+                                            <div className="w-24 h-20 bg-slate-100 rounded bg-cover bg-center shrink-0">
+                                                {getImageUrl(sad.images?.[0]) && (
+                                                    <img
+                                                        src={getImageUrl(sad.images?.[0]) || ''}
+                                                        alt={sad.headline}
+                                                        className="w-full h-full object-cover"
+                                                        loading="lazy"
+                                                    />
+                                                )}
+                                            </div>
                                             <div className="flex-1 min-w-0 flex flex-col justify-center">
                                                 <h4 className="text-xs text-slate-800 line-clamp-2 mb-1">{sad.headline}</h4>
                                                 <div className="flex items-center gap-3 text-[10px] text-slate-500 mb-1">
@@ -646,6 +684,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                 src={getImageUrl(images[currentImageIndex]) || undefined}
                                 alt="Expanded View"
                                 className="max-w-full max-h-full object-contain"
+                                loading="lazy"
                             />
                         )}
 
@@ -665,7 +704,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                 className={`w-12 h-12 rounded overflow-hidden flex-shrink-0 border-2 transition-all ${currentImageIndex === idx ? 'border-white opacity-100' : 'border-transparent opacity-50 hover:opacity-100'
                                     }`}
                             >
-                                <img src={getImageUrl(img) || undefined} className="w-full h-full object-cover" />
+                                <img src={getImageUrl(img) || undefined} className="w-full h-full object-cover" loading="lazy" />
                             </button>
                         ))}
                     </div>

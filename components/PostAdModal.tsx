@@ -122,8 +122,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 setPrice(editAd.price ? String(editAd.price) : "");
                 setPriceType(editAd.priceType || "Negotiable");
                 setExistingImages(editAd.images || []);
-                setHasReadRules(true);
-                setView('form');
+                setFeatureValues(editAd.features || {});
                 setHasReadRules(true);
                 setView('form');
             } else {
@@ -133,9 +132,9 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 setHidePhone(false);
                 setPrice("");
                 setPriceType("Negotiable");
+                setFeatureValues({});
                 setImages([]);
                 setExistingImages([]);
-                setHasReadRules(true);
                 setShowOtpVerification(false);
                 setOtp(["", "", "", "", "", ""]);
                 setOtpTimer(47);
@@ -487,7 +486,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded shrink-0 flex items-center justify-center p-0.5">
                                                     {(cat.icon || cat.image) ? (
-                                                        <img src={getImageUrl(cat.icon || cat.image || "") || ''} alt="" className="w-full h-full object-contain" />
+                                                        <img src={getImageUrl(cat.icon || cat.image || "") || ''} alt="" className="w-full h-full object-contain" loading="lazy" />
                                                     ) : (
                                                         <div className="w-full h-full bg-slate-100 rounded flex items-center justify-center text-slate-400 text-xs font-bold">
                                                             {cat.name[0]}
@@ -524,7 +523,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                     >
                                                         {(sub.image || sub.icon) ? (
                                                             <div className="w-5 h-5 rounded overflow-hidden shrink-0">
-                                                                <img src={getImageUrl(sub.image || sub.icon || "") || ''} className="w-full h-full object-cover" />
+                                                                <img src={getImageUrl(sub.image || sub.icon || "") || ''} className="w-full h-full object-cover" loading="lazy" />
                                                             </div>
                                                         ) : (
                                                             <span className="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0"></span> // Bullet
@@ -574,7 +573,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                         <div className="flex items-center gap-3">
                                             <div className="w-6 h-6 rounded shrink-0 flex items-center justify-center overflow-hidden">
                                                 {loc.image ? (
-                                                    <img src={getImageUrl(loc.image) || ''} alt="" className="w-full h-full object-contain" />
+                                                    <img src={getImageUrl(loc.image) || ''} alt="" className="w-full h-full object-contain" loading="lazy" />
                                                 ) : (
                                                     <div className="w-2 h-2 rounded-full bg-slate-400"></div>
                                                 )}
@@ -603,7 +602,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                         <label key={sub._id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer border border-transparent hover:border-slate-100">
                                             {sub.image && (
                                                 <div className="w-5 h-5 shrink-0 rounded overflow-hidden">
-                                                    <img src={getImageUrl(sub.image) || ''} alt="" className="w-full h-full object-cover" />
+                                                    <img src={getImageUrl(sub.image) || ''} alt="" className="w-full h-full object-cover" loading="lazy" />
                                                 </div>
                                             )}
                                             <input
@@ -796,7 +795,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                         <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
                                             {existingImages.map((imgUrl, i) => (
                                                 <div key={imgUrl} className="relative min-w-[80px] h-[80px] rounded-xl overflow-hidden bg-slate-50 border border-slate-100 group">
-                                                    <img src={`${API_BASE_URL}${imgUrl}`} alt="" className="w-full h-full object-cover" />
+                                                    <img src={getImageUrl(imgUrl) || ''} alt="" className="w-full h-full object-cover" loading="lazy" />
                                                     <button onClick={() => removeExistingImage(imgUrl)} className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full opacity-0 group-hover:opacity-100">
                                                         <X className="w-3 h-3" />
                                                     </button>
@@ -804,7 +803,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                             ))}
                                             {images.map((file, i) => (
                                                 <div key={i} className="relative min-w-[80px] h-[80px] rounded-xl overflow-hidden bg-slate-50 border border-slate-100 group">
-                                                    <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" />
+                                                    <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" loading="lazy" />
                                                     <button onClick={() => removeImage(i)} className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full opacity-0 group-hover:opacity-100">
                                                         <X className="w-3 h-3" />
                                                     </button>
@@ -863,7 +862,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                         </span>
                                                         <input
                                                             type="number"
-                                                            placeholder={`${subCat.priceBoxName || "দাম"} লিখুন`}
+                                                            placeholder=""
                                                             value={price}
                                                             onChange={(e) => setPrice(e.target.value)}
                                                             className="w-full bg-transparent pl-2 text-[13px] text-black placeholder:text-slate-400 focus:outline-none"
@@ -910,9 +909,9 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                             </button>
                                         </div>
 
-                                        <div className="flex flex-col gap-1 border-t border-slate-100 pt-2">
-                                            <span className="text-[11px] text-slate-400 font-bold tracking-tight">ফিচারস</span>
-                                            {Object.keys(featureValues).length > 0 ? (
+                                        {Object.keys(featureValues).length > 0 && (
+                                            <div className="flex flex-col gap-1 border-t border-slate-100 pt-2">
+                                                <span className="text-[11px] text-slate-400 font-bold tracking-tight">ফিচারস</span>
                                                 <div className="flex flex-wrap gap-2 pt-1">
                                                     {Object.entries(featureValues).map(([key, value]) => (
                                                         <div key={key} className="bg-slate-50 border border-slate-200 px-2 py-0.5 rounded text-[10px] text-slate-600 flex items-center gap-1">
@@ -921,10 +920,8 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                         </div>
                                                     ))}
                                                 </div>
-                                            ) : (
-                                                <span className="text-[10px] text-slate-300 italic px-1">No features selected</span>
-                                            )}
-                                        </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="bg-white rounded-lg border border-slate-500 p-3.5 space-y-2 shadow-sm font-sans">
@@ -949,19 +946,19 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                 placeholder="Phone Number"
                                                 className="flex-1 text-[14px] text-black tracking-wide focus:outline-none bg-transparent cursor-not-allowed"
                                             />
-                                            {additionalPhones.length > 0 && (
-                                                <button
-                                                    onClick={() => {
-                                                        if (additionalPhones.length > 0) {
-                                                            setPhone(additionalPhones[0].number);
-                                                            setAdditionalPhones(prev => prev.slice(1));
-                                                        }
-                                                    }}
-                                                    className="ml-auto flex items-center justify-center w-5 h-5 rounded-full bg-red-100 text-red-500 hover:bg-red-200 transition-colors"
-                                                >
-                                                    <X className="w-3 h-3 stroke-[3]" />
-                                                </button>
-                                            )}
+                                            <button
+                                                onClick={() => {
+                                                    if (additionalPhones.length > 0) {
+                                                        setPhone(additionalPhones[0].number);
+                                                        setAdditionalPhones(prev => prev.slice(1));
+                                                    } else {
+                                                        toast.error("add another number for remove");
+                                                    }
+                                                }}
+                                                className="ml-auto flex items-center justify-center w-5 h-5 rounded-full bg-red-100 text-red-500 hover:bg-red-200 transition-colors shrink-0"
+                                            >
+                                                <X className="w-3 h-3 stroke-[3]" />
+                                            </button>
                                         </div>
 
                                         {!isUserLoggedIn && (
@@ -1018,7 +1015,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                         <option value="whatsapp">WhatsApp</option>
                                                         <option value="telegram">Telegram</option>
                                                         <option value="imo">Imo</option>
-                                                        <option value="none">None</option>
+                                                        <option value="mobile">Mobile</option>
                                                     </select>
                                                     <ChevronDown className="absolute right-1 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                                                 </div>

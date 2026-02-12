@@ -88,6 +88,7 @@ export default function LatestFreeAdPromo() {
                             src={mainImage}
                             className="w-full h-full object-contain"
                             alt="Preview"
+                            loading="lazy"
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-300 font-bold uppercase">No Image</div>

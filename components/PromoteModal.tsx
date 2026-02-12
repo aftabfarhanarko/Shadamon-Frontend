@@ -320,7 +320,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                     <div className="bg-white rounded-lg p-0">
                         <div className="flex gap-3 mb-3">
                             <div className="w-24 h-16 rounded overflow-hidden shrink-0 relative">
-                                <img src={mainImage} className="w-full h-full object-cover" alt="ad" />
+                                <img src={mainImage} className="w-full h-full object-cover" alt="ad" loading="lazy" />
                                 <div className="absolute bottom-1 left-1 w-3 h-3 bg-white rounded-full border border-slate-400"></div>
                                 <button
                                     onClick={() => setSelectedDetailAd(ad)}

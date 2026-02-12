@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -20,7 +20,9 @@ import RegisterModal from '../../components/RegisterModal';
 import AccountActivityModal from '../../components/AccountActivityModal';
 import MobileEntryModal from '../../components/MobileEntryModal';
 import VerificationModal from '../../components/VerificationModal';
+import AdDetailsModal from '../../components/AdDetailsModal';
 import { API_BASE_URL } from '../../utils/apiConfig';
+import { getImageUrl } from '../../utils/imageUrl';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs));
@@ -65,11 +67,20 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
     const [mobileEntryReason, setMobileEntryReason] = useState<'post_ad' | 'account'>('post_ad');
 
+    const [searchQuery, setSearchQuery] = useState('');
+    const [suggestions, setSuggestions] = useState<any[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [selectedAdForDetail, setSelectedAdForDetail] = useState<any | null>(null);
+
+    const searchRef = useRef<HTMLDivElement>(null);
+
     // Event Listener for opening account modal from children
     useEffect(() => {
         const handleOpenAccount = (e: CustomEvent) => {
             const userId = e.detail?.userId;
             setViewingUserId(userId);
+            setAccountModalInitialTab('Page');
+
             setIsAccountModalOpen(true);
 
             // Update URL with profile param
@@ -81,7 +92,30 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         };
 
         window.addEventListener('open-account-modal', handleOpenAccount as EventListener);
-        return () => window.removeEventListener('open-account-modal', handleOpenAccount as EventListener);
+
+        const handleOpenMobileEntry = () => {
+            setIsMobileEntryModalOpen(true);
+        };
+        window.addEventListener('open-mobile-entry-modal', handleOpenMobileEntry);
+
+        return () => {
+            window.removeEventListener('open-account-modal', handleOpenAccount as EventListener);
+            window.removeEventListener('open-mobile-entry-modal', handleOpenMobileEntry);
+        };
+    }, []);
+
+    // Handle clicking outside of search to close suggestions
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+                setShowSuggestions(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
     }, []);
 
     // Mobile Sidebar State
@@ -165,6 +199,36 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         }
     }, [searchParams]);
 
+    // Handle Search Suggestions
+    useEffect(() => {
+        const fetchSuggestions = async () => {
+            if (searchQuery.trim().length >= 2) {
+                try {
+                    const res = await fetch(`${API_BASE_URL}/api/ads/public/all?search=${encodeURIComponent(searchQuery)}&limit=5`);
+                    const data = await res.json();
+                    console.log("Search suggestions API response:", data);
+                    if (data.success) {
+                        setSuggestions(data.data);
+                        setShowSuggestions(true);
+                    }
+                } catch (err) {
+                    console.error("Suggestion fetch error:", err);
+                }
+            } else {
+                setSuggestions([]);
+                setShowSuggestions(false);
+            }
+        };
+
+        const timeoutId = setTimeout(fetchSuggestions, 50);
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery]);
+
+    const handleSearchExecution = () => {
+        window.dispatchEvent(new CustomEvent('show-search-results', { detail: { query: searchQuery } }));
+        setShowSuggestions(false);
+    };
+
     const handleLogout = () => {
         Cookies.remove('token');
         router.push('/login');
@@ -204,87 +268,160 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         }
     };
 
+    const [headerOffset, setHeaderOffset] = useState(0);
+
+    useEffect(() => {
+        const handleCenterScroll = (e: any) => {
+            setHeaderOffset(e.detail?.offset || 0);
+        };
+        window.addEventListener('center-scroll', handleCenterScroll as EventListener);
+        return () => window.removeEventListener('center-scroll', handleCenterScroll as EventListener);
+    }, []);
+
     return (
-        <div className="h-screen bg-[#F1F5F9] font-sans overflow-hidden flex flex-col">
-            {/* Top Navigation Bar */}
-            <header className="flex-none bg-white border-b border-slate-200 z-50 h-16 w-full">
-                <div className="max-w-[1320px] mx-auto px-4 h-full flex items-center justify-center">
-                    {/* Section 1: 300px (Logo & Ad Count) */}
-                    <div className="w-[300px] flex-none flex items-center gap-2">
-                        {/* Mobile Menu Button */}
-                        <button
-                            className="md:hidden p-2 -ml-2 text-black hover:bg-slate-100 rounded-full transition-colors"
-                            onClick={() => setIsMobileMenuOpen(true)}
-                        >
-                            <Menu className="w-6 h-6" />
-                        </button>
-
-                        <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
-                            <span className="text-3xl font-bold text-[#1A202C] tracking-tighter">shadamon</span>
-                            <div className="hidden lg:flex items-center border-l border-slate-300 pl-2 h-8 self-center">
-                                <div className="flex flex-col -space-y-1">
-                                    <span className="text-sm font-bold text-black">{totalAds.toLocaleString()}</span>
-                                    <span className="text-xs text-black tracking-tight">Product</span>
-                                </div>
-                            </div>
-                        </Link>
-                    </div>
-
-                    {/* Gap 1: 50px */}
-                    <div className="w-[50px] flex-none"></div>
-
-                    {/* Section 2: 565px (Search & Icons) */}
-                    <div className="w-[565px] flex-none flex items-center gap-4">
-                        <div className="flex-1 flex bg-[#EDF2F7] rounded overflow-hidden transition-all focus-within:ring-2 focus-within:ring-brand-500/20">
-                            <input
-                                type="text"
-                                placeholder="Search"
-                                className="flex-1 bg-transparent px-4 py-2 outline-none text-sm text-black placeholder-slate-400"
-                            />
-                            <button className="bg-[#1A202C] text-white px-6 py-2 text-xs hover:bg-slate-800 transition-colors tracking-wider">
-                                Search
-                            </button>
-                        </div>
-
-                        {/* Language & Action Icons */}
-                        <div className="flex items-center gap-3 shrink-0">
+        <div className="h-screen bg-[#F1F5F9] font-sans overflow-hidden flex flex-col relative">
+            <div
+                className="flex-none z-50 transform-gpu"
+                style={{ transform: `translateY(${-headerOffset}px)`, marginBottom: -headerOffset }}
+            >
+                {/* Top Navigation Bar */}
+                <header className="bg-white border-b border-slate-200 h-16 w-full">
+                    <div className="max-w-[1320px] mx-auto px-4 h-full flex items-center justify-center">
+                        {/* Section 1: 300px (Logo & Ad Count) */}
+                        <div className="w-[300px] flex-none flex items-center gap-2">
+                            {/* Mobile Menu Button */}
                             <button
-                                onClick={toggleLanguage}
-                                className="w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[14px] text-black uppercase"
+                                className="md:hidden p-2 -ml-2 text-black hover:bg-slate-100 rounded-full transition-colors"
+                                onClick={() => setIsMobileMenuOpen(true)}
                             >
-                                {language}
-                            </button>
-                            <button className="w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all relative">
-                                <RiMailFill className="w-5 h-5" />
-                                <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#0088cc] text-white text-[10px] flex items-center justify-center rounded-full border-2 border-white">23</span>
+                                <Menu className="w-6 h-6" />
                             </button>
 
-                            <Link
-                                href="/dashboard/profile"
-                                onClick={handleAccountClick}
-                                className="w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all"
-                            >
-                                <RiUser3Fill className="w-5 h-5" />
+                            <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
+                                <span className="text-3xl font-bold text-[#1A202C] tracking-tighter">shadamon</span>
+                                <div className="hidden lg:flex items-center border-l border-slate-300 pl-2 h-8 self-center">
+                                    <div className="flex flex-col -space-y-1">
+                                        <span className="text-sm font-bold text-black">{totalAds.toLocaleString()}</span>
+                                        <span className="text-xs text-black tracking-tight">Product</span>
+                                    </div>
+                                </div>
                             </Link>
                         </div>
-                    </div>
 
-                    {/* Gap 2: 50px */}
-                    <div className="w-[50px] flex-none"></div>
+                        {/* Gap 1: 50px */}
+                        <div className="w-[50px] flex-none"></div>
 
-                    {/* Section 3: 230px (Post Free) */}
-                    <div className="w-[230px] flex-none">
-                        <button
-                            onClick={handleAddAdClick}
-                            className="w-full bg-[#EDF2F7] text-black py-1.5 rounded text-sm uppercase tracking-widest"
-                        >
-                            Post Free
-                        </button>
+                        {/* Section 2: 565px (Search & Icons) */}
+                        <div className="w-[565px] flex-none flex items-center gap-4 relative" ref={searchRef}>
+                            <div className="flex-1 flex bg-[#EDF2F7] rounded relative">
+                                <div className="flex-1 relative flex items-center">
+                                    <input
+                                        type="text"
+                                        placeholder="Search"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleSearchExecution()}
+                                        onFocus={() => {
+                                            if (searchQuery.trim().length >= 2 && suggestions.length > 0) setShowSuggestions(true);
+                                        }}
+                                        className="flex-1 bg-transparent px-4 py-2 pr-10 outline-none text-sm text-black placeholder-slate-400"
+                                    />
+
+                                    {searchQuery && (
+                                        <button
+                                            onClick={() => {
+                                                setSearchQuery('');
+                                                setShowSuggestions(false);
+                                            }}
+                                            className="absolute right-2 p-1 text-slate-400 hover:text-black transition-colors"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    )}
+
+                                    {/* Suggestions Dropdown */}
+                                    {showSuggestions && suggestions.length > 0 && (
+                                        <div className="absolute top-full left-0 w-full bg-[#EDF2F7] border border-brand-500/20 shadow-2xl z-[100] mt-1 overflow-hidden divide-y divide-slate-200 rounded-lg animate-in fade-in slide-in-from-top-2 duration-200">
+                                            {suggestions.map((ad) => (
+                                                <div
+                                                    key={ad._id}
+                                                    className="p-3 hover:bg-slate-200 cursor-pointer flex items-center justify-between group transition-colors"
+                                                    onClick={() => {
+                                                        setSelectedAdForDetail(ad);
+                                                        setShowSuggestions(false);
+                                                    }}
+                                                >
+                                                    <div className="flex-1 min-w-0 pr-4">
+                                                        <h4 className="text-sm font-medium text-black truncate group-hover:text-[#0088cc]">{ad.headline}</h4>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <span className="text-[10px] text-slate-500 uppercase tracking-wider">{ad.user?.name || ad.user?.storeName}</span>
+                                                            <span className="w-1 h-1 rounded-full bg-slate-300" />
+                                                            <span className="text-[10px] text-[#0088cc] font-medium">{ad.category}</span>
+                                                        </div>
+                                                    </div>
+                                                    {ad.images && ad.images[0] && (
+                                                        <div className="w-12 h-12 rounded bg-white overflow-hidden shrink-0 border border-slate-200">
+                                                            <img
+                                                                src={getImageUrl(ad.images[0])}
+                                                                alt=""
+                                                                className="w-full h-full object-cover"
+                                                                onError={(e) => (e.currentTarget.src = "/placeholder.png")}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={handleSearchExecution}
+                                    className="bg-[#1A202C] text-white px-6 py-2 text-xs hover:bg-slate-800 transition-colors tracking-wider rounded-r"
+                                >
+                                    Search
+                                </button>
+                            </div>
+
+                            {/* Language & Action Icons */}
+                            <div className="flex items-center gap-3 shrink-0">
+                                <button
+                                    onClick={toggleLanguage}
+                                    className="w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[14px] text-black uppercase"
+                                >
+                                    {language}
+                                </button>
+                                <button className="w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all relative">
+                                    <RiMailFill className="w-5 h-5" />
+                                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#0088cc] text-white text-[10px] flex items-center justify-center rounded-full border-2 border-white">23</span>
+                                </button>
+
+                                <Link
+                                    href="/dashboard/profile"
+                                    onClick={handleAccountClick}
+                                    className="w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all"
+                                >
+                                    <RiUser3Fill className="w-5 h-5" />
+                                </Link>
+                            </div>
+                        </div>
+
+                        {/* Gap 2: 50px */}
+                        <div className="w-[50px] flex-none"></div>
+
+                        {/* Section 3: 230px (Post Free) */}
+                        <div className="w-[230px] flex-none">
+                            <button
+                                onClick={handleAddAdClick}
+                                className="w-full bg-[#EDF2F7] text-black py-1.5 rounded text-sm uppercase tracking-widest"
+                            >
+                                Post Free
+                            </button>
+                        </div>
+                        {/* Balancing Spacer */}
+                        <div className="w-[70px] flex-none hidden lg:block"></div>
                     </div>
-                    {/* Balancing Spacer */}
-                    <div className="w-[70px] flex-none hidden lg:block"></div>
-                </div>
-            </header>
+                </header>
+            </div>
 
             {/* Mobile Bottom Navigation */}
             <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 z-50 h-[70px] flex items-center justify-around px-2 pb-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
@@ -561,6 +698,12 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     setIsAccountModalOpen(false);
                     setIsPostAdModalOpen(true);
                 }}
+            />
+
+            <AdDetailsModal
+                isOpen={!!selectedAdForDetail}
+                ad={selectedAdForDetail}
+                onClose={() => setSelectedAdForDetail(null)}
             />
         </div>
     );

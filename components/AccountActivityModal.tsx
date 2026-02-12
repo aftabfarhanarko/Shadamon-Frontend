@@ -36,14 +36,26 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
     const [userData, setUserData] = useState<any>(null);
     const [isOwnAccount, setIsOwnAccount] = useState(false);
     const [userAds, setUserAds] = useState<any[]>([]);
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [followLoading, setFollowLoading] = useState(false);
 
     // Promote Modal State
     const [promoteAd, setPromoteAd] = useState<any>(null);
     const [showPromoteModal, setShowPromoteModal] = useState(false);
 
     const handlePromoteClick = (ad: any) => {
-        setPromoteAd(ad);
-        setShowPromoteModal(true);
+        const token = Cookies.get('token');
+        if (!token) {
+            window.dispatchEvent(new CustomEvent('open-mobile-entry-modal'));
+            return;
+        }
+
+        if (isOwnAccount) {
+            setPromoteAd(ad);
+            setShowPromoteModal(true);
+        } else {
+            if (onOpenPostAd) onOpenPostAd();
+        }
     };
 
     // Ad Details Modal State
@@ -57,6 +69,53 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
     const [activityData, setActivityData] = useState<any>(null);
     const [categories, setCategories] = useState<any[]>([]);
     const [expandedActivity, setExpandedActivity] = useState<string | null>('followed');
+
+    // Rating State
+    const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+    const [ratingValue, setRatingValue] = useState(0);
+
+    const handleSubmitRating = async () => {
+        if (ratingValue === 0) {
+            toast.error("Please select a rating");
+            return;
+        }
+
+        const token = Cookies.get('token');
+        if (!token) {
+            window.dispatchEvent(new CustomEvent('open-mobile-entry-modal'));
+            setIsRatingModalOpen(false);
+            return;
+        }
+
+        if (!userData || !userData._id) return;
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/user/rate/${userData._id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ stars: ratingValue })
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                toast.success("Rating submitted successfully");
+                setIsRatingModalOpen(false);
+                setUserData((prev: any) => ({
+                    ...prev,
+                    rating: data.rating
+                }));
+            } else {
+                toast.error(data.message || "Failed to submit rating");
+            }
+        } catch (error) {
+            console.error("Error submitting rating", error);
+            toast.error("Failed to submit rating");
+        }
+    };
 
     useEffect(() => {
         if (activeTab === 'Activity') {
@@ -255,6 +314,8 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
     const fetchUserData = async () => {
         setLoading(true);
         setUserData(null); // Clear previous data to avoid flickering
+        setUserAds([]); // Clear previous ads
+        setIsOwnAccount(false); // Reset account ownership status
         try {
             const token = Cookies.get('token');
             let currentUser = null;
@@ -281,10 +342,27 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                 setIsOwnAccount(false);
             }
 
-            // 3. Fetch Target User Data Details
             if (targetUserId) {
                 if (isOwnAccount && currentUser) {
                     setUserData(currentUser);
+                } else {
+                    // Fetch fresh public profile for target user
+                    try {
+                        const profileRes = await fetch(`${API_BASE_URL}/api/user/profile/${targetUserId}`);
+                        if (profileRes.ok) {
+                            const profileData = await profileRes.json();
+                            setUserData(profileData);
+
+                            // Check if current user is following this target user
+                            if (currentUser && currentUser.following && currentUser.following.includes(targetUserId)) {
+                                setIsFollowing(true);
+                            } else {
+                                setIsFollowing(false);
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Failed to fetch public profile", err);
+                    }
                 }
 
                 // Update URL if missing or different (for own account mostly)
@@ -307,8 +385,9 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                     if (adsData.success) {
                         const userPublicAds = adsData.data.filter((ad: any) => ad.user?._id === targetUserId || ad.user === targetUserId);
                         setUserAds(userPublicAds);
-                        if (!userData && userPublicAds.length > 0) {
-                            setUserData(userPublicAds[0].user);
+                        // If public profile fetch failed, fallback to ad user data (though profile fetch is better)
+                        if (!userData && userPublicAds.length > 0 && !userData) {
+                            // Keep existing fallback logic just in case, but profile fetch above should handle it
                         }
                     }
                 }
@@ -321,8 +400,84 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
         }
     };
 
+    const handleFollowToggle = async () => {
+        if (!userData || !userData._id) return;
+        setFollowLoading(true);
+
+        const token = Cookies.get('token');
+        if (!token) {
+            // Trigger mobile entry modal
+            window.dispatchEvent(new CustomEvent('open-mobile-entry-modal'));
+            setFollowLoading(false);
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/user/follow/${userData._id}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                const newStatus = data.isFollowing;
+                setIsFollowing(newStatus);
+
+                // Optimistic update of followers count
+                setUserData((prev: any) => {
+                    const currentCount = prev.followers?.length || 0; // Use length if array, or number if count
+                    // Since backend schema has array of ObjectIds, but public profile might populate or just return array
+                    // Let's assume array of IDs for now based on Schema.
+                    // If backend response updated count, use it. But simple toggle:
+
+                    let newFollowers = prev.followers ? [...prev.followers] : [];
+                    // We don't have current user ID easily here without fetching 'me' again, 
+                    // so exact array manipulation is hard. But we can just use a number if we trust the toggle.
+                    // Actually, if we just want to update the COUNT displayed:
+                    // We can check if prev.followers is number or array.
+                    // Schema says array.
+
+                    // Simple hack: if we don't have the ID to push/pull, just rely on re-fetch or simple count increment on UI separated from array.
+                    // But 'userData' holds the source of truth for 'followers' count display (displayUser.followers).
+
+                    // Let's reload profile to be safe and accurate or just mock it:
+                    if (newStatus) {
+                        // Add a placeholder to increase length
+                        return { ...prev, followers: [...(prev.followers || []), 'placeholder_id'] };
+                    } else {
+                        // Remove one
+                        const newArr = prev.followers ? [...prev.followers] : [];
+                        newArr.pop();
+                        return { ...prev, followers: newArr };
+                    }
+                });
+
+                toast.success(newStatus ? "Followed successfully" : "Unfollowed successfully");
+            } else {
+                toast.error(data.message || "Something went wrong");
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to update follow status");
+        } finally {
+            setFollowLoading(false);
+        }
+    };
+
     const toggleSetting = (setting: string) => {
         setExpandedSetting(expandedSetting === setting ? null : setting);
+    };
+
+    const handleSendMessage = () => {
+        const token = Cookies.get('token');
+        if (!token) {
+            window.dispatchEvent(new CustomEvent('open-mobile-entry-modal'));
+            return;
+        }
+        // Placeholder for future implementation
+        toast.success("Message feature coming soon");
     };
 
     const handleLogout = () => {
@@ -406,6 +561,7 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
         photo: getImageUrl(userData.photo),
         storeLogo: getImageUrl(userData.storeLogo),
         coverPhoto: getImageUrl(userData.storeBanner), // Backend uses storeBanner
+        followersCount: Array.isArray(userData.followers) ? userData.followers.length : (typeof userData.followers === 'number' ? userData.followers : 0)
     } : {
         name: "User",
         storeName: "My Store",
@@ -413,12 +569,13 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
         photo: null,
         coverPhoto: null,
         verifiedBy: null,
-        followers: 0,
+        followersCount: 0,
         rating: 0
     };
 
     // Filter ads logic
-    const promotedAds = userAds.filter(ad => ad.promoteType); // Filter by promoteType existence
+    const sortedByViews = [...userAds].sort((a, b) => (b.views || 0) - (a.views || 0));
+    const promotedAds = sortedByViews.slice(0, 5); // Top 5 viewed
     const displayAds = productTab === 'Popular' ? promotedAds : userAds;
 
     return (
@@ -444,15 +601,15 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                     </div>
 
                     {/* Tabs */}
-                    <div className="px-3 pb-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
-                        {['Page', 'Profile', 'Settings', 'Post', 'Activity'].map((tab) => (
+                    <div className="px-4 pb-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
+                        {(isOwnAccount ? ['Page', 'Profile', 'Settings', 'Post', 'Activity'] : ['Page']).map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab as any)}
                                 className={cn(
-                                    "px-3 py-1 rounded text-[12px] transition-colors whitespace-nowrap border",
+                                    "px-4 py-1.5 rounded text-[14px] font-medium transition-colors whitespace-nowrap border",
                                     activeTab === tab
-                                        ? "bg-blue-500 text-white border-blue-500"
+                                        ? "bg-blue-500 text-white border-blue-500 shadow-sm"
                                         : "bg-white text-black border-slate-200 hover:bg-slate-50"
                                 )}
                             >
@@ -465,7 +622,7 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto no-scrollbar bg-[#F1F5F9] relative">
                     {loading && (
-                        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/50 backdrop-blur-[1px]">
+                        <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#F1F5F9]">
                             <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                         </div>
                     )}
@@ -474,9 +631,9 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                             {/* Banner & Profile Section */}
                             <div className="bg-white mb-2 pb-3 shadow-sm">
                                 {/* Banner */}
-                                <div className="h-[100px] mx-3 rounded-lg bg-slate-200 relative group overflow-hidden">
+                                <div className="h-[100px] mx-4 rounded-lg bg-slate-200 relative group overflow-hidden">
                                     {displayUser.coverPhoto ? (
-                                        <img src={displayUser.coverPhoto} alt="Cover" className="w-full h-full object-cover" />
+                                        <img src={displayUser.coverPhoto} alt="Cover" className="w-full h-full object-cover" loading="lazy" />
                                     ) : (
                                         <div className="w-full h-full bg-slate-200" />
                                     )}
@@ -491,22 +648,22 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                             />
                                             <button
                                                 onClick={() => bannerInputRef.current?.click()}
-                                                className="absolute bottom-2 right-2 w-6 h-6 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-slate-700 shadow-sm hover:scale-110 transition-transform"
+                                                className="absolute bottom-2 right-2 w-6 h-6 bg-[#0088cc] backdrop-blur-sm rounded-full flex items-center justify-center text-white shadow-sm hover:scale-110 transition-transform"
                                             >
-                                                <Edit2 className="w-3.5 h-3.5" />
+                                                <Plus className="w-3.5 h-3.5" />
                                             </button>
                                         </>
                                     )}
                                 </div>
 
                                 {/* Profile Info */}
-                                <div className="px-3 pt-2 pb-2 relative">
+                                <div className="px-4 pt-2 pb-2 relative">
                                     <div className="flex items-start gap-3">
                                         {/* Profile Pic - Left Aligned */}
                                         <div className="relative shrink-0">
                                             <div className="w-16 h-16 rounded-full border border-slate-200 bg-white shadow-sm overflow-hidden relative group">
-                                                {displayUser.storeLogo || displayUser.photo ? (
-                                                    <img src={displayUser.storeLogo || displayUser.photo} alt={displayUser.name} className="w-full h-full object-cover" />
+                                                {displayUser.storeLogo ? (
+                                                    <img src={displayUser.storeLogo} alt={displayUser.name} className="w-full h-full object-cover" loading="lazy" />
                                                 ) : (
                                                     <div className="w-full h-full bg-red-600 flex items-center justify-center text-white text-xl font-bold">
                                                         {displayUser.name?.charAt(0) || 'U'}
@@ -524,7 +681,7 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                                     />
                                                     <button
                                                         onClick={() => logoInputRef.current?.click()}
-                                                        className="absolute bottom-0 right-0 w-5 h-5 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-700 shadow-sm hover:scale-110 transition-transform"
+                                                        className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-6 h-6 bg-[#0088cc] border border-white rounded-full flex items-center justify-center text-white shadow-sm hover:scale-110 transition-transform"
                                                     >
                                                         <Plus className="w-3 h-3" />
                                                     </button>
@@ -534,75 +691,111 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
 
                                         {/* Info - Right of Logo */}
                                         <div className="flex-1 min-w-0 pt-1">
-                                            <div className="flex items-center gap-1 flex-wrap mb-0.5">
-                                                <h3 className="text-[15px] font-black text-slate-800 leading-tight truncate">
-                                                    {displayUser.storeName || displayUser.name}
-                                                </h3>
-                                                {/* Premium Blue Tick */}
-                                                {displayUser.merchantType === 'Premium' && (
-                                                    <span className="text-blue-500 shrink-0" title="Premium Verified">
-                                                        {/* High Quality Blue Tick SVG */}
-                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                            <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM10.59 16.6L7.45 13.46L8.86 12.05L10.59 13.78L15.95 8.41L17.36 9.83L10.59 16.6Z" fill="#3B82F6" />
-                                                        </svg>
-                                                    </span>
-                                                )}
+                                            {/* Row 1: Name, Verified, Follow */}
+                                            <div className="flex items-center justify-between mb-0.5">
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <h3 className="text-lg font-bold text-black leading-tight truncate">
+                                                        {displayUser.storeName || displayUser.name}
+                                                    </h3>
+                                                    {/* Premium Blue Tick - Commented out as per previous state */}
+                                                    {/* {displayUser.merchantType === 'Premium' && ... } */}
+
+                                                    {/* Get Verified Badge */}
+                                                    {isOwnAccount && (
+                                                        <span className="px-2 py-[2px] bg-white border border-slate-200 text-xs text-black rounded-full shadow-sm">
+                                                            Get Verified
+                                                        </span>
+                                                    )}
+                                                </div>
 
                                                 {!isOwnAccount && (
-                                                    <button className="ml-2 px-2 py-0.5 border border-slate-300 text-[10px] rounded text-slate-600 font-bold hover:bg-slate-50 transition-colors">
-                                                        Unfollow
+                                                    <button
+                                                        onClick={handleFollowToggle}
+                                                        disabled={followLoading}
+                                                        className={cn(
+                                                            "ml-2 px-3 py-1 text-xs rounded-full transition-all border shrink-0",
+                                                            isFollowing
+                                                                ? "bg-slate-100 text-black border-slate-300 hover:bg-slate-200"
+                                                                : "bg-slate-100 text-black border-slate-300 hover:bg-slate-200"
+                                                        )}
+                                                    >
+                                                        {followLoading ? '...' : (isFollowing ? 'Unfollow' : 'Follow')}
                                                     </button>
                                                 )}
                                             </div>
 
-                                            <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 leading-tight">
-                                                {displayUser.rating && displayUser.rating > 0 ? (
-                                                    <div className="font-bold text-slate-600">
-                                                        {displayUser.rating}☆ Seller
-                                                    </div>
-                                                ) : null}
+                                            {/* Row 2: Ratings */}
+                                            <div className="flex items-center gap-2 text-sm text-black leading-tight mb-0.5">
+                                                <div className="text-black flex items-center">
+                                                    {displayUser.rating || 0}
+                                                    <span className="text-black font-normal ml-0.5">☆ Seller</span>
+                                                </div>
 
                                                 {!isOwnAccount && (
-                                                    <span className="px-1.5 py-[1px] bg-slate-100 text-[9px] font-bold text-slate-500 rounded border border-slate-200">
+                                                    <button
+                                                        onClick={() => {
+                                                            const token = Cookies.get('token');
+                                                            if (!token) {
+                                                                window.dispatchEvent(new CustomEvent('open-mobile-entry-modal'));
+                                                            } else {
+                                                                setIsRatingModalOpen(true);
+                                                            }
+                                                        }}
+                                                        className="px-2 py-[1px] bg-white text-xs text-black rounded-full border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors"
+                                                    >
                                                         Ratings Seller
-                                                    </span>
+                                                    </button>
                                                 )}
+                                            </div>
 
-                                                {displayUser.followers > 0 && (
-                                                    <div className="font-medium text-slate-400">
-                                                        <span className="font-bold text-slate-600">{displayUser.followers}</span> Follower
-                                                    </div>
-                                                )}
+                                            {/* Row 3: Followers */}
+                                            <div className="text-black text-sm">
+                                                <span className="text-black">{displayUser.followersCount}</span> Follower
                                             </div>
                                         </div>
                                     </div>
 
+                                    {/* Divider */}
+                                    <div className="mt-3 mb-3 border-t border-slate-200"></div>
+
                                     {/* Action Buttons */}
-                                    {!isOwnAccount && (
-                                        <div className="flex items-center gap-2 mt-3 pl-[76px]">
-                                            <button className="flex-1 py-1.5 bg-slate-100 text-slate-700 text-[11px] font-bold rounded-full hover:bg-slate-200 transition-colors border border-slate-200">
-                                                About
-                                            </button>
-                                            <button className="flex-1 py-1.5 bg-slate-100 text-slate-700 text-[11px] font-bold rounded-full hover:bg-slate-200 transition-colors border border-slate-200">
+                                    {/* {!isOwnAccount && ( */}
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => isOwnAccount && setActiveTab('Profile')}
+                                            className="px-4 py-1.5 bg-slate-300 text-black text-sm rounded-full hover:bg-slate-300 transition-colors"
+                                        >
+                                            About
+                                        </button>
+                                        <button
+                                            onClick={() => isOwnAccount && setActiveTab('Profile')}
+                                            className="px-4 py-1.5 bg-slate-300 text-black text-sm rounded-full hover:bg-slate-300 transition-colors"
+                                        >
+                                            Contact
+                                        </button>
+                                        {!isOwnAccount && (
+                                            <button
+                                                onClick={handleSendMessage}
+                                                className="px-4 py-1.5 bg-slate-300 text-black text-sm rounded-full hover:bg-slate-300 transition-colors"
+                                            >
                                                 Send Message
                                             </button>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
+                                    {/* )} */}
                                 </div>
                             </div>
 
-                            {isOwnAccount && (
-                                <button
-                                    onClick={onOpenPostAd}
-                                    className="w-full bg-white px-3 py-2 mb-2 flex items-center justify-between shadow-sm border-y border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors text-left"
-                                >
-                                    <span className="text-[12px] text-slate-500 italic">Promote your Business, <span className="font-bold text-slate-800 not-italic border-b border-transparent hover:border-slate-800">Create a post</span></span>
-                                </button>
-                            )}
+                            <button
+                                onClick={onOpenPostAd}
+                                className="w-full bg-white px-3 py-2 mb-2 flex items-center justify-between shadow-sm border-y border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors text-left"
+                            >
+                                <span className="text-[12px] text-slate-500 italic">Promote your Business, <span className="font-bold text-slate-800 not-italic border-b border-transparent hover:border-slate-800">Create a post</span></span>
+                            </button>
 
                             {/* Products Section */}
                             <div className="bg-white pt-2 min-h-[400px]">
-                                <div className="px-3 flex items-center gap-3 mb-2 border-b border-slate-100">
+                                <div className="px-4 flex items-center gap-3 mb-2 border-b border-slate-100">
                                     <button
                                         onClick={() => setProductTab('All')}
                                         className={cn(
@@ -624,17 +817,27 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                 </div>
 
                                 {/* Custom Grid Layout */}
-                                <div className="p-2 bg-[#F1F5F9] space-y-2">
+                                <div className="p-4 bg-[#F1F5F9] space-y-3">
                                     {displayAds.length > 0 ? (
                                         <>
                                             {/* First Row: Items 1-2 (Small) */}
-                                            <div className="grid grid-cols-2 gap-2">
+                                            <div className="grid grid-cols-2 gap-3">
                                                 {displayAds.slice(0, 2).map(ad => (
-                                                    <div key={ad._id} className="bg-white rounded shadow-sm overflow-hidden flex flex-col">
+                                                    <div
+                                                        key={ad._id}
+                                                        onClick={() => handleSeeLiveClick(ad)}
+                                                        className="bg-white rounded shadow-sm overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition-shadow"
+                                                    >
                                                         <div className="h-24 bg-slate-900 relative">
                                                             {/* Image */}
                                                             {ad.images && ad.images.length > 0 && (
-                                                                <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-contain" />
+                                                                <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-contain" loading="lazy" />
+                                                            )}
+                                                            {productTab === 'Popular' && (
+                                                                <div className="absolute top-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                                                    {ad.views || 0}
+                                                                </div>
                                                             )}
                                                         </div>
                                                         <div className="p-1.5 flex-1 flex flex-col">
@@ -645,7 +848,10 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                                                 {ad.headline}
                                                             </div>
                                                             <button
-                                                                onClick={() => handlePromoteClick(ad)}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handlePromoteClick(ad);
+                                                                }}
                                                                 className="mt-auto w-full bg-[#0088cc] text-white text-[10px] font-bold py-1 rounded hover:bg-[#0077b5] transition-colors"
                                                             >
                                                                 Promote This Post
@@ -657,10 +863,20 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
 
                                             {/* Second Row: Item 3 (Large) */}
                                             {displayAds.length > 2 && displayAds.slice(2, 3).map(ad => (
-                                                <div key={ad._id} className="bg-white rounded shadow-sm overflow-hidden flex flex-col">
+                                                <div
+                                                    key={ad._id}
+                                                    onClick={() => handleSeeLiveClick(ad)}
+                                                    className="bg-white rounded shadow-sm overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition-shadow"
+                                                >
                                                     <div className="h-40 bg-slate-900 relative">
                                                         {ad.images && ad.images.length > 0 && (
-                                                            <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-contain" />
+                                                            <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-contain" loading="lazy" />
+                                                        )}
+                                                        {productTab === 'Popular' && (
+                                                            <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded flex items-center gap-1">
+                                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                                                {ad.views || 0}
+                                                            </div>
                                                         )}
                                                     </div>
                                                     <div className="p-2">
@@ -672,7 +888,10 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                                         </div>
                                                         <div className="flex items-center gap-2 bg-[#0088cc] rounded px-1 py-0.5">
                                                             <button
-                                                                onClick={() => handlePromoteClick(ad)}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handlePromoteClick(ad);
+                                                                }}
                                                                 className="flex-1 text-white text-[11px] font-bold pl-1"
                                                             >
                                                                 Promote This Post
@@ -684,12 +903,22 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
 
                                             {/* Remaining Items 4+ (Fallback Grid) */}
                                             {displayAds.length > 3 && (
-                                                <div className="grid grid-cols-2 gap-2">
+                                                <div className="grid grid-cols-2 gap-3">
                                                     {displayAds.slice(3).map(ad => (
-                                                        <div key={ad._id} className="bg-white rounded shadow-sm overflow-hidden flex flex-col">
+                                                        <div
+                                                            key={ad._id}
+                                                            onClick={() => handleSeeLiveClick(ad)}
+                                                            className="bg-white rounded shadow-sm overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition-shadow"
+                                                        >
                                                             <div className="h-24 bg-slate-100 relative">
                                                                 {ad.images && ad.images.length > 0 && (
-                                                                    <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover" />
+                                                                    <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover" loading="lazy" />
+                                                                )}
+                                                                {productTab === 'Popular' && (
+                                                                    <div className="absolute top-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                                                        {ad.views || 0}
+                                                                    </div>
                                                                 )}
                                                             </div>
                                                             <div className="p-1.5 flex-1 flex flex-col">
@@ -700,7 +929,10 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                                                     {ad.headline}
                                                                 </div>
                                                                 <button
-                                                                    onClick={() => handlePromoteClick(ad)}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handlePromoteClick(ad);
+                                                                    }}
                                                                     className="mt-auto w-full bg-[#0088cc] text-white text-[10px] font-bold py-1 rounded hover:bg-[#0077b5] transition-colors"
                                                                 >
                                                                     Promote This Post
@@ -714,7 +946,7 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                     ) : (
                                         productTab === 'Popular' ? (
                                             <div className="py-20 text-center text-slate-400 text-sm">
-                                                No promoted products found.
+                                                No popular products found.
                                             </div>
                                         ) : (
                                             <div className="py-20 text-center text-slate-400 text-sm">
@@ -734,7 +966,7 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                 <div className="relative">
                                     <div className="w-16 h-16 rounded-full overflow-hidden border border-slate-200 bg-slate-100">
                                         {displayUser.photo ? (
-                                            <img src={displayUser.photo} className="w-full h-full object-cover" />
+                                            <img src={displayUser.photo} className="w-full h-full object-cover" loading="lazy" />
                                         ) : (
                                             <div className="w-full h-full bg-[#1e8e7f]" />
                                             /* Matching the green color in image roughly */
@@ -1018,7 +1250,7 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                     )}
 
                     {activeTab === 'Settings' && (
-                        <div className="p-3 space-y-3 pb-20">
+                        <div className="p-4 space-y-3 pb-20">
                             {/* App Theme Mode */}
                             <div className="bg-white rounded border border-slate-200 overflow-hidden">
                                 <div
@@ -1150,7 +1382,7 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                     )}
 
                     {activeTab === 'Post' && (
-                        <div className="p-0 bg-white space-y-2 pb-20">
+                        <div className="px-4 py-4 bg-white space-y-2 pb-20">
                             {userAds.length > 0 ? (
                                 <div className="space-y-0">
                                     {userAds.map((ad, idx) => (
@@ -1164,6 +1396,7 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                                                 src={getImageUrl(ad.images[0]) || undefined}
                                                                 className="w-full h-full object-cover"
                                                                 alt={ad.headline}
+                                                                loading="lazy"
                                                             />
                                                         ) : (
                                                             <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">No Image</div>
@@ -1253,7 +1486,7 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                     )}
 
                     {activeTab === 'Activity' && (
-                        <div className="p-3 space-y-3 pb-20">
+                        <div className="p-4 space-y-3 pb-20">
                             {/* Followed List */}
                             <div className="bg-white rounded border border-slate-200 overflow-hidden">
                                 <div
@@ -1271,7 +1504,7 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                             <div key={user._id} className="flex items-center justify-between bg-white p-2 rounded border border-slate-200 shadow-sm">
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-8 h-8 rounded overflow-hidden bg-slate-200">
-                                                        {user.photo ? <img src={getImageUrl(user.photo) || ''} alt={user.name} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-slate-300" />}
+                                                        {user.photo ? <img src={getImageUrl(user.photo) || ''} alt={user.name} className="w-full h-full object-cover" loading="lazy" /> : <div className="w-full h-full bg-slate-300" />}
                                                     </div>
                                                     <div>
                                                         <h4 className="text-xs font-bold text-slate-800">{user.storeName || user.name}</h4>
@@ -1318,7 +1551,7 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                             <div key={ad._id} className="flex items-center justify-between bg-white p-2 rounded border border-slate-200 shadow-sm">
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-8 h-8 rounded overflow-hidden bg-slate-200">
-                                                        {ad.images && ad.images[0] ? <img src={`${API_BASE_URL}${ad.images[0]}`} alt="Ad" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-slate-300" />}
+                                                        {ad.images && ad.images[0] ? <img src={getImageUrl(ad.images[0]) || undefined} alt="Ad" className="w-full h-full object-cover" loading="lazy" /> : <div className="w-full h-full bg-slate-300" />}
                                                     </div>
                                                     <div>
                                                         <h4 className="text-xs font-bold text-slate-800 line-clamp-1">{ad.headline}</h4>
@@ -1439,6 +1672,51 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                     onClose={() => setSelectedDetailAd(null)}
                     ad={selectedDetailAd}
                 />
+            )}
+
+            {/* Rating Modal */}
+            {isRatingModalOpen && (
+                <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsRatingModalOpen(false)} />
+                    <div className="relative bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+                        <button
+                            onClick={() => setIsRatingModalOpen(false)}
+                            className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-50 transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        <div className="text-center mb-8">
+                            <h3 className="text-xl font-bold text-slate-900 mb-2">Rate this Seller</h3>
+                            <p className="text-sm text-slate-500">How would you rate your experience?</p>
+                        </div>
+
+                        <div className="flex justify-center gap-3 mb-8">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                    key={star}
+                                    onClick={() => setRatingValue(star)}
+                                    className="transition-transform hover:scale-110 active:scale-95 focus:outline-none group"
+                                >
+                                    <Star
+                                        className={cn(
+                                            "w-10 h-10 transition-colors",
+                                            star <= ratingValue ? "fill-amber-400 text-amber-400" : "text-slate-200 fill-slate-50 group-hover:text-amber-200"
+                                        )}
+                                        strokeWidth={1.5}
+                                    />
+                                </button>
+                            ))}
+                        </div>
+
+                        <button
+                            onClick={handleSubmitRating}
+                            className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20 active:scale-[0.98]"
+                        >
+                            Submit Review
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );
