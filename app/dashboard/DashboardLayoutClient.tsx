@@ -63,6 +63,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     const [accountModalInitialTab, setAccountModalInitialTab] = useState<'Page' | 'Profile' | 'Settings' | 'Post' | 'Activity'>('Page');
     const [viewingUserId, setViewingUserId] = useState<string | undefined>(undefined);
     const [adToPromote, setAdToPromote] = useState<any>(null);
+    const [adToEdit, setAdToEdit] = useState<any>(null);
     const [verificationToken, setVerificationToken] = useState<string | undefined>(undefined);
 
     const [mobileEntryReason, setMobileEntryReason] = useState<'post_ad' | 'account'>('post_ad');
@@ -579,7 +580,11 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
             <PostAdModal
                 isOpen={isPostAdModalOpen}
-                onClose={() => setIsPostAdModalOpen(false)}
+                onClose={() => {
+                    setIsPostAdModalOpen(false);
+                    setAdToEdit(null);
+                }}
+                editAd={adToEdit}
                 initialMobile={tempMobile} // Pass temp mobile
                 onSuccess={(newAd) => {
                     // Dispatch custom event to tell Dashboard to refetch
@@ -696,6 +701,11 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 userId={viewingUserId}
                 onOpenPostAd={() => {
                     setIsAccountModalOpen(false);
+                    setIsPostAdModalOpen(true);
+                }}
+                onEditAd={(ad) => {
+                    setIsAccountModalOpen(false);
+                    setAdToEdit(ad);
                     setIsPostAdModalOpen(true);
                 }}
             />

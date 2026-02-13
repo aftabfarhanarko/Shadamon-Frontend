@@ -22,10 +22,11 @@ interface AccountActivityModalProps {
     onClose: () => void;
     userId?: string; // If provided, viewing another user. If null, viewing self (logged in user)
     onOpenPostAd?: () => void;
+    onEditAd?: (ad: any) => void;
     initialTab?: 'Page' | 'Profile' | 'Settings' | 'Post' | 'Activity';
 }
 
-export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPostAd, initialTab = 'Page' }: AccountActivityModalProps) {
+export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPostAd, onEditAd, initialTab = 'Page' }: AccountActivityModalProps) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'Page' | 'Profile' | 'Settings' | 'Post' | 'Activity'>(initialTab);
     const [productTab, setProductTab] = useState<'All' | 'Popular'>('All');
@@ -309,6 +310,12 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
             }
             fetchUserData();
         }
+
+        const handleRefresh = () => {
+            if (isOpen) fetchUserData();
+        };
+        window.addEventListener('refresh-ads', handleRefresh);
+        return () => window.removeEventListener('refresh-ads', handleRefresh);
     }, [isOpen, userId, initialTab]);
 
     const fetchUserData = async () => {
@@ -1432,19 +1439,21 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                                     <div className="flex items-start justify-between gap-1">
                                                         {/* Promote Performance Stats */}
                                                         <div className="text-[10px] text-black flex-1">
-                                                            <div className="mb-0.5">Promote Performance</div>
+                                                            <div className="mb-0.5 font-bold">{ad.adType === 'Promoted' ? 'Promote Performance' : 'Ad Performance'}</div>
                                                             <div className="text-black leading-tight space-y-0.5">
-                                                                <div className="flex flex-wrap gap-x-2">
-                                                                    <span>Budget : <span className="text-black">500</span></span>
-                                                                    <span>From : <span className="text-black">28.1.2026</span> to <span className="text-black">31.1.2026</span></span>
-                                                                </div>
+                                                                {ad.adType === 'Promoted' && (
+                                                                    <div className="flex flex-wrap gap-x-2">
+                                                                        <span>Budget : <span className="text-black">{ad.promoteBudget || 0}</span></span>
+                                                                        <span>From : <span className="text-black">{ad.createdAt ? new Date(ad.createdAt).toLocaleDateString('en-GB').replace(/\//g, '.') : 'N/A'}</span> to <span className="text-black">{ad.promoteEndDate ? new Date(ad.promoteEndDate).toLocaleDateString('en-GB').replace(/\//g, '.') : 'N/A'}</span></span>
+                                                                    </div>
+                                                                )}
                                                                 <div className="flex gap-x-2">
-                                                                    <span>View : <span className="text-black">452</span></span>
-                                                                    <span>Delivery : <span className="text-black">897</span></span>
-                                                                    <span>Rate : <span className="text-black">50%</span></span>
+                                                                    <span>View : <span className="text-black">{ad.dailyViewsCount || 0}</span></span>
+                                                                    <span>Delivery : <span className="text-black">{ad.dailyDeliveryCount || 0}</span></span>
+                                                                    <span>Rate : <span className="text-black">{ad.deliveryCount > 0 ? ((ad.views / ad.deliveryCount) * 100).toFixed(0) : 0}%</span></span>
                                                                 </div>
                                                                 <div>
-                                                                    Lifetime View : <span className="text-black">10256</span>
+                                                                    Lifetime View : <span className="text-black">{ad.views || 0}</span>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1455,7 +1464,7 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                                                 AD On
                                                             </span>
                                                             <button
-                                                                // onClick={() => onEdit(ad)}
+                                                                onClick={() => onEditAd?.(ad)}
                                                                 className="text-[10px] text-slate-500 font-bold border border-slate-300 px-3 py-0.5 rounded-full hover:bg-slate-50"
                                                             >
                                                                 Edit

@@ -105,24 +105,44 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const fillFormData = (ad: any) => {
+        setHeadline(ad.headline || "");
+        setDescription(ad.description || "");
+        setPhone(ad.phone || "");
+        setAdditionalPhones(ad.additionalPhones || []);
+        setHidePhone(ad.hidePhone === true);
+        setSelectedCategory(ad.category || "");
+        setSelectedSubCategory(ad.subCategory || "");
+        setSelectedLocation(ad.location || "");
+        setSelectedSubLocation(ad.subLocation || "");
+        setPrice(ad.price ? String(ad.price) : "");
+        setPriceType(ad.priceType || "Negotiable");
+        setExistingImages(ad.images || []);
+        setFeatureValues(ad.features || {});
+    };
+
+    const fetchAdData = async (id: string) => {
+        setLoadingData(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/ads/public/${id}`);
+            const data = await res.json();
+            if (data.success && data.data) {
+                fillFormData(data.data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch ad details:", error);
+        } finally {
+            setLoadingData(false);
+        }
+    };
+
     useEffect(() => {
         if (isOpen) {
             fetchData();
             checkUser();
             if (editAd) {
-                setHeadline(editAd.headline || "");
-                setDescription(editAd.description || "");
-                setPhone(editAd.phone || "");
-                setAdditionalPhones(editAd.additionalPhones || []);
-                setHidePhone(editAd.hidePhone === true);
-                setSelectedCategory(editAd.category || "");
-                setSelectedSubCategory(editAd.subCategory || "");
-                setSelectedLocation(editAd.location || "");
-                setSelectedSubLocation(editAd.subLocation || "");
-                setPrice(editAd.price ? String(editAd.price) : "");
-                setPriceType(editAd.priceType || "Negotiable");
-                setExistingImages(editAd.images || []);
-                setFeatureValues(editAd.features || {});
+                fillFormData(editAd);
+                fetchAdData(editAd._id);
                 setHasReadRules(true);
                 setView('form');
             } else {
@@ -428,7 +448,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         // Use new auth flow instead of mock OTP for unauth users?
         // User requested: "if post ad then user will auto login/register and post"
         // This implies skipping the mock OTP "123456" step for them if they provide password.
-        if (!isUserLoggedIn) {
+        if (!isUserLoggedIn || editAd) {
             submitAd(); // Check auth inside
             return;
         }
@@ -713,7 +733,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                 <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-black hover:bg-slate-50 rounded-full transition-colors">
                                     <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
                                 </button>
-                                <h2 className="text-[16px] text-black font-medium">Post your AD</h2>
+                                <h2 className="text-[16px] text-black font-medium">{editAd ? "Edit your AD" : "Post your AD"}</h2>
                             </div>
                             <button onClick={onClose} className="p-1 hover:bg-slate-50 rounded-full">
                                 <X className="w-5 h-5 text-black" />
@@ -1055,7 +1075,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                     : "bg-[#1A1A1A] text-white hover:bg-black"
                                             )}
                                         >
-                                            {loading ? "POSTING..." : "POST AD"}
+                                            {loading ? (editAd ? "UPDATING..." : "POSTING...") : (editAd ? "EDIT AD" : "POST AD")}
                                         </button>
                                         <label className="flex items-center gap-2 mt-3 cursor-pointer">
                                             <input
