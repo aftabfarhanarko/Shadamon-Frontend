@@ -9,6 +9,8 @@ import { API_BASE_URL } from '../utils/apiConfig';
 import { getImageUrl } from '../utils/imageUrl';
 import { formatDistanceToNow } from 'date-fns';
 import { useRef, useEffect } from 'react';
+import Cookies from 'js-cookie';
+
 
 interface AdDetailsModalProps {
     isOpen: boolean;
@@ -26,6 +28,8 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
     const [isDetailsOpen, setIsDetailsOpen] = useState(true);
     const [showOptionsPopup, setShowOptionsPopup] = useState(false);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
     const [actionButtons, setActionButtons] = useState<string[]>(['Call', 'Chat']);
     const popupRef = useRef<HTMLDivElement>(null);
     const optionsButtonRef = useRef<HTMLButtonElement>(null);
@@ -114,8 +118,23 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                     }
                 })
                 .catch(err => console.error("Error fetching subcategories:", err));
+            // Fetch current user if token exists to check ownership
+            const token = Cookies.get('token');
+            if (token && !currentUserId) {
+                fetch(`${API_BASE_URL}/api/user/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data && data._id) {
+                            setCurrentUserId(data._id);
+                        }
+                    })
+                    .catch(err => console.error("Error fetching current user:", err));
+            }
         }
     }, [isOpen, ad]);
+
 
     const nextImage = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -296,8 +315,18 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                         );
                                     }
                                     if (btn === 'Message' || btn === 'Chat') {
+                                        // Hide chat button if it's user's own ad
+                                        const adUserId = typeof ad.user === 'object' ? ad.user?._id : ad.user;
+                                        if (currentUserId && adUserId === currentUserId) return null;
+
                                         return (
-                                            <button key={idx} className="col-span-1 bg-white border border-slate-500 text-slate-700 text-xs py-2 rounded-md hover:bg-slate-50 transition-colors">
+                                            <button
+                                                key={idx}
+                                                className="col-span-1 bg-white border border-slate-500 text-slate-700 text-xs py-2 rounded-md hover:bg-slate-50 transition-colors"
+                                                onClick={() => {
+                                                    window.dispatchEvent(new CustomEvent('open-chat-modal', { detail: { ad } }));
+                                                }}
+                                            >
                                                 Chat
                                             </button>
                                         );
@@ -329,13 +358,73 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                         >
                                             {/* Top Row */}
                                             <div className="grid grid-cols-4 gap-2 mb-4">
-                                                <div className="flex flex-col items-center gap-1 cursor-pointer group">
+                                                <div
+                                                    onClick={async () => {
+                                                        const token = Cookies.get('token');
+                                                        if (!token) {
+                                                            alert('Please login to enable notifications');
+                                                            return;
+                                                        }
+                                                        try {
+                                                            const res = await fetch(`${API_BASE_URL}/api/user/notify-preference`, {
+                                                                method: 'POST',
+                                                                headers: {
+                                                                    'Content-Type': 'application/json',
+                                                                    'Authorization': `Bearer ${token}`
+                                                                },
+                                                                body: JSON.stringify({
+                                                                    subCategory: ad.subCategory,
+                                                                    location: ad.location,
+                                                                    adId: ad._id
+                                                                })
+                                                            });
+                                                            const data = await res.json();
+                                                            if (res.ok) {
+                                                                alert('Notification preference saved! We will notify you when new products matching this subcategory/location are posted.');
+                                                            } else {
+                                                                alert(data.message || 'Failed to save preference');
+                                                            }
+                                                        } catch (err) {
+                                                            console.error("Error saving notify preference:", err);
+                                                        }
+                                                    }}
+                                                    className="flex flex-col items-center gap-1 cursor-pointer group"
+                                                >
                                                     <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-200 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
                                                         <Bell className="w-5 h-5 text-slate-700 fill-black" />
                                                     </div>
-                                                    <span className="text-[10px] text-slate-600 font-medium">Notify</span>
+                                                    <span className="text-[10px] text-slate-600 font-medium whitespace-nowrap">Notify</span>
                                                 </div>
-                                                <div className="flex flex-col items-center gap-1 cursor-pointer group">
+                                                <div
+                                                    onClick={async () => {
+                                                        const token = Cookies.get('token');
+                                                        if (!token) {
+                                                            alert('Please login to request a callback');
+                                                            return;
+                                                        }
+                                                        try {
+                                                            const res = await fetch(`${API_BASE_URL}/api/messages/call-me`, {
+                                                                method: 'POST',
+                                                                headers: {
+                                                                    'Content-Type': 'application/json',
+                                                                    'Authorization': `Bearer ${token}`
+                                                                },
+                                                                body: JSON.stringify({ adId: ad._id })
+                                                            });
+                                                            const data = await res.json();
+                                                            if (data.success) {
+                                                                setShowOptionsPopup(false);
+                                                                // Open chat window after sending
+                                                                window.dispatchEvent(new CustomEvent('open-chat-modal', { detail: { ad } }));
+                                                            } else {
+                                                                alert(data.message || 'Failed to send request');
+                                                            }
+                                                        } catch (err) {
+                                                            console.error("Error sending call-me request:", err);
+                                                        }
+                                                    }}
+                                                    className="flex flex-col items-center gap-1 cursor-pointer group"
+                                                >
                                                     <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-200 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
                                                         <Phone className="w-5 h-5 text-slate-700 fill-black" />
                                                     </div>

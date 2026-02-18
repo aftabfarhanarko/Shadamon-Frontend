@@ -21,6 +21,10 @@ import AccountActivityModal from '../../components/AccountActivityModal';
 import MobileEntryModal from '../../components/MobileEntryModal';
 import VerificationModal from '../../components/VerificationModal';
 import AdDetailsModal from '../../components/AdDetailsModal';
+import MessageModal from '../../components/MessageModal';
+import ChatMessageModal from '../../components/ChatMessageModal';
+
+
 import { API_BASE_URL } from '../../utils/apiConfig';
 import { getImageUrl } from '../../utils/imageUrl';
 
@@ -62,11 +66,18 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [accountModalInitialTab, setAccountModalInitialTab] = useState<'Page' | 'Profile' | 'Settings' | 'Post' | 'Activity'>('Page');
     const [viewingUserId, setViewingUserId] = useState<string | undefined>(undefined);
+    const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+    const [isChatMessageModalOpen, setIsChatMessageModalOpen] = useState(false);
+    const [chatAd, setChatAd] = useState<any>(null);
+    const [chatOtherUser, setChatOtherUser] = useState<any>(null);
+
+
     const [adToPromote, setAdToPromote] = useState<any>(null);
     const [adToEdit, setAdToEdit] = useState<any>(null);
     const [verificationToken, setVerificationToken] = useState<string | undefined>(undefined);
 
-    const [mobileEntryReason, setMobileEntryReason] = useState<'post_ad' | 'account'>('post_ad');
+    const [mobileEntryReason, setMobileEntryReason] = useState<'post_ad' | 'account' | 'message'>('post_ad');
+
 
     const [searchQuery, setSearchQuery] = useState('');
     const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -99,10 +110,19 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         };
         window.addEventListener('open-mobile-entry-modal', handleOpenMobileEntry);
 
+        const handleOpenChat = (e: CustomEvent) => {
+            setChatAd(e.detail?.ad);
+            setChatOtherUser(e.detail?.otherUser || null);
+            setIsChatMessageModalOpen(true);
+        };
+        window.addEventListener('open-chat-modal', handleOpenChat as EventListener);
+
         return () => {
             window.removeEventListener('open-account-modal', handleOpenAccount as EventListener);
             window.removeEventListener('open-mobile-entry-modal', handleOpenMobileEntry);
+            window.removeEventListener('open-chat-modal', handleOpenChat as EventListener);
         };
+
     }, []);
 
     // Handle clicking outside of search to close suggestions
@@ -176,8 +196,16 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         // Auto-open modal if openModal=true or profile=ID is in URL
         const openModal = searchParams.get('openModal');
         const openUsersProfile = searchParams.get('openUsersProfile');
+        const openMessageModal = searchParams.get('openMessageModal');
         const profileId = searchParams.get('profile');
         const token = Cookies.get('token');
+
+        if (openMessageModal === 'true' && token) {
+            setIsMessageModalOpen(true);
+            const params = new URLSearchParams(window.location.search);
+            params.delete('openMessageModal');
+            router.replace(`${window.location.pathname}?${params.toString()}`, { scroll: false });
+        }
 
         if (openUsersProfile === 'true' && token) {
             setAccountModalInitialTab('Profile');
@@ -268,6 +296,52 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             setIsAccountModalOpen(true);
         }
     };
+
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    const fetchUnreadCount = async () => {
+        const token = Cookies.get('token');
+        if (!token) {
+            setUnreadCount(0);
+            return;
+        }
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/messages/conversations`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.success && Array.isArray(data.data)) {
+                // Count how many conversations have at least one unread message
+                const total = data.data.filter((conv: any) => (conv.unreadCount || 0) > 0).length;
+                setUnreadCount(total);
+            }
+        } catch (err) {
+            console.error("Unread count fetch error:", err);
+        }
+    };
+
+    useEffect(() => {
+        fetchUnreadCount();
+        const interval = setInterval(fetchUnreadCount, 30000); // Every 30s
+        window.addEventListener('refresh-unread-count', fetchUnreadCount);
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('refresh-unread-count', fetchUnreadCount);
+        };
+    }, []);
+
+    const handleMessageClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        const token = Cookies.get('token');
+        if (!token) {
+            setMobileEntryReason('message');
+            setIsMobileEntryModalOpen(true);
+        } else {
+            setIsMessageModalOpen(true);
+            fetchUnreadCount();
+        }
+    };
+
 
     const [headerOffset, setHeaderOffset] = useState(0);
 
@@ -391,10 +465,18 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                 >
                                     {language}
                                 </button>
-                                <button className="w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all relative">
+                                <button
+                                    onClick={handleMessageClick}
+                                    className="w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all relative"
+                                >
                                     <RiMailFill className="w-5 h-5" />
-                                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#0088cc] text-white text-[10px] flex items-center justify-center rounded-full border-2 border-white">23</span>
+                                    {unreadCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#0088cc] text-white text-[10px] flex items-center justify-center rounded-full border-2 border-white">
+                                            {unreadCount}
+                                        </span>
+                                    )}
                                 </button>
+
 
                                 <Link
                                     href="/dashboard/profile"
@@ -445,10 +527,22 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     </button>
                 </div>
 
-                <Link href="/dashboard/inbox" className="flex flex-col items-center gap-1 p-2 text-black hover:text-black">
-                    <Inbox className="w-6 h-6" />
+                <Link
+                    href="/dashboard/inbox"
+                    onClick={handleMessageClick}
+                    className="flex flex-col items-center gap-1 p-2 text-black hover:text-black relative"
+                >
+                    <div className="relative">
+                        <Inbox className="w-6 h-6" />
+                        {unreadCount > 0 && (
+                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#0088cc] text-white text-[9px] flex items-center justify-center rounded-full border border-white">
+                                {unreadCount}
+                            </span>
+                        )}
+                    </div>
                     <span className="text-[10px] font-medium">{t('inbox')}</span>
                 </Link>
+
 
                 <Link
                     href="/dashboard/profile"
@@ -618,10 +712,15 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 }}
                 initialMobile={initialMobile}
                 onSuccess={() => {
-                    // Navigate to profile after login by reloading with param
+                    // Navigate to profile or message after login by reloading with param
                     const url = new URL(window.location.href);
-                    url.searchParams.set('openUsersProfile', 'true');
+                    if (mobileEntryReason === 'message') {
+                        url.searchParams.set('openMessageModal', 'true');
+                    } else {
+                        url.searchParams.set('openUsersProfile', 'true');
+                    }
                     window.location.href = url.toString();
+
                 }}
             />
 
@@ -639,10 +738,15 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                         setVerificationToken(token);
                         setIsVerificationModalOpen(true);
                     } else {
-                        // Direct to profile
+                        // Direct to profile or message
                         const url = new URL(window.location.href);
-                        url.searchParams.set('openUsersProfile', 'true');
+                        if (mobileEntryReason === 'message') {
+                            url.searchParams.set('openMessageModal', 'true');
+                        } else {
+                            url.searchParams.set('openUsersProfile', 'true');
+                        }
                         window.location.href = url.toString();
+
                     }
                 }}
             />
@@ -655,20 +759,28 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     setIsMobileEntryModalOpen(false);
                     if (mobileEntryReason === 'post_ad') {
                         setIsPostAdModalOpen(true);
+                    } else if (mobileEntryReason === 'message') {
+                        setInitialMobile(mobile);
+                        setIsLoginModalOpen(true);
                     } else {
                         setInitialMobile(mobile);
                         setIsLoginModalOpen(true);
                     }
+
                 }}
                 onUserNew={(mobile) => {
                     setTempMobile(mobile);
                     setIsMobileEntryModalOpen(false);
                     if (mobileEntryReason === 'post_ad') {
                         setIsPostAdModalOpen(true);
+                    } else if (mobileEntryReason === 'message') {
+                        setInitialMobile(mobile);
+                        setIsRegisterModalOpen(true);
                     } else {
                         setInitialMobile(mobile);
                         setIsRegisterModalOpen(true);
                     }
+
                 }}
             />
 
@@ -681,10 +793,15 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 verificationToken={verificationToken}
                 onSuccess={() => {
                     setIsVerificationModalOpen(false);
-                    // Reload to refresh auth state and open profile
+                    // Reload to refresh auth state and open profile or message
                     const url = new URL(window.location.href);
-                    url.searchParams.set('openUsersProfile', 'true');
+                    if (mobileEntryReason === 'message') {
+                        url.searchParams.set('openMessageModal', 'true');
+                    } else {
+                        url.searchParams.set('openUsersProfile', 'true');
+                    }
                     window.location.href = url.toString();
+
                 }}
             />
             <AccountActivityModal
@@ -715,6 +832,33 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 ad={selectedAdForDetail}
                 onClose={() => setSelectedAdForDetail(null)}
             />
+
+            <MessageModal
+                isOpen={isMessageModalOpen}
+                onClose={() => setIsMessageModalOpen(false)}
+                onOpenChat={(ad, otherUser) => {
+                    setIsMessageModalOpen(false);
+                    setChatAd(ad);
+                    setChatOtherUser(otherUser);
+                    setIsChatMessageModalOpen(true);
+                }}
+            />
+
+            <ChatMessageModal
+                isOpen={isChatMessageModalOpen}
+                onClose={() => {
+                    setIsChatMessageModalOpen(false);
+                    fetchUnreadCount();
+                }}
+                onBack={() => {
+                    setIsChatMessageModalOpen(false);
+                    setIsMessageModalOpen(true);
+                }}
+                ad={chatAd}
+                otherUser={chatOtherUser}
+            />
+
+
         </div>
     );
 }

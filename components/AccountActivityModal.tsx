@@ -198,6 +198,32 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
         }
     };
 
+    const handleRemoveNotifyPreference = async (prefId: string) => {
+        try {
+            const token = Cookies.get('token');
+            if (!token) return;
+
+            // Optimistic update
+            setActivityData((prev: any) => ({
+                ...prev,
+                notifyPreferences: prev.notifyPreferences.filter((p: any) => p._id !== prefId)
+            }));
+
+            const res = await fetch(`${API_BASE_URL}/api/user/notify-preference/${prefId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                toast.success("Preference removed");
+            } else {
+                fetchActivityData(); // Revert/Sync on error
+            }
+        } catch (error) {
+            console.error("Error removing preference", error);
+            fetchActivityData();
+        }
+    };
+
     // Profile Form State
     const [profileForm, setProfileForm] = useState({
         name: '',
@@ -1654,6 +1680,45 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                 )}
                             </div>
 
+                            {/* Saved Notify Preferences (Subcategory + Location) */}
+                            <div className="bg-white rounded border border-slate-200 overflow-hidden">
+                                <div
+                                    className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50"
+                                    onClick={() => toggleActivitySection('notifyPrefs')}
+                                >
+                                    <span className="text-sm font-bold text-slate-800">
+                                        Saved Notify Preferences <span className="text-xs font-normal text-slate-500">({activityData?.notifyPreferences?.length || 0})</span>
+                                    </span>
+                                    <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", expandedActivity === 'notifyPrefs' && "rotate-180")} />
+                                </div>
+                                {expandedActivity === 'notifyPrefs' && (
+                                    <div className="p-2 border-t border-slate-100 bg-slate-50 space-y-2">
+                                        {activityData?.notifyPreferences?.map((pref: any) => (
+                                            <div key={pref._id} className="flex items-center justify-between bg-white p-2 rounded border border-slate-200 shadow-sm">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[11px] font-bold text-blue-600">{pref.subCategory}</span>
+                                                    <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                                                        <MapPin className="w-3 h-3" />
+                                                        {pref.location}
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleRemoveNotifyPreference(pref._id)}
+                                                    className="p-1.5 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full transition-colors"
+                                                    title="Remove"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {(!activityData?.notifyPreferences || activityData.notifyPreferences.length === 0) && (
+                                            <div className="text-center text-xs text-slate-400 py-4 italic">
+                                                সরাসরি প্রডাক্ট পেইজ থেকে 'Notify' বাটনে টাচ করে আপনার পছন্দের প্রডাক্ট সেভ করে রাখুন।
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 
