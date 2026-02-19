@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { RiMailFill, RiUser3Fill } from 'react-icons/ri';
 import Cookies from 'js-cookie';
+import { io } from 'socket.io-client';
 import { useLanguage } from '../context/LanguageContext';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -137,6 +138,46 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
+    }, []);
+
+    const [socket, setSocket] = useState<any>(null);
+
+    // Socket.io for notifications
+    useEffect(() => {
+        const token = Cookies.get('token');
+        if (!token) return;
+
+        // Fetch current user to get ID for socket room
+        const fetchUserAndSetupSocket = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/user/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const userData = await res.json();
+
+                if (userData && userData._id) {
+                    const socketUrl = API_BASE_URL.replace('/api', '');
+                    const newSocket = io(socketUrl);
+                    setSocket(newSocket);
+
+                    newSocket.emit('setup', { id: userData._id });
+
+                    newSocket.on('notification received', () => {
+                        fetchUnreadCount();
+                        // Also trigger refresh for Open MessageModal if it's listening
+                        window.dispatchEvent(new Event('refresh-unread-count'));
+                    });
+
+                    return () => {
+                        newSocket.disconnect();
+                    };
+                }
+            } catch (err) {
+                console.error("Socket setup error:", err);
+            }
+        };
+
+        fetchUserAndSetupSocket();
     }, []);
 
     // Mobile Sidebar State
@@ -306,15 +347,31 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             return;
         }
         try {
-            const res = await fetch(`${API_BASE_URL}/api/messages/conversations`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (data.success && Array.isArray(data.data)) {
+            const [convRes, notifRes] = await Promise.all([
+                fetch(`${API_BASE_URL}/api/messages/conversations`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch(`${API_BASE_URL}/api/user/notifications`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+            ]);
+
+            const convData = await convRes.json();
+            const notifData = await notifRes.json();
+
+            let total = 0;
+
+            if (convData.success && Array.isArray(convData.data)) {
                 // Count how many conversations have at least one unread message
-                const total = data.data.filter((conv: any) => (conv.unreadCount || 0) > 0).length;
-                setUnreadCount(total);
+                total += convData.data.filter((conv: any) => (conv.unreadCount || 0) > 0).length;
             }
+
+            if (Array.isArray(notifData)) {
+                // Count unread admin notifications
+                total += notifData.filter((n: any) => !n.isRead).length;
+            }
+
+            setUnreadCount(total);
         } catch (err) {
             console.error("Unread count fetch error:", err);
         }

@@ -37,8 +37,10 @@ const formatMessageDate = (dateString: string) => {
 
 export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageModalProps) {
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeTab, setActiveTab] = useState<'All' | 'Message' | 'Notify'>('All');
+    const [activeTab, setActiveTab] = useState<'All' | 'Message' | 'Notify' | 'Shadamon'>('All');
     const [conversations, setConversations] = useState<any[]>([]);
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [expandedIds, setExpandedIds] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedItems, setSelectedItems] = useState<string[]>([]);
     const [currentUser, setCurrentUser] = useState<any>(null);
@@ -84,6 +86,10 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
             fetchConversations(searchQuery);
         });
 
+        socket.on('notification received', () => {
+            fetchNotifications();
+        });
+
         const handleRefresh = () => fetchConversations(searchQuery);
         window.addEventListener('refresh-unread-count', handleRefresh);
 
@@ -100,10 +106,13 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
 
         const timer = setTimeout(() => {
             fetchConversations(searchQuery);
+            if (activeTab === 'All' || activeTab === 'Shadamon') {
+                fetchNotifications();
+            }
         }, searchQuery ? 500 : 0); // Delay only when typing search
 
         return () => clearTimeout(timer);
-    }, [searchQuery, isOpen]);
+    }, [searchQuery, isOpen, activeTab]);
 
     const fetchUser = async () => {
         const token = Cookies.get('token');
@@ -147,7 +156,51 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
         } catch (err) {
             console.error("Error fetching conversations:", err);
         } finally {
+            if (activeTab !== 'Shadamon') setLoading(false);
+        }
+    };
+
+    const fetchNotifications = async () => {
+        const token = Cookies.get('token');
+        if (!token) return;
+        setLoading(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/user/notifications`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setNotifications(data);
+        } catch (err) {
+            console.error("Error fetching notifications:", err);
+        } finally {
             setLoading(false);
+        }
+    };
+
+    const markAsRead = async (id: string) => {
+        const token = Cookies.get('token');
+        if (!token) return;
+        try {
+            await fetch(`${API_BASE_URL}/api/user/notifications/${id}/read`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+            // Trigger header unread count refresh
+            window.dispatchEvent(new Event('refresh-unread-count'));
+        } catch (err) {
+            console.error("Error marking as read:", err);
+        }
+    };
+
+    const handleExpand = (notif: any) => {
+        setExpandedIds(prev =>
+            prev.includes(notif._id)
+                ? prev.filter(id => id !== notif._id)
+                : [...prev, notif._id]
+        );
+        if (!notif.isRead) {
+            markAsRead(notif._id);
         }
     };
 
@@ -243,6 +296,9 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
         if (activeTab === 'Notify') {
             return conv.lastMessage?.messageType === 'callme' || conv.lastMessage?.messageType === 'notify';
         }
+        if (activeTab === 'Shadamon') {
+            return false;
+        }
         return true;
     });
 
@@ -256,8 +312,16 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
             updatedAt: p.createdAt || new Date().toISOString(),
             createdAt: p.createdAt,
             lastMessage: { messageType: 'notify' }
+        })) : []),
+        ...(activeTab === 'All' || activeTab === 'Shadamon' ? notifications.map(n => ({
+            ...n,
+            uiType: 'notification'
         })) : [])
-    ].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    ].sort((a, b) => {
+        const dateA = new Date(a.updatedAt || a.createdAt).getTime();
+        const dateB = new Date(b.updatedAt || b.createdAt).getTime();
+        return dateB - dateA;
+    });
 
     return (
         <div className="fixed inset-0 z-[200] flex items-start justify-center pt-20">
@@ -296,13 +360,13 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
                         </div>
 
                         {/* Tabs/Filters */}
-                        <div className="flex items-center justify-between gap-2">
-                            {(['All', 'Message', 'Notify'] as const).map((tab) => (
+                        <div className="flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
+                            {(['All', 'Message', 'Notify', 'Shadamon'] as const).map((tab) => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
                                     className={cn(
-                                        "px-6 py-1 rounded text-[14px] font-medium transition-colors border",
+                                        "px-4 py-1 rounded text-[14px] font-medium transition-colors border whitespace-nowrap",
                                         activeTab === tab
                                             ? "bg-slate-200 text-black border-slate-300 shadow-sm"
                                             : "bg-white text-black border-slate-200 hover:bg-slate-50"
@@ -389,6 +453,76 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
                                                 >
                                                     <ExternalLink className="w-5 h-5" />
                                                 </button>
+                                            </div>
+                                        </div>
+                                    );
+                                }
+
+                                if (item.uiType === 'notification') {
+                                    const isExpanded = expandedIds.includes(item._id);
+                                    return (
+                                        <div
+                                            key={item._id}
+                                            onClick={() => handleExpand(item)}
+                                            className={cn(
+                                                "flex items-start gap-4 px-4 py-3 border-b border-slate-300 cursor-pointer transition-colors relative group",
+                                                !item.isRead ? "bg-[#EDF2F7]" : "bg-white",
+                                                "hover:bg-slate-50"
+                                            )}
+                                        >
+                                            {/* Selection Checkbox */}
+                                            <div
+                                                onClick={(e) => toggleSelection(item._id, e)}
+                                                className="mt-1 shrink-0"
+                                            >
+                                                <div className={cn(
+                                                    "w-5 h-5 border-2 rounded flex items-center justify-center transition-all",
+                                                    isSelected ? "bg-[#0088CC] border-[#0088CC]" : "border-slate-300 bg-white"
+                                                )}>
+                                                    {isSelected && <div className="w-1.5 h-3 border-r-2 border-b-2 border-white rotate-45 mb-1" />}
+                                                </div>
+                                            </div>
+
+                                            {/* Shadamon Logo */}
+                                            <div className="w-[50px] h-[50px] rounded-full overflow-hidden shrink-0 border border-slate-200 bg-white flex items-center justify-center p-1">
+                                                <span className="text-[10px] font-bold text-black text-center leading-tight">shadamon</span>
+                                            </div>
+
+                                            {/* Content Area */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-[12px] text-slate-400 font-bold mb-0.5">SHADAMON</div>
+                                                <p className={cn(
+                                                    "text-[14px] text-black leading-snug",
+                                                    !isExpanded && "line-clamp-1"
+                                                )}>
+                                                    {item.message}
+                                                </p>
+
+                                                {!isExpanded ? (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleExpand(item);
+                                                        }}
+                                                        className="text-[12px] text-slate-400 font-medium mt-1 hover:text-black transition-colors"
+                                                    >
+                                                        See Detail
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleExpand(item);
+                                                        }}
+                                                        className="text-[12px] text-slate-400 font-medium mt-1 hover:text-black transition-colors"
+                                                    >
+                                                        See Less
+                                                    </button>
+                                                )}
+
+                                                <div className="text-[11px] text-slate-400 mt-2">
+                                                    {formatMessageDate(item.createdAt)}
+                                                </div>
                                             </div>
                                         </div>
                                     );
