@@ -323,8 +323,30 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
         return dateB - dateA;
     });
 
+    const messageUnread = conversations
+        .filter(conv => !conv.lastMessage?.messageType || conv.lastMessage?.messageType === 'text')
+        .reduce((acc, conv) => acc + (conv.unreadCount || 0), 0);
+
+    const notifyUnread = conversations
+        .filter(conv => conv.lastMessage?.messageType === 'callme' || conv.lastMessage?.messageType === 'notify')
+        .reduce((acc, conv) => acc + (conv.unreadCount || 0), 0);
+
+    const shadamonUnread = notifications.filter(n => !n.isRead).length;
+
+    const totalUnreadCount = messageUnread + notifyUnread + shadamonUnread;
+
+    const getTabUnreadCount = (tab: string) => {
+        switch (tab) {
+            case 'All': return totalUnreadCount;
+            case 'Message': return messageUnread;
+            case 'Notify': return notifyUnread;
+            case 'Shadamon': return shadamonUnread;
+            default: return 0;
+        }
+    };
+
     return (
-        <div className="fixed inset-0 z-[200] flex items-start justify-center pt-20">
+        <div className="fixed inset-0 z-[1100] flex items-start justify-center pt-20">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
@@ -361,20 +383,23 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
 
                         {/* Tabs/Filters */}
                         <div className="flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
-                            {(['All', 'Message', 'Notify', 'Shadamon'] as const).map((tab) => (
-                                <button
-                                    key={tab}
-                                    onClick={() => setActiveTab(tab)}
-                                    className={cn(
-                                        "px-4 py-1 rounded text-[14px] font-medium transition-colors border whitespace-nowrap",
-                                        activeTab === tab
-                                            ? "bg-slate-200 text-black border-slate-300 shadow-sm"
-                                            : "bg-white text-black border-slate-200 hover:bg-slate-50"
-                                    )}
-                                >
-                                    {tab}
-                                </button>
-                            ))}
+                            {(['All', 'Message', 'Notify', 'Shadamon'] as const).map((tab) => {
+                                const count = getTabUnreadCount(tab);
+                                return (
+                                    <button
+                                        key={tab}
+                                        onClick={() => setActiveTab(tab)}
+                                        className={cn(
+                                            "px-3 py-1 rounded text-[13px] font-medium transition-colors border whitespace-nowrap",
+                                            activeTab === tab
+                                                ? "bg-slate-200 text-black border-slate-300 shadow-sm"
+                                                : "bg-white text-black border-slate-200 hover:bg-slate-50"
+                                        )}
+                                    >
+                                        {tab}{count > 0 ? ` (${count > 99 ? '99+' : count})` : ''}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -397,7 +422,7 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
                 )}
 
                 {/* Content Area */}
-                <div className="flex-1 overflow-y-auto no-scrollbar bg-white">
+                <div className="flex-1 overflow-y-auto bg-white">
                     {loading ? (
                         <div className="flex items-center justify-center h-full text-slate-400 p-8">
                             <p className="text-sm animate-pulse">Loading messages...</p>
@@ -412,7 +437,7 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
                                         <div
                                             key={item._id}
                                             onClick={() => item.ad && setSelectedAdForDetail(item.ad)}
-                                            className="flex items-start gap-4 px-4 py-2.5 border-b border-slate-300 cursor-pointer hover:bg-slate-50 transition-colors relative group bg-white"
+                                            className="flex items-start gap-3 px-4 py-1 border-b border-slate-300 cursor-pointer hover:bg-slate-50 transition-colors relative group bg-white"
                                         >
                                             {/* Selection Checkbox (Match Messages) */}
                                             <div
@@ -428,7 +453,7 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
                                             </div>
 
                                             {/* Avatar (Match Messages) */}
-                                            <div className="w-[50px] h-[50px] rounded-full overflow-hidden shrink-0 border border-slate-200 bg-slate-50">
+                                            <div className="w-[45px] h-[45px] rounded-full overflow-hidden shrink-0 border border-slate-200 bg-slate-50">
                                                 <img
                                                     src={getImageUrl(item.ad?.images?.[0])}
                                                     alt=""
@@ -449,9 +474,9 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
                                                         e.stopPropagation();
                                                         setSelectedAdForDetail(item.ad);
                                                     }}
-                                                    className="p-2 ml-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors"
+                                                    className="p-1.5 ml-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors"
                                                 >
-                                                    <ExternalLink className="w-5 h-5" />
+                                                    <ExternalLink className="w-4 h-4" />
                                                 </button>
                                             </div>
                                         </div>
@@ -465,7 +490,7 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
                                             key={item._id}
                                             onClick={() => handleExpand(item)}
                                             className={cn(
-                                                "flex items-start gap-4 px-4 py-3 border-b border-slate-300 cursor-pointer transition-colors relative group",
+                                                "flex items-start gap-3 px-4 py-1 border-b border-slate-300 cursor-pointer transition-colors relative group",
                                                 !item.isRead ? "bg-[#EDF2F7]" : "bg-white",
                                                 "hover:bg-slate-50"
                                             )}
@@ -484,13 +509,12 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
                                             </div>
 
                                             {/* Shadamon Logo */}
-                                            <div className="w-[50px] h-[50px] rounded-full overflow-hidden shrink-0 border border-slate-200 bg-white flex items-center justify-center p-1">
-                                                <span className="text-[10px] font-bold text-black text-center leading-tight">shadamon</span>
+                                            <div className="w-[45px] h-[45px] rounded-full overflow-hidden shrink-0 border border-slate-200 bg-white flex items-center justify-center p-1">
+                                                <span className="text-[9px] font-bold text-black text-center leading-tight">shadamon</span>
                                             </div>
 
-                                            {/* Content Area */}
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-[12px] text-slate-400 font-bold mb-0.5">SHADAMON</div>
+                                            <div className="flex-1 min-w-0 flex flex-col gap-0">
+                                                <div className="text-[11px] text-slate-400 font-bold">SHADAMON</div>
                                                 <p className={cn(
                                                     "text-[14px] text-black leading-snug",
                                                     !isExpanded && "line-clamp-1"
@@ -504,7 +528,7 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
                                                             e.stopPropagation();
                                                             handleExpand(item);
                                                         }}
-                                                        className="text-[12px] text-slate-400 font-medium mt-1 hover:text-black transition-colors"
+                                                        className="text-[11px] text-slate-400 font-medium hover:text-black transition-colors w-fit"
                                                     >
                                                         See Detail
                                                     </button>
@@ -514,13 +538,13 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
                                                             e.stopPropagation();
                                                             handleExpand(item);
                                                         }}
-                                                        className="text-[12px] text-slate-400 font-medium mt-1 hover:text-black transition-colors"
+                                                        className="text-[11px] text-slate-400 font-medium hover:text-black transition-colors w-fit"
                                                     >
                                                         See Less
                                                     </button>
                                                 )}
 
-                                                <div className="text-[11px] text-slate-400 mt-2">
+                                                <div className="text-[10px] text-slate-400">
                                                     {formatMessageDate(item.createdAt)}
                                                 </div>
                                             </div>
@@ -537,7 +561,7 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
                                         key={conv._id}
                                         onClick={() => onOpenChat(conv.ad, otherUser)}
                                         className={cn(
-                                            "flex items-start gap-4 px-4 py-2.5 border-b border-slate-300 cursor-pointer transition-colors relative group",
+                                            "flex items-start gap-3 px-4 py-1 border-b border-slate-300 cursor-pointer transition-colors relative group",
                                             isUnread ? "bg-[#EDF2F7]" : "bg-white",
                                             "hover:bg-slate-50"
                                         )}
@@ -556,7 +580,7 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
                                         </div>
 
                                         {/* Avatar */}
-                                        <div className="w-[50px] h-[50px] rounded-full overflow-hidden shrink-0 border border-slate-200 bg-slate-50">
+                                        <div className="w-[45px] h-[45px] rounded-full overflow-hidden shrink-0 border border-slate-200 bg-slate-50">
                                             <img
                                                 src={getImageUrl(otherUser?.photo || otherUser?.storeLogo || conv.ad?.images?.[0])}
                                                 alt=""
@@ -580,7 +604,7 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
                                                     <span className="text-[11px] text-slate-400">{formatMessageDate(conv.updatedAt)}</span>
                                                 </div>
                                             ) : (
-                                                <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                                                <div className="flex-1 min-w-0 flex flex-col gap-0">
                                                     <div className="flex items-center justify-between">
                                                         <h3 className="text-[15px] font-bold text-black truncate flex items-center">
                                                             <span className="truncate">{otherUser?.name || otherUser?.storeName || 'User'}</span>
@@ -609,13 +633,13 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
                                                     </p>
 
                                                     {/* Ad Headline (Secondary) */}
-                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                    <div className="flex items-center gap-2 mt-0">
                                                         <p className="text-[11px] text-slate-400 truncate flex-1">
                                                             {conv.ad?.headline || 'No Headline'}
                                                         </p>
                                                     </div>
 
-                                                    <div className="text-[10px] text-slate-400 mt-1">
+                                                    <div className="text-[10px] text-slate-400 mt-0.5">
                                                         <span>{formatMessageDate(conv.updatedAt)}</span>
                                                     </div>
                                                 </div>
@@ -627,9 +651,9 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
                                                         e.stopPropagation();
                                                         setSelectedAdForDetail(conv.ad);
                                                     }}
-                                                    className="p-2 ml-2 hover:bg-slate-100 rounded-full text-slate-500 transition-colors"
+                                                    className="p-1.5 ml-2 hover:bg-slate-100 rounded-full text-slate-500 transition-colors"
                                                 >
-                                                    <ExternalLink className="w-5 h-5" />
+                                                    <ExternalLink className="w-4 h-4" />
                                                 </button>
                                             )}
                                         </div>

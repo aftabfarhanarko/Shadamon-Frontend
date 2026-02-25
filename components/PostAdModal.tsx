@@ -37,6 +37,7 @@ interface Feature {
     name: string;
     inputType: string;
     buttonType: string;
+    selectionType?: 'Single' | 'Multi';
     boxFadeName?: string;
     buttonItemNames: string[];
 }
@@ -73,6 +74,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [priceType, setPriceType] = useState("Negotiable");
     const [hasReadRules, setHasReadRules] = useState(true);
     const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
+    const [userData, setUserData] = useState<any>(null);
 
     // Categories & Locations
     const [categories, setCategories] = useState<Category[]>([]);
@@ -83,7 +85,8 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [selectedSubLocation, setSelectedSubLocation] = useState("");
 
     // Wizard State
-    const [view, setView] = useState<'form' | 'category' | 'category-sub' | 'location' | 'location-sub' | 'features' | 'loading'>('loading');
+    const [view, setView] = useState<'form' | 'category' | 'category-sub' | 'location' | 'location-sub' | 'features' | 'loading' | 'status'>('loading');
+    const [submissionStatus, setSubmissionStatus] = useState<{ status: 'review' | 'active' | 'limit-reached', limit?: number, ad?: any } | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [tempCategory, setTempCategory] = useState<string>("");
     const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
@@ -99,11 +102,11 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     // OTP State
     const [showOtpVerification, setShowOtpVerification] = useState(false);
     const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-    const [otpTimer, setOtpTimer] = useState(47);
+    const [otpTimer, setOtpTimer] = useState(300);
     const [isEditingPhone, setIsEditingPhone] = useState(false);
     const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const headlineInputRef = useRef<HTMLInputElement>(null);
 
     const fillFormData = (ad: any) => {
         setHeadline(ad.headline || "");
@@ -137,6 +140,15 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     };
 
     useEffect(() => {
+        if (isOpen && view === 'form' && !loadingData && !showOtpVerification && headlineInputRef.current) {
+            const timer = setTimeout(() => {
+                headlineInputRef.current?.focus();
+            }, 150);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen, view, loadingData, showOtpVerification]);
+
+    useEffect(() => {
         if (isOpen) {
             fetchData();
             checkUser();
@@ -157,7 +169,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 setExistingImages([]);
                 setShowOtpVerification(false);
                 setOtp(["", "", "", "", "", ""]);
-                setOtpTimer(47);
+                setOtpTimer(300);
                 setIsEditingPhone(false);
 
                 if (initialMobile) {
@@ -165,6 +177,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 } else {
                     setPhone("");
                 }
+                setSubmissionStatus(null);
                 // View reset handled in checkUser
             }
         }
@@ -226,7 +239,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 const userData = await res.json();
                 if (userData) {
                     setIsUserLoggedIn(true);
-                    // foundUser = true; // Not strictly needed for logic flow anymore
+                    setUserData(userData);
                     if (userData.mobile) setPhone(userData.mobile);
                     if (userData.name) setName(userData.name);
 
@@ -330,13 +343,12 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
 
     const handlePhoneEditSubmit = () => {
         setIsEditingPhone(false);
-        setOtpTimer(47); // Reset timer (simulate resend)
         setOtp(["", "", "", "", "", ""]);
-        toast.success("Number updated & OTP resent!");
+        sendMobileOtp();
     };
 
     // Actual submission logic moved here
-    const submitAd = async (authToken?: string) => {
+    const submitAd = async (authToken?: string, wasOtpVerified: boolean = false) => {
         let token = authToken || Cookies.get('token');
 
         // Auto-Auth if needed
@@ -392,6 +404,13 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             formData.append('price', price);
             formData.append('priceType', priceType);
 
+            if (wasOtpVerified) {
+                formData.append('verificationInfo', JSON.stringify({
+                    number: phone,
+                    at: new Date().toISOString()
+                }));
+            }
+
             images.forEach((file) => {
                 formData.append('images', file);
             });
@@ -408,9 +427,17 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             const data = await response.json();
 
             if (response.ok && data.success) {
-                toast.success(editAd ? "Ad updated!" : "Ad posted successfully!");
-                if (onSuccess) onSuccess(data.data || data.ad);
-                onClose();
+                if (data.limitReached) {
+                    setSubmissionStatus({ status: 'limit-reached', limit: data.limit, ad: data.data || data.ad });
+                    setView('status');
+                } else if (data.data?.status === 'pause') {
+                    setSubmissionStatus({ status: 'review', ad: data.data || data.ad });
+                    setView('status');
+                } else {
+                    toast.success(editAd ? "Ad updated!" : "Ad posted successfully!");
+                    if (onSuccess) onSuccess(data.data || data.ad);
+                    onClose();
+                }
             } else {
                 toast.error(data.message || "Failed to process ad");
             }
@@ -421,13 +448,53 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         }
     };
 
-    const handleVerifyOtp = () => {
+    const sendMobileOtp = async () => {
+        try {
+            setLoading(true);
+            const res = await fetch(`${API_BASE_URL}/api/user/otp/mobile/request`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone })
+            });
+            const data = await res.json();
+            if (data.success) {
+                toast.success("OTP sent to your mobile");
+                setShowOtpVerification(true);
+                setOtpTimer(300);
+            } else {
+                toast.error(data.message || "Failed to send OTP");
+            }
+        } catch (error) {
+            toast.error("Failed to send OTP");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = async () => {
         const fullOtp = otp.join("");
-        if (fullOtp === "123456") {
-            // Mock success
-            submitAd();
-        } else {
-            toast.error("Invalid OTP");
+        if (fullOtp.length !== 6) {
+            toast.error("Please enter 6-digit OTP");
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const res = await fetch(`${API_BASE_URL}/api/user/otp/mobile/verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone, otp: fullOtp })
+            });
+            const data = await res.json();
+            if (data.success) {
+                submitAd(undefined, true);
+            } else {
+                toast.error(data.message || "Invalid OTP");
+            }
+        } catch (error) {
+            toast.error("Verification failed");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -445,25 +512,29 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             return;
         }
 
-        // Use new auth flow instead of mock OTP for unauth users?
-        // User requested: "if post ad then user will auto login/register and post"
-        // This implies skipping the mock OTP "123456" step for them if they provide password.
-        if (!isUserLoggedIn || editAd) {
-            submitAd(); // Check auth inside
+        if (editAd) {
+            submitAd();
             return;
         }
 
-        // Step 1: Show OTP Verification (Mock) for logged in users?
-        // Or if phone changed? 
-        // For now, keep existing flow for logged in users or if just posting
-        setShowOtpVerification(true);
-        setOtpTimer(47);
+        // If already verified by Mobile, skip OTP
+        if (isUserLoggedIn && userData?.verifiedBy === 'Mobile') {
+            submitAd();
+            return;
+        }
+
+        // For unverified users or new users, show OTP
+        sendMobileOtp();
     };
+
+    const subCat = categories
+        .find(c => c.name === selectedCategory)
+        ?.subcategories.find(s => s.name === selectedSubCategory);
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-start justify-center pt-20">
+        <div className="fixed inset-0 z-[1100] flex items-start justify-center pt-20">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
             <div className="relative bg-[#F4F6F8] w-full max-w-[565px] rounded-t-lg rounded-b-none overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300 shadow-2xl h-[calc(100vh-80px)]">
@@ -476,11 +547,11 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
 
                 {view === 'category' && (
                     <div className="flex flex-col h-full bg-white">
-                        <div className="p-3 border-b border-slate-100 flex items-center gap-3">
+                        <div className="p-2.5 border-b border-slate-100 flex items-center gap-3">
                             <button onClick={() => setView('form')}><ArrowLeft className="w-5 h-5 text-slate-600" /></button>
                             <h2 className="text-[16px] text-slate-800">Pick a Category</h2>
                         </div>
-                        <div className="p-3 bg-slate-50">
+                        <div className="p-2.5 bg-slate-50">
                             <div className="bg-white rounded-lg border border-slate-200 flex items-center px-3 py-2 gap-2">
                                 <Search className="w-4 h-4 text-slate-400" />
                                 <input
@@ -499,7 +570,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                         <button
                                             onClick={() => setExpandedCategory(expandedCategory === cat._id ? null : cat._id)}
                                             className={cn(
-                                                "w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors",
+                                                "w-full flex items-center justify-between py-1.5 px-4 hover:bg-slate-50 transition-colors",
                                                 expandedCategory === cat._id && "bg-slate-50"
                                             )}
                                         >
@@ -521,16 +592,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                         {/* Subcategories Accordion */}
                                         {expandedCategory === cat._id && (
                                             <div className="bg-slate-50 border-t border-slate-100">
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedCategory(cat.name);
-                                                        setSelectedSubCategory(""); // All
-                                                        setView('location');
-                                                    }}
-                                                    className="w-full text-left p-3 pl-14 text-xs font-medium text-slate-800 hover:bg-slate-100 flex items-center gap-2"
-                                                >
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Go to all ads in {cat.name}
-                                                </button>
+
                                                 {cat.subcategories.map(sub => (
                                                     <button
                                                         key={sub._id}
@@ -539,7 +601,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                             setSelectedSubCategory(sub.name);
                                                             setView('location');
                                                         }}
-                                                        className="w-full flex items-center gap-3 p-3 pl-14 hover:bg-slate-100 transition-colors text-left"
+                                                        className="w-full flex items-center gap-3 py-1 pl-14 pr-4 hover:bg-slate-100 transition-colors text-left"
                                                     >
                                                         {(sub.image || sub.icon) ? (
                                                             <div className="w-5 h-5 rounded overflow-hidden shrink-0">
@@ -562,11 +624,11 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
 
                 {view === 'location' && (
                     <div className="flex flex-col h-full bg-white">
-                        <div className="p-3 border-b border-slate-100 flex items-center gap-3">
+                        <div className="p-2.5 border-b border-slate-100 flex items-center gap-3">
                             <button onClick={() => setView('category')}><ArrowLeft className="w-5 h-5 text-slate-600" /></button>
                             <h2 className="text-[16px] text-slate-800">Pick a Location</h2>
                         </div>
-                        <div className="p-3 bg-slate-50">
+                        <div className="p-2.5 bg-slate-50">
                             <div className="bg-white rounded-lg border border-slate-200 flex items-center px-3 py-2 gap-2">
                                 <Search className="w-4 h-4 text-slate-400" />
                                 <input
@@ -588,7 +650,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                             setSearchQuery("");
                                             setView('location-sub');
                                         }}
-                                        className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors"
+                                        className="w-full flex items-center justify-between py-1.5 px-4 hover:bg-slate-50 transition-colors"
                                     >
                                         <div className="flex items-center gap-3">
                                             <div className="w-6 h-6 rounded shrink-0 flex items-center justify-center overflow-hidden">
@@ -610,7 +672,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
 
                 {view === 'location-sub' && (
                     <div className="flex flex-col h-full bg-white">
-                        <div className="p-3 border-b border-slate-100 flex items-center gap-3">
+                        <div className="p-2.5 border-b border-slate-100 flex items-center gap-3">
                             <button onClick={() => setView('location')}><ArrowLeft className="w-5 h-5 text-slate-600" /></button>
                             <h2 className="text-[16px] text-slate-800">{tempLocation}</h2>
                         </div>
@@ -619,7 +681,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                 <h3 className="text-sm mb-2">Select Areas (Multi-select)</h3>
                                 <div className="space-y-2">
                                     {locations.find(l => l.name === tempLocation)?.subLocations.map(sub => (
-                                        <label key={sub._id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer border border-transparent hover:border-slate-100">
+                                        <label key={sub._id} className="flex items-center gap-3 py-1 px-2 hover:bg-slate-50 rounded cursor-pointer border border-transparent hover:border-slate-100">
                                             {sub.image && (
                                                 <div className="w-5 h-5 shrink-0 rounded overflow-hidden">
                                                     <img src={getImageUrl(sub.image) || ''} alt="" className="w-full h-full object-cover" loading="lazy" />
@@ -658,7 +720,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
 
                 {view === 'features' && (
                     <div className="flex flex-col h-full bg-white">
-                        <div className="p-3 border-b border-slate-100 flex items-center gap-3">
+                        <div className="p-2.5 border-b border-slate-100 flex items-center gap-3">
                             <button onClick={() => setView('location')}><ArrowLeft className="w-5 h-5 text-slate-600" /></button>
                             <h2 className="text-[16px] text-slate-800">Add Details</h2>
                         </div>
@@ -671,17 +733,40 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                         <div className="flex flex-wrap gap-3">
                                             {feature.buttonItemNames.map((item) => (
                                                 <label key={item} className="flex items-center gap-2 cursor-pointer">
-                                                    <div className={cn("w-4 h-4 rounded-full border flex items-center justify-center transition-colors", featureValues[feature.name] === item ? 'border-black' : 'border-slate-300')}>
-                                                        {featureValues[feature.name] === item && <div className="w-2 h-2 rounded-full bg-black" />}
-                                                    </div>
-                                                    <input
-                                                        type="radio"
-                                                        name={feature.name}
-                                                        className="hidden"
-                                                        checked={featureValues[feature.name] === item}
-                                                        onChange={() => setFeatureValues(prev => ({ ...prev, [feature.name]: item }))}
-                                                    />
-                                                    <span className="text-sm text-slate-700">{item}</span>
+                                                    {feature.selectionType === 'Multi' ? (
+                                                        <>
+                                                            <div className={cn("w-4 h-4 rounded border flex items-center justify-center transition-colors shadow-sm", (featureValues[feature.name] || []).includes(item) ? 'bg-black border-black text-white' : 'border-slate-300 bg-white')}>
+                                                                {(featureValues[feature.name] || []).includes(item) && <Check className="w-3 h-3 stroke-[4]" />}
+                                                            </div>
+                                                            <input
+                                                                type="checkbox"
+                                                                className="hidden"
+                                                                checked={(featureValues[feature.name] || []).includes(item)}
+                                                                onChange={() => {
+                                                                    const currentVal = featureValues[feature.name] || [];
+                                                                    if (currentVal.includes(item)) {
+                                                                        setFeatureValues(prev => ({ ...prev, [feature.name]: currentVal.filter((i: string) => i !== item) }));
+                                                                    } else {
+                                                                        setFeatureValues(prev => ({ ...prev, [feature.name]: [...currentVal, item] }));
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <div className={cn("w-4 h-4 rounded-full border flex items-center justify-center transition-colors", featureValues[feature.name] === item ? 'border-black' : 'border-slate-300')}>
+                                                                {featureValues[feature.name] === item && <div className="w-2 h-2 rounded-full bg-black" />}
+                                                            </div>
+                                                            <input
+                                                                type="radio"
+                                                                name={feature.name}
+                                                                className="hidden"
+                                                                checked={featureValues[feature.name] === item}
+                                                                onChange={() => setFeatureValues(prev => ({ ...prev, [feature.name]: item }))}
+                                                            />
+                                                        </>
+                                                    )}
+                                                    <span className="text-sm text-slate-700 font-medium">{item}</span>
                                                 </label>
                                             ))}
                                         </div>
@@ -698,19 +783,45 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                     )}
 
                                     {feature.buttonType === 'Box' && feature.buttonItemNames.length > 1 && (
-                                        <div className="relative">
-                                            <select
-                                                value={featureValues[feature.name] || ''}
-                                                onChange={(e) => setFeatureValues(prev => ({ ...prev, [feature.name]: e.target.value }))}
-                                                className="w-full appearance-none border border-slate-300 rounded px-3 py-2 text-sm outline-none focus:border-black bg-white transition-colors"
-                                            >
-                                                <option value="" disabled>Select {feature.name}</option>
+                                        feature.selectionType === 'Multi' ? (
+                                            <div className="grid grid-cols-2 gap-2">
                                                 {feature.buttonItemNames.map(item => (
-                                                    <option key={item} value={item}>{item}</option>
+                                                    <label key={item} className="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer transition-colors">
+                                                        <div className={cn("w-4 h-4 rounded border flex items-center justify-center transition-colors shadow-sm", (featureValues[feature.name] || []).includes(item) ? 'bg-black border-black text-white' : 'border-slate-300 bg-white')}>
+                                                            {(featureValues[feature.name] || []).includes(item) && <Check className="w-3 h-3 stroke-[4]" />}
+                                                        </div>
+                                                        <input
+                                                            type="checkbox"
+                                                            className="hidden"
+                                                            checked={(featureValues[feature.name] || []).includes(item)}
+                                                            onChange={() => {
+                                                                const currentVal = featureValues[feature.name] || [];
+                                                                if (currentVal.includes(item)) {
+                                                                    setFeatureValues(prev => ({ ...prev, [feature.name]: currentVal.filter((i: string) => i !== item) }));
+                                                                } else {
+                                                                    setFeatureValues(prev => ({ ...prev, [feature.name]: [...currentVal, item] }));
+                                                                }
+                                                            }}
+                                                        />
+                                                        <span className="text-xs text-slate-700 truncate font-medium">{item}</span>
+                                                    </label>
                                                 ))}
-                                            </select>
-                                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                                        </div>
+                                            </div>
+                                        ) : (
+                                            <div className="relative">
+                                                <select
+                                                    value={featureValues[feature.name] || ''}
+                                                    onChange={(e) => setFeatureValues(prev => ({ ...prev, [feature.name]: e.target.value }))}
+                                                    className="w-full appearance-none border border-slate-300 rounded px-3 py-2 text-sm outline-none focus:border-black bg-white transition-colors"
+                                                >
+                                                    <option value="" disabled>Select {feature.name}</option>
+                                                    {feature.buttonItemNames.map(item => (
+                                                        <option key={item} value={item}>{item}</option>
+                                                    ))}
+                                                </select>
+                                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                            </div>
+                                        )
                                     )}
                                 </div>
                             ))}
@@ -740,7 +851,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto no-scrollbar px-3 pt-2 space-y-2 pb-40">
+                        <div className="flex-1 overflow-y-auto px-3 pt-2 space-y-2 pb-40">
                             {/* Summary Card REMOVED */}
 
                             {loadingData ? (
@@ -795,7 +906,9 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                         </div>
                                         <div className="flex items-center justify-between pt-2">
                                             <div className="text-[13px] text-slate-400 font-medium">
-                                                Resend OTP <span className="text-slate-800 font-bold ml-1">00:{otpTimer.toString().padStart(2, '0')}</span>
+                                                Resend OTP <span className="text-slate-800 font-bold ml-1">
+                                                    {Math.floor(otpTimer / 60)}:{(otpTimer % 60).toString().padStart(2, '0')}
+                                                </span>
                                             </div>
                                         </div>
                                         <div className="pt-4">
@@ -845,63 +958,27 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*" multiple onChange={handleImageUpload} />
                                     </div>
 
-                                    <div className="space-y-2 font-sans bg-white">
-                                        <div className="bg-slate-100 rounded-lg border border-slate-500 px-3 py-2 relative">
-                                            <div className="absolute left-3 top-1/2 -translate-y-1/2 w-[1px] h-4 bg-slate-500" />
+                                    <div className="space-y-2 font-sans bg-slate-100">
+                                        <div className="bg-white rounded-lg border border-slate-500 px-3 py-2 relative">
                                             <input
+                                                ref={headlineInputRef}
                                                 type="text"
                                                 placeholder="Headline"
                                                 value={headline}
                                                 onChange={(e) => setHeadline(e.target.value)}
-                                                className="w-full pl-4 py-1 text-[13px] text-black placeholder:text-slate-400 focus:outline-none bg-transparent"
+                                                className="w-full pl-4 py-1 text-sm text-black placeholder:text-slate-400 focus:outline-none bg-white"
                                             />
                                         </div>
 
-                                        <div className="bg-slate-100 rounded-lg border border-slate-500 px-3 py-3 min-h-[120px] flex flex-col">
+                                        <div className="bg-white rounded-lg border border-slate-500 px-3 py-3">
                                             <textarea
                                                 placeholder="Description"
                                                 value={description}
                                                 onChange={(e) => setDescription(e.target.value)}
-                                                className="w-full flex-1 text-[13px] text-black placeholder:text-slate-400 focus:outline-none resize-none px-1 bg-transparent"
+                                                className="w-full text-sm text-black placeholder:text-slate-400 focus:outline-none px-1 bg-white resize-y min-h-[100px] block"
                                             />
                                             <p className="text-[10px] text-black mt-2 px-1 leading-tight">*A nice & Detail Description Might Help your Product Sell Faster</p>
                                         </div>
-
-                                        {(() => {
-                                            const subCat = categories
-                                                .find(c => c.name === selectedCategory)
-                                                ?.subcategories.find(s => s.name === selectedSubCategory);
-
-                                            if (!subCat || !subCat.priceBoxShow) return null;
-
-                                            return (
-                                                <div className="bg-slate-100 rounded-lg border border-slate-500 flex items-center overflow-hidden h-10 px-3">
-                                                    <div className="flex-1 flex items-center pr-2">
-                                                        <span className="text-[13px] text-slate-800 pr-2 border-r border-slate-300 whitespace-nowrap">
-                                                            {subCat.priceBoxName || "দাম"}
-                                                        </span>
-                                                        <input
-                                                            type="number"
-                                                            placeholder=""
-                                                            value={price}
-                                                            onChange={(e) => setPrice(e.target.value)}
-                                                            className="w-full bg-transparent pl-2 text-[13px] text-black placeholder:text-slate-400 focus:outline-none"
-                                                        />
-                                                    </div>
-                                                    <div className="relative h-full flex items-center pl-2 border-l border-slate-300">
-                                                        <select
-                                                            value={priceType}
-                                                            onChange={(e) => setPriceType(e.target.value)}
-                                                            className="bg-transparent text-[12px] text-slate-700 font-medium pr-6 focus:outline-none appearance-none cursor-pointer"
-                                                        >
-                                                            <option value="Negotiable">আলোচনা সাপেক্ষে</option>
-                                                            <option value="Fixed">ফিক্সড</option>
-                                                        </select>
-                                                        <ChevronDown className="absolute right-0 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-                                                    </div>
-                                                </div>
-                                            );
-                                        })()}
                                     </div>
 
                                     {/* Category & Location Selection Section */}
@@ -925,13 +1002,12 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                 onClick={() => setView('category')}
                                                 className="text-[12px] text-[#0088cc] font-bold hover:underline"
                                             >
-                                                Change
+                                                {(selectedCategory || selectedLocation) ? 'Change' : 'Select'}
                                             </button>
                                         </div>
 
                                         {Object.keys(featureValues).length > 0 && (
                                             <div className="flex flex-col gap-1 border-t border-slate-100 pt-2">
-                                                <span className="text-[11px] text-slate-400 font-bold tracking-tight">ফিচারস</span>
                                                 <div className="flex flex-wrap gap-2 pt-1">
                                                     {Object.entries(featureValues).map(([key, value]) => (
                                                         <div key={key} className="bg-slate-50 border border-slate-200 px-2 py-0.5 rounded text-[10px] text-slate-600 flex items-center gap-1">
@@ -944,6 +1020,34 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                         )}
                                     </div>
 
+                                    {subCat?.priceBoxShow && (
+                                        <div className="bg-slate-100 rounded-lg border border-slate-500 flex items-center overflow-hidden h-10 px-3">
+                                            <div className="flex-1 flex items-center pr-2">
+                                                <span className="text-[13px] text-slate-800 pr-2 border-r border-slate-300 whitespace-nowrap">
+                                                    {subCat.priceBoxName || "দাম"}
+                                                </span>
+                                                <input
+                                                    type="number"
+                                                    placeholder=""
+                                                    value={price}
+                                                    onChange={(e) => setPrice(e.target.value)}
+                                                    className="w-full bg-transparent pl-2 text-[13px] text-black placeholder:text-slate-400 focus:outline-none"
+                                                />
+                                            </div>
+                                            <div className="relative h-full flex items-center pl-2 border-l border-slate-300">
+                                                <select
+                                                    value={priceType}
+                                                    onChange={(e) => setPriceType(e.target.value)}
+                                                    className="bg-transparent text-[12px] text-slate-700 font-medium pr-6 focus:outline-none appearance-none cursor-pointer"
+                                                >
+                                                    <option value="Negotiable">আলোচনা সাপেক্ষে</option>
+                                                    <option value="Fixed">ফিক্সড</option>
+                                                </select>
+                                                <ChevronDown className="absolute right-0 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="bg-white rounded-lg border border-slate-500 p-3.5 space-y-2 shadow-sm font-sans">
                                         <div className="space-y-1">
                                             <input
@@ -951,7 +1055,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                 value={name}
                                                 onChange={(e) => setName(e.target.value)}
                                                 placeholder="Name"
-                                                className="w-full text-[13px] text-black focus:outline-none placeholder:text-slate-300 px-1 border-b border-slate-500 pb-1"
+                                                className="w-full text-[13px] text-black focus:outline-none placeholder:text-black px-1 border-b border-slate-500 pb-1"
                                             />
                                         </div>
 
@@ -987,8 +1091,8 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                     type="password"
                                                     value={password}
                                                     onChange={(e) => setPassword(e.target.value)}
-                                                    placeholder="Password (for login/register)"
-                                                    className="w-full text-[13px] text-black focus:outline-none placeholder:text-slate-300 px-1 border-b border-slate-500 pb-1"
+                                                    placeholder="Create New Password"
+                                                    className="w-full text-[13px] text-black focus:outline-none placeholder:text-black px-1 border-b border-slate-500 pb-1"
                                                 />
                                             </div>
                                         )}
@@ -1067,10 +1171,18 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                         <button
                                             type="button"
                                             onClick={handleSubmit}
-                                            disabled={loading || (images.length === 0 && existingImages.length === 0) || !headline.trim() || !description.trim() || !phone.trim() || (!isUserLoggedIn && !password.trim())}
+                                            disabled={
+                                                loading ||
+                                                (images.length === 0 && existingImages.length === 0) ||
+                                                !headline.trim() ||
+                                                !description.trim() ||
+                                                !phone.trim() ||
+                                                (!isUserLoggedIn && !password.trim()) ||
+                                                (subCat?.priceBoxShow && !price.trim())
+                                            }
                                             className={cn(
                                                 "w-full py-3.5 rounded-lg text-[13px] font-bold tracking-widest active:scale-[0.98] transition-all",
-                                                (loading || (images.length === 0 && existingImages.length === 0) || !headline.trim() || !description.trim() || !phone.trim() || (!isUserLoggedIn && !password.trim()))
+                                                (loading || (images.length === 0 && existingImages.length === 0) || !headline.trim() || !description.trim() || !phone.trim() || (!isUserLoggedIn && !password.trim()) || (subCat?.priceBoxShow && !price.trim()))
                                                     ? "bg-slate-300 text-slate-500 cursor-not-allowed"
                                                     : "bg-[#1A1A1A] text-white hover:bg-black"
                                             )}
@@ -1095,7 +1207,10 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                     </>
                 )}
                 {/* Floating Chat Icon */}
-                <div className="absolute right-5 bottom-20 z-[210]">
+                <div
+                    className="absolute right-5 bottom-20 z-[210] cursor-pointer"
+                    onClick={() => window.open('https://m.me/shadamon.bd', '_blank')}
+                >
                     <div className="flex flex-col items-center">
                         <button className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-white shadow-xl hover:scale-105 active:scale-95 transition-all mb-1">
                             <MessageCircle className="w-5 h-5 fill-white" />
@@ -1103,6 +1218,65 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                         <button className="text-[11px] text-black font-bold">HelpChat</button>
                     </div>
                 </div>
+                {view === 'status' && submissionStatus && (
+                    <div className="flex-1 flex flex-col items-center justify-center p-8 bg-white text-center font-sans">
+                        {submissionStatus.status === 'review' ? (
+                            <>
+                                <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mb-6">
+                                    <Loader2 className="w-10 h-10 text-amber-500 animate-[spin_3s_linear_infinite]" />
+                                </div>
+                                <h2 className="text-2xl font-bold text-slate-800 mb-3">আপনার বিজ্ঞাপনটি রিভিউতে আছে</h2>
+                                <p className="text-slate-600 mb-8 leading-relaxed max-w-sm mx-auto">
+                                    অ্যাডমিন আপনার বিজ্ঞাপনটি সফলভাবে চেক করলে এটি পাবলিশ হবে। বিজ্ঞাপন টি সরাসরি পাবলিশ করতে হলে ট্রাস্টেড মার্চেন্ট হতে পারেন। অথবা দ্রুত বিক্রয় করতে চাইলে বিজ্ঞাপনটি প্রমোট করতে পারেন।
+                                </p>
+                                <div className="w-full space-y-3">
+                                    <button
+                                        onClick={() => {
+                                            if (onSuccess) onSuccess(submissionStatus.ad);
+                                            onClose();
+                                        }}
+                                        className="w-full py-4 bg-black text-white rounded-xl font-bold text-sm tracking-widest hover:bg-slate-900 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        আপনার অ্যাডটি প্রমোট করুন
+                                    </button>
+                                    <button
+                                        onClick={onClose}
+                                        className="w-full py-4 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all"
+                                    >
+                                        পরে করব
+                                    </button>
+                                </div>
+                            </>
+                        ) : submissionStatus.status === 'limit-reached' ? (
+                            <>
+                                <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-6">
+                                    <X className="w-10 h-10 text-red-500" />
+                                </div>
+                                <h2 className="text-2xl font-bold text-slate-800 mb-3">ফ্রি অ্যাড লিমিট শেষ হবেছে!</h2>
+                                <p className="text-slate-600 mb-8 leading-relaxed max-w-sm mx-auto">
+                                    আপনি আপনার ফ্রি অ্যাডের সীমা ({submissionStatus.limit}) অতিক্রম করেছেন। বিজ্ঞাপন জারি রাখতে এবং সরাসরি পাবলিশ করতে হলে অনুগ্রহ করে বিজ্ঞাপনটি এখন প্রমোট করুন।
+                                </p>
+                                <div className="w-full space-y-3">
+                                    <button
+                                        onClick={() => {
+                                            if (onSuccess) onSuccess(submissionStatus.ad);
+                                            onClose();
+                                        }}
+                                        className="w-full py-4 bg-[#FF4F01] text-white rounded-xl font-bold text-sm tracking-widest hover:bg-[#e64600] transition-all flex items-center justify-center gap-2"
+                                    >
+                                        অ্যাডটি প্রমোট করুন
+                                    </button>
+                                    <button
+                                        onClick={onClose}
+                                        className="w-full py-4 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all"
+                                    >
+                                        ফিরে যান
+                                    </button>
+                                </div>
+                            </>
+                        ) : null}
+                    </div>
+                )}
             </div>
         </div>
     );

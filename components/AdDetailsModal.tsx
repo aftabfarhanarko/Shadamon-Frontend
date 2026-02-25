@@ -10,6 +10,29 @@ import { getImageUrl } from '../utils/imageUrl';
 import { formatDistanceToNow } from 'date-fns';
 import { useRef, useEffect } from 'react';
 import Cookies from 'js-cookie';
+import { useLanguage } from '../app/context/LanguageContext';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import { RiCheckboxCircleFill } from 'react-icons/ri';
+import InfoModal from './InfoModal';
+
+const VerifiedBadge = () => (
+    <div className="relative group/badge flex items-center justify-center -mt-0.5 ml-1">
+        <RiCheckboxCircleFill className="w-5 h-5 text-[#0088cc] shrink-0 cursor-pointer" />
+        <div className="absolute bottom-full left-1/2 -translate-x-[20%] lg:-translate-x-1/2 mb-2 hidden group-hover/badge:block w-[240px] bg-slate-50 border border-slate-200 shadow-xl rounded-xl p-3 z-[100] animate-in fade-in zoom-in-95 duration-200 pointer-events-none text-left">
+            <p className="text-[13px] text-slate-700 font-medium leading-relaxed whitespace-normal break-words normal-case">
+                <span className="font-bold text-black">Verified</span> by mobile number & additional checks to ensure authenticity.
+            </p>
+            <div className="absolute top-full left-[20%] lg:left-1/2 -translate-x-1/2 -mt-[1px]">
+                <div className="w-3 h-3 bg-slate-50 border-b border-r border-slate-200 transform rotate-45" />
+            </div>
+        </div>
+    </div>
+);
+
+function cn(...inputs: (string | undefined | null | false)[]) {
+    return twMerge(clsx(inputs));
+}
 
 
 interface AdDetailsModalProps {
@@ -29,8 +52,13 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
     const [showOptionsPopup, setShowOptionsPopup] = useState(false);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [currentUser, setCurrentUser] = useState<any>(null);
+    const [isFavorited, setIsFavorited] = useState(false);
+    const [isNotifying, setIsNotifying] = useState(false);
+    const [showShippingModal, setShowShippingModal] = useState(false);
 
     const [actionButtons, setActionButtons] = useState<string[]>(['Call', 'Chat']);
+    const { t } = useLanguage();
     const popupRef = useRef<HTMLDivElement>(null);
     const optionsButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -60,6 +88,9 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
         setIsDescriptionExpanded(false);
         setCurrentImageIndex(0);
         setShowPhone(false);
+        // Reset favorited/notifying local states until re-fetched
+        setIsFavorited(false);
+        setIsNotifying(false);
     }, [ad?._id]);
 
     // Fetch Ads Effect and Subcategory Info
@@ -118,9 +149,10 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                     }
                 })
                 .catch(err => console.error("Error fetching subcategories:", err));
-            // Fetch current user if token exists to check ownership
+
+            // Fetch current user if token exists to check ownership and favorites
             const token = Cookies.get('token');
-            if (token && !currentUserId) {
+            if (token) {
                 fetch(`${API_BASE_URL}/api/user/me`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 })
@@ -128,13 +160,41 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                     .then(data => {
                         if (data && data._id) {
                             setCurrentUserId(data._id);
+                            setCurrentUser(data);
+
+                            // Set favorite status
+                            const favorited = (data.favorites || []).some((favId: any) =>
+                                (typeof favId === 'string' ? favId : favId?._id) === ad._id
+                            );
+                            setIsFavorited(favorited);
+
+                            // Set notify status
+                            const adSubCat = typeof ad.subCategory === 'object' ? ad.subCategory?.name : ad.subCategory;
+                            const adLoc = typeof ad.location === 'object' ? ad.location?.name : ad.location;
+
+                            const notifying = (data.notifyPreferences || []).some((p: any) =>
+                                p.subCategory === adSubCat && p.location === adLoc
+                            );
+                            setIsNotifying(notifying);
                         }
                     })
                     .catch(err => console.error("Error fetching current user:", err));
             }
         }
-    }, [isOpen, ad]);
+    }, [isOpen, ad?._id, currentUserId]);
 
+
+    const handlePromotePost = () => {
+        const adOwnerId = typeof ad.user === 'object' ? ad.user?._id : ad.user;
+        const isOwnAd = currentUserId === adOwnerId;
+
+        if (isOwnAd) {
+            window.dispatchEvent(new CustomEvent('open-promote-modal', { detail: { ad } }));
+        } else {
+            window.dispatchEvent(new CustomEvent('open-post-ad-modal'));
+        }
+        onClose();
+    };
 
     const nextImage = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -151,7 +211,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
     };
 
     return (
-        <div className="fixed inset-0 z-[999] flex items-start justify-center pt-20">
+        <div className="fixed inset-0 z-[1000] flex items-start justify-center pt-20">
             {/* Backdrop */}
             <div className="fixed inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
@@ -172,10 +232,10 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                 </div>
 
                 {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto bg-white no-scrollbar pb-32">
+                <div className="flex-1 overflow-y-auto bg-white pb-32">
 
                     {/* 2. Image Gallery */}
-                    <div className="relative w-full aspect-[16/9] bg-slate-900 group">
+                    <div className="relative w-full aspect-[16/9] bg-black group">
                         {hasImages ? (
                             <img
                                 src={getImageUrl(images[currentImageIndex]) || undefined}
@@ -241,87 +301,149 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                             {ad.headline}
                         </h1>
                         <p className="text-xs text-slate-900">
-                            {ad.price ? `$ ${ad.price.toLocaleString()}` : '0.00'}
+                            {ad.price ? `৳ ${ad.price.toLocaleString()}` : '0.00'}
                         </p>
 
                         {/* 5. Contact Section */}
                         <div className="bg-slate-200 rounded-lg mt-2 mb-2 p-3 border border-slate-100">
                             {/* Phone & Socials */}
                             <div className="flex items-center gap-2 mb-4">
-                                {/* Phone Section */}
-                                <div className="flex items-center gap-2 shrink-0">
-                                    <div className="w-8 h-8 rounded-full bg-[#1A202C] flex items-center justify-center text-white shrink-0">
-                                        <Phone className="w-4 h-4 fill-white" />
-                                    </div>
-                                    <div className="flex flex-col leading-none justify-center">
-                                        <div className="flex items-center gap-1">
-                                            <span className="text-slate-800 text-sm leading-none">
-                                                {showPhone ? (ad.phone) : '017 XXXXXXXX'}
-                                            </span>
+                                {!(ad.hidePhone === true || ad.hidePhone === 'true') && (
+                                    <>
+                                        {/* Phone Section */}
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <div className="w-8 h-8 rounded-full bg-[#1A202C] flex items-center justify-center text-white shrink-0">
+                                                <Phone className="w-4 h-4 fill-white" />
+                                            </div>
+                                            <div className="flex flex-col leading-none justify-center">
+                                                <div className="flex items-center gap-1">
+                                                    <span className="text-slate-800 text-sm leading-none">
+                                                        {showPhone ? (ad.phone || 'N/A') : '017 XXXXXXXX'}
+                                                    </span>
+                                                </div>
+                                                <button
+                                                    onClick={() => setShowPhone(!showPhone)}
+                                                    className="text-[10px] text-slate-500 hover:text-blue-600 hover:underline text-left mt-0.5"
+                                                >
+                                                    Click to show number
+                                                </button>
+                                            </div>
                                         </div>
-                                        <button
-                                            onClick={() => setShowPhone(!showPhone)}
-                                            className="text-[10px] text-slate-500 hover:text-blue-600 hover:underline text-left mt-0.5"
-                                        >
-                                            Click to show number
-                                        </button>
-                                    </div>
-                                </div>
 
-                                {/* Divider */}
-                                <div className="h-6 w-[3px] bg-slate-400 mx-1 shrink-0" />
+                                        {/* Divider */}
+                                        <div className="h-6 w-[3px] bg-slate-400 mx-1 shrink-0" />
+                                    </>
+                                )}
 
                                 {/* Socials */}
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => window.open(`https://wa.me/+88${ad.phone}`, '_blank')}
-                                        className="w-8 h-8 rounded-full bg-[#25D366] text-white flex items-center justify-center hover:scale-110 transition-transform shadow-sm shrink-0"
-                                    >
-                                        <FaWhatsapp className="w-5 h-5" />
-                                    </button>
+                                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                                    {ad.additionalPhones && ad.additionalPhones.length > 0 ? (
+                                        ad.additionalPhones.flatMap((ap: any) => {
+                                            const apObj = typeof ap === 'string' ? JSON.parse(ap) : ap;
+                                            return (apObj?.types || []).map((type: string) => ({ type, number: apObj?.number || '' }));
+                                        }).filter((s: any) => s.number).map((social: any, sIdx: number, allSocials: any[]) => {
+                                            let icon = null;
+                                            let bgColor = "";
+                                            let link = "";
+                                            let title = "";
 
-                                    <div className="h-6 w-[3px] bg-slate-400 mx-1 shrink-0" />
+                                            const rawNum = social.number;
+                                            if (!rawNum || String(rawNum) === "undefined") return null;
+                                            const numStr = String(rawNum).trim();
+                                            const formattedNumber = numStr.startsWith('+') ? numStr : `+88${numStr}`;
 
-                                    <button
-                                        onClick={() => window.open(`https://t.me/+88${ad.phone}`, '_blank')}
-                                        className="w-8 h-8 rounded-full bg-[#0088cc] text-white flex items-center justify-center hover:scale-105 transition-transform shadow-sm shrink-0"
-                                    >
-                                        <FaTelegramPlane className="w-4 h-4 pr-0.5" />
-                                    </button>
+                                            if (social.type === 'whatsapp') {
+                                                icon = <FaWhatsapp className="w-5 h-5" />;
+                                                bgColor = "bg-[#25D366]";
+                                                link = `https://wa.me/${formattedNumber}`;
+                                                title = `WhatsApp: ${social.number}`;
+                                            } else if (social.type === 'telegram') {
+                                                icon = <FaTelegramPlane className="w-4 h-4 pr-0.5" />;
+                                                bgColor = "bg-[#0088cc]";
+                                                link = `https://t.me/${formattedNumber}`;
+                                                title = `Telegram: ${social.number}`;
+                                            } else if (social.type === 'imo') {
+                                                icon = <BsChatDotsFill className="w-4 h-4 pb-0.5" />;
+                                                bgColor = "bg-[#004c99]";
+                                                link = `tel:${social.number}`; // Fallback for Imo
+                                                title = `Imo: ${social.number}`;
+                                            } else if (social.type === 'mobile') {
+                                                icon = <Phone className="w-4 h-4" />;
+                                                bgColor = "bg-slate-700";
+                                                link = `tel:${social.number}`;
+                                                title = `Call: ${social.number}`;
+                                            }
 
-                                    <div className="h-6 w-[3px] bg-slate-400 mx-1 shrink-0" />
+                                            if (!icon) return null;
 
-                                    <button
-                                        onClick={() => window.open(`tel:${ad.phone}`, '_blank')} // Fallback to call for Imo or leave as is? 
-                                        className="w-8 h-8 rounded-full bg-[#004c99] text-white flex items-center justify-center hover:scale-105 transition-transform shadow-sm shrink-0"
-                                    >
-                                        <BsChatDotsFill className="w-4 h-4 pb-0.5" />
-                                    </button>
+                                            return (
+                                                <React.Fragment key={sIdx}>
+                                                    <button
+                                                        onClick={() => window.open(link, '_blank')}
+                                                        className={`w-8 h-8 rounded-full text-white flex items-center justify-center shadow-sm shrink-0 ${bgColor}`}
+                                                        title={title}
+                                                    >
+                                                        {icon}
+                                                    </button>
+                                                    {sIdx < allSocials.length - 1 && (
+                                                        <div className="h-6 w-[2px] bg-slate-300 mx-0.5 shrink-0" />
+                                                    )}
+                                                </React.Fragment>
+                                            );
+                                        })
+                                    ) : (
+                                        <>
+                                            {ad.phone && String(ad.phone) !== "undefined" && !(ad.hidePhone === true || ad.hidePhone === 'true') && (
+                                                <>
+                                                    <button
+                                                        onClick={() => {
+                                                            const num = String(ad.phone).trim();
+                                                            const formatted = num.startsWith('+') ? num : `+88${num}`;
+                                                            window.open(`https://wa.me/${formatted}`, '_blank');
+                                                        }}
+                                                        className="w-8 h-8 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-sm shrink-0"
+                                                    >
+                                                        <FaWhatsapp className="w-5 h-5" />
+                                                    </button>
+
+                                                    <div className="h-6 w-[2px] bg-slate-300 mx-0.5 shrink-0" />
+
+                                                    <button
+                                                        onClick={() => {
+                                                            const num = String(ad.phone).trim();
+                                                            const formatted = num.startsWith('+') ? num : `+88${num}`;
+                                                            window.open(`https://t.me/${formatted}`, '_blank');
+                                                        }}
+                                                        className="w-8 h-8 rounded-full bg-[#0088cc] text-white flex items-center justify-center shadow-sm shrink-0"
+                                                    >
+                                                        <FaTelegramPlane className="w-4 h-4 pr-0.5" />
+                                                    </button>
+                                                </>
+                                            )}
+                                        </>
+                                    )}
                                 </div>
                             </div>
 
                             {/* Action Buttons Row */}
                             <div className="grid grid-cols-4 gap-2 relative">
-                                {actionButtons.map((btn, idx) => {
-                                    if (btn === 'Call') {
-                                        return (
-                                            <button
-                                                key={idx}
-                                                onClick={() => window.location.href = `tel:${ad.phone}`}
-                                                className="col-span-1 bg-[#1A202C] text-white text-xs py-2 rounded-md hover:bg-slate-800 transition-colors"
-                                            >
-                                                Call
-                                            </button>
-                                        );
-                                    }
-                                    if (btn === 'Message' || btn === 'Chat') {
-                                        // Hide chat button if it's user's own ad
-                                        const adUserId = typeof ad.user === 'object' ? ad.user?._id : ad.user;
-                                        if (currentUserId && adUserId === currentUserId) return null;
+                                {(() => {
+                                    const otherButtons = actionButtons.filter(b => b !== 'Chat' && b !== 'Message');
 
-                                        return (
+                                    return (
+                                        <>
+                                            {/* Call Button - Only if requested and phone available */}
+                                            {otherButtons.includes('Call') && !((ad.hidePhone === true || ad.hidePhone === 'true') || !ad.phone || String(ad.phone) === 'undefined') && (
+                                                <button
+                                                    onClick={() => window.location.href = `tel:${ad.phone}`}
+                                                    className="col-span-1 bg-[#1A202C] text-white text-xs py-2 rounded-md hover:bg-slate-800 transition-colors"
+                                                >
+                                                    Call
+                                                </button>
+                                            )}
+
+                                            {/* Chat Button - ALWAYS SHOW */}
                                             <button
-                                                key={idx}
                                                 className="col-span-1 bg-white border border-slate-500 text-slate-700 text-xs py-2 rounded-md hover:bg-slate-50 transition-colors"
                                                 onClick={() => {
                                                     window.dispatchEvent(new CustomEvent('open-chat-modal', { detail: { ad } }));
@@ -329,18 +451,80 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                             >
                                                 Chat
                                             </button>
-                                        );
-                                    }
-                                    if (btn === 'Send CV') {
-                                        return (
-                                            <button key={idx} className="col-span-1 bg-white border border-slate-500 text-slate-700 text-xs py-2 rounded-md hover:bg-slate-50 transition-colors flex items-center justify-center gap-1">
-                                                <FileText className="w-3.5 h-3.5" />
-                                                <span className="truncate">Send CV</span>
-                                            </button>
-                                        );
-                                    }
-                                    return null;
-                                })}
+
+                                            {/* Send CV Button - Only if requested */}
+                                            {otherButtons.includes('Send CV') && (
+                                                <button
+                                                    onClick={async () => {
+                                                        const token = Cookies.get('token');
+                                                        if (!token) {
+                                                            window.dispatchEvent(new CustomEvent('open-mobile-entry-modal'));
+                                                            return;
+                                                        }
+
+                                                        const adOwnerId = typeof ad.user === 'object' ? ad.user?._id : ad.user;
+
+                                                        const missingMobile = !currentUser?.mobile && !currentUser?.phone;
+                                                        if (!currentUser?.gender || !currentUser?.location || !currentUser?.education || !currentUser?.profession || missingMobile || !currentUser?.email) {
+                                                            window.dispatchEvent(new CustomEvent('init-send-cv', { detail: { ad } }));
+                                                            onClose();
+                                                            return;
+                                                        }
+
+                                                        const userName = currentUser?.name || 'User';
+                                                        const userPhone = currentUser?.phone || currentUser?.mobile || 'Not provided';
+                                                        const userEmail = currentUser?.email || 'Not provided';
+                                                        const userGender = currentUser?.gender || 'Not specified';
+                                                        const userLocation = currentUser?.location || 'Not specified';
+                                                        const userEducation = currentUser?.education || 'Not specified';
+                                                        const userProfession = currentUser?.profession || 'Not specified';
+
+                                                        const message = `Hello, I am interested in your ad: "${ad.headline}". Here is my contact info:
+Name: ${userName}
+Gender: ${userGender}
+Location: ${userLocation}
+Education: ${userEducation}
+Profession: ${userProfession}
+Phone: ${userPhone}
+Email: ${userEmail}
+
+I have sent my CV for your review.`;
+
+                                                        try {
+                                                            const formData = new FormData();
+                                                            formData.append('receiverId', adOwnerId);
+                                                            formData.append('adId', ad._id);
+                                                            formData.append('text', message);
+
+                                                            const res = await fetch(`${API_BASE_URL}/api/messages`, {
+                                                                method: 'POST',
+                                                                headers: { 'Authorization': `Bearer ${token}` },
+                                                                body: formData
+                                                            });
+
+                                                            const data = await res.json();
+                                                            if (data.success) {
+                                                                // Open chat modal immediately
+                                                                window.dispatchEvent(new CustomEvent('open-chat-modal', { detail: { ad } }));
+                                                                // Optionally close this modal
+                                                                // onClose();
+                                                            } else {
+                                                                alert(data.message || "Failed to send CV. Please try again.");
+                                                            }
+                                                        } catch (err) {
+                                                            console.error("Error sending CV:", err);
+                                                            alert("An error occurred while sending your information.");
+                                                        }
+                                                    }}
+                                                    className="col-span-1 bg-white border border-slate-500 text-slate-700 text-xs py-2 rounded-md hover:bg-slate-50 transition-colors flex items-center justify-center gap-1"
+                                                >
+                                                    <FileText className="w-3.5 h-3.5" />
+                                                    <span className="truncate">Send CV</span>
+                                                </button>
+                                            )}
+                                        </>
+                                    );
+                                })()}
                                 <div className="col-span-1 relative">
                                     <button
                                         ref={optionsButtonRef}
@@ -349,127 +533,6 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                     >
                                         <SquareArrowOutUpRight className="w-10 h-10 stroke-[1.5]" color="#64748b" />
                                     </button>
-
-                                    {/* Options Popup */}
-                                    {showOptionsPopup && (
-                                        <div
-                                            ref={popupRef}
-                                            className="absolute top-0 right-[calc(100%+8px)] w-[280px] bg-[#F8F9FB] rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.15)] border border-slate-200 p-4 z-50 animate-in fade-in zoom-in-95 duration-200"
-                                        >
-                                            {/* Top Row */}
-                                            <div className="grid grid-cols-4 gap-2 mb-4">
-                                                <div
-                                                    onClick={async () => {
-                                                        const token = Cookies.get('token');
-                                                        if (!token) {
-                                                            alert('Please login to enable notifications');
-                                                            return;
-                                                        }
-                                                        try {
-                                                            const res = await fetch(`${API_BASE_URL}/api/user/notify-preference`, {
-                                                                method: 'POST',
-                                                                headers: {
-                                                                    'Content-Type': 'application/json',
-                                                                    'Authorization': `Bearer ${token}`
-                                                                },
-                                                                body: JSON.stringify({
-                                                                    subCategory: ad.subCategory,
-                                                                    location: ad.location,
-                                                                    adId: ad._id
-                                                                })
-                                                            });
-                                                            const data = await res.json();
-                                                            if (res.ok) {
-                                                                alert('Notification preference saved! We will notify you when new products matching this subcategory/location are posted.');
-                                                            } else {
-                                                                alert(data.message || 'Failed to save preference');
-                                                            }
-                                                        } catch (err) {
-                                                            console.error("Error saving notify preference:", err);
-                                                        }
-                                                    }}
-                                                    className="flex flex-col items-center gap-1 cursor-pointer group"
-                                                >
-                                                    <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-200 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
-                                                        <Bell className="w-5 h-5 text-slate-700 fill-black" />
-                                                    </div>
-                                                    <span className="text-[10px] text-slate-600 font-medium whitespace-nowrap">Notify</span>
-                                                </div>
-                                                <div
-                                                    onClick={async () => {
-                                                        const token = Cookies.get('token');
-                                                        if (!token) {
-                                                            alert('Please login to request a callback');
-                                                            return;
-                                                        }
-                                                        try {
-                                                            const res = await fetch(`${API_BASE_URL}/api/messages/call-me`, {
-                                                                method: 'POST',
-                                                                headers: {
-                                                                    'Content-Type': 'application/json',
-                                                                    'Authorization': `Bearer ${token}`
-                                                                },
-                                                                body: JSON.stringify({ adId: ad._id })
-                                                            });
-                                                            const data = await res.json();
-                                                            if (data.success) {
-                                                                setShowOptionsPopup(false);
-                                                                // Open chat window after sending
-                                                                window.dispatchEvent(new CustomEvent('open-chat-modal', { detail: { ad } }));
-                                                            } else {
-                                                                alert(data.message || 'Failed to send request');
-                                                            }
-                                                        } catch (err) {
-                                                            console.error("Error sending call-me request:", err);
-                                                        }
-                                                    }}
-                                                    className="flex flex-col items-center gap-1 cursor-pointer group"
-                                                >
-                                                    <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-200 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
-                                                        <Phone className="w-5 h-5 text-slate-700 fill-black" />
-                                                    </div>
-                                                    <span className="text-[10px] text-slate-600 font-medium whitespace-nowrap">Call Me</span>
-                                                </div>
-                                                <div className="flex flex-col items-center gap-1 cursor-pointer group">
-                                                    <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-200 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
-                                                        <Search className="w-5 h-5 text-slate-700" />
-                                                    </div>
-                                                    <span className="text-[10px] text-slate-600 font-medium">Similar</span>
-                                                </div>
-                                                <div className="flex flex-col items-center gap-1 cursor-pointer group">
-                                                    <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-200 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
-                                                        <Share2 className="w-5 h-5 text-slate-700 fill-black" />
-                                                    </div>
-                                                    <span className="text-[10px] text-slate-600 font-medium">Share</span>
-                                                </div>
-                                            </div>
-
-                                            {/* Bottom Row */}
-                                            <div className="grid grid-cols-4 gap-2">
-                                                <div className="flex flex-col items-center gap-1 cursor-pointer group">
-                                                    <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-200 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
-                                                        <Heart className="w-5 h-5 text-slate-700 fill-black" />
-                                                    </div>
-                                                    <span className="text-[10px] text-slate-600 font-medium">Save</span>
-                                                </div>
-                                                <div className="flex flex-col items-center gap-1 cursor-pointer group">
-                                                    <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-200 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
-                                                        <AlertCircle className="w-5 h-5 text-slate-700" />
-                                                    </div>
-                                                    <span className="text-[10px] text-slate-600 font-medium">Report</span>
-                                                </div>
-                                                <div className="flex flex-col items-center gap-1 cursor-pointer group">
-                                                    <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-200 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
-                                                        <UserSquare2 className="w-5 h-5 text-slate-700" />
-                                                    </div>
-                                                    <span className="text-[10px] text-slate-600 font-medium">Post ID</span>
-                                                </div>
-                                            </div>
-
-                                            {/* Arrow pointer roughly pointing to button */}
-                                            <div className="absolute top-4 -right-1.5 w-3 h-3 bg-[#F8F9FB] border-t border-r border-slate-200 rotate-45"></div>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         </div>
@@ -488,11 +551,8 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                         Details
                                     </button>
                                     <button
-                                        onClick={() => {
-                                            setActiveTab('shipping');
-                                            setIsDetailsOpen(true);
-                                        }}
-                                        className={`px-3 py-1.5 text-xs font-bold border rounded-md transition-all ${activeTab === 'shipping' ? 'border-slate-400 text-slate-800 bg-white shadow-sm' : 'border-transparent text-slate-400 hover:bg-slate-50'}`}
+                                        onClick={() => setShowShippingModal(true)}
+                                        className="px-3 py-1.5 text-xs font-bold border border-transparent text-slate-400 hover:bg-slate-50 rounded-md transition-all"
                                     >
                                         Shipping & Safety
                                     </button>
@@ -505,67 +565,54 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                             {/* Tab Content */}
                             {isDetailsOpen && (
                                 <div className="animate-in slide-in-from-top-2 duration-200 min-h-[80px]">
-                                    {activeTab === 'details' ? (
-                                        <div className="space-y-3">
-                                            {ad.features && Object.keys(ad.features).length > 0 && (
+                                    <div className="space-y-3">
+                                        {(() => {
+                                            const featuresObj = typeof ad.features === 'string' ? JSON.parse(ad.features) : (ad.features || {});
+                                            if (Object.keys(featuresObj).length === 0) return null;
+
+                                            return (
                                                 <div className="grid grid-cols-3 gap-x-3 gap-y-1 mt-2 mb-2 p-0 pt-1 rounded-lg">
-                                                    {Object.entries(ad.features).map(([key, value]) => (
+                                                    {Object.entries(featuresObj).map(([key, value]) => (
                                                         <div key={key} className="flex items-center gap-1.5 min-w-0">
                                                             <span className="text-xs text-black whitespace-nowrap shrink-0">{key}:</span>
                                                             <span className="text-xs text-black truncate">{String(value)}</span>
                                                         </div>
                                                     ))}
                                                 </div>
-                                            )}
-                                            <div className="text-xs text-slate-500 leading-relaxed relative">
-                                                <p className={`whitespace-pre-wrap ${!isDescriptionExpanded ? 'line-clamp-2' : ''}`}>
-                                                    {ad.description}
-                                                    {isDescriptionExpanded && (
-                                                        <button
-                                                            onClick={() => setIsDescriptionExpanded(false)}
-                                                            className="ml-2 text-xs font-bold text-black hover:underline"
-                                                        >
-                                                            See less
-                                                        </button>
-                                                    )}
-                                                </p>
-                                                {!isDescriptionExpanded && (
+                                            );
+                                        })()}
+                                        <div className="text-xs text-slate-500 leading-relaxed relative">
+                                            <p className={`whitespace-pre-wrap ${!isDescriptionExpanded ? 'line-clamp-2' : ''}`}>
+                                                {ad.description}
+                                                {isDescriptionExpanded && (
                                                     <button
-                                                        onClick={() => setIsDescriptionExpanded(true)}
-                                                        className="absolute bottom-0 right-0 bg-white pl-1 text-xs font-bold text-black"
+                                                        onClick={() => setIsDescriptionExpanded(false)}
+                                                        className="ml-2 text-xs font-bold text-black hover:underline"
                                                     >
-                                                        ...See more
+                                                        {t('show_less')}
                                                     </button>
                                                 )}
-                                            </div>
+                                            </p>
+                                            {!isDescriptionExpanded && (
+                                                <button
+                                                    onClick={() => setIsDescriptionExpanded(true)}
+                                                    className="absolute bottom-0 right-0 bg-white pl-1 text-xs font-bold text-black"
+                                                >
+                                                    ...{t('read_more')}
+                                                </button>
+                                            )}
                                         </div>
-                                    ) : (
-                                        <div className="space-y-3 pt-1">
-                                            <div className="flex items-start gap-3">
-                                                <Truck className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
-                                                <span className="text-xs text-slate-600 font-medium">This merchant can ship to BD</span>
-                                            </div>
-                                            <div className="flex items-start gap-3">
-                                                <Undo2 className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
-                                                <span className="text-xs text-slate-600 font-medium leading-tight">
-                                                    You can return new and unused items within 30 days
-                                                </span>
-                                            </div>
-                                            <div className="flex items-start gap-3">
-                                                <Timer className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
-                                                <div className="text-xs text-slate-600 font-medium leading-tight">
-                                                    <span>You can cancel within 30 minutes of merchant</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
+                                    </div>
                                 </div>
                             )}
                         </div>
 
                         {/* 7. Promote Button (Moved inside scroll) */}
                         <div className="mt-4 mb-4">
-                            <button className="w-full bg-[#0088cc] text-white text-sm rounded-lg py-2 flex flex-col items-center justify-center transition-colors shadow-sm hover:bg-[#0077b5] active:scale-[0.99]">
+                            <button
+                                onClick={handlePromotePost}
+                                className="w-full bg-[#0088cc] text-white text-sm rounded-lg py-2 flex flex-col items-center justify-center transition-colors shadow-sm hover:bg-[#0077b5] active:scale-[0.99]"
+                            >
                                 Promote This Post
                             </button>
                         </div>
@@ -613,7 +660,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                                     </div>
                                                 </div>
                                                 <div className="text-sm text-black">
-                                                    {pad.price ? `$${pad.price.toLocaleString()}` : 'Price on ask'}
+                                                    {pad.price ? `৳${pad.price.toLocaleString()}` : 'Price on ask'}
                                                 </div>
                                             </div>
                                         </div>
@@ -663,15 +710,18 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                 <div className="flex-1 flex flex-col pt-0.5">
                                     <span className="text-[10px] text-slate-500 leading-none mb-0.5">Seller Information</span>
 
-                                    <h4
-                                        className="font-bold text-slate-900 text-sm leading-tight mb-0.5 cursor-pointer hover:text-blue-600 hover:underline"
-                                        onClick={() => {
-                                            onClose();
-                                            window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: (ad as any).user?._id } }));
-                                        }}
-                                    >
-                                        {(ad as any).user?.storeName || 'Store Name'}
-                                    </h4>
+                                    <div className="flex items-center gap-1.5 mb-0.5">
+                                        <h4
+                                            className="font-bold text-slate-900 text-sm leading-tight cursor-pointer hover:text-blue-600 hover:underline"
+                                            onClick={() => {
+                                                onClose();
+                                                window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: (ad as any).user?._id } }));
+                                            }}
+                                        >
+                                            {(ad as any).user?.storeName || 'Store Name'}
+                                        </h4>
+                                        {(ad as any).user?.mVerified && <VerifiedBadge />}
+                                    </div>
 
                                     <div className="text-[11px] text-slate-500 leading-none mb-1">
                                         {(ad as any).user?.followers || 0} Follower
@@ -734,7 +784,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                                     </div>
                                                 </div>
                                                 <div className="text-sm text-slate-900">
-                                                    {sad.price ? `${sad.price.toLocaleString()}` : 'Price on ask'}
+                                                    {sad.price ? `৳ ${sad.price.toLocaleString()}` : 'Price on ask'}
                                                 </div>
                                             </div>
                                         </div>
@@ -742,11 +792,188 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                 </div>
                             </div>
                         )}
-
                     </div>
                 </div>
 
-                {/* Footer Removed - Content moved inside scrollable area to match requested design flow */}
+                {/* Options Popup Overlay */}
+                {showOptionsPopup && (
+                    <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/20 animate-in fade-in duration-200">
+                        <div
+                            ref={popupRef}
+                            className="w-[280px] bg-[#F8F9FB] rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.15)] border border-slate-200 p-4 animate-in zoom-in-95 duration-200"
+                        >
+                            {/* Top Row */}
+                            <div className="grid grid-cols-4 gap-2 mb-4">
+                                <div
+                                    onClick={async () => {
+                                        const token = Cookies.get('token');
+                                        if (!token) {
+                                            window.dispatchEvent(new CustomEvent('open-mobile-entry-modal'));
+                                            return;
+                                        }
+                                        try {
+                                            const res = await fetch(`${API_BASE_URL}/api/user/notify-preference/toggle`, {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Content-Type': 'application/json',
+                                                    'Authorization': `Bearer ${token}`
+                                                },
+                                                body: JSON.stringify({
+                                                    subCategory: typeof ad.subCategory === 'object' ? ad.subCategory?.name : ad.subCategory,
+                                                    location: typeof ad.location === 'object' ? ad.location?.name : ad.location,
+                                                    adId: ad._id
+                                                })
+                                            });
+                                            const data = await res.json();
+                                            if (res.ok) {
+                                                setIsNotifying(data.isNotifying);
+                                                // toast.success(data.message);
+                                            } else {
+                                                alert(data.message || 'Failed to update preference');
+                                            }
+                                        } catch (err) {
+                                            console.error("Error toggling notify preference:", err);
+                                        }
+                                    }}
+                                    className="flex flex-col items-center gap-1 cursor-pointer group"
+                                >
+                                    <div className={cn(
+                                        "w-10 h-10 rounded-full shadow-sm border flex items-center justify-center transition-colors",
+                                        isNotifying
+                                            ? "bg-teal-500 border-teal-600 text-white"
+                                            : "bg-slate-200 border-slate-200 text-slate-700 group-hover:bg-slate-300"
+                                    )}>
+                                        <Bell className={cn("w-5 h-5", isNotifying && "fill-current")} />
+                                    </div>
+                                    <span className={cn("text-[10px] font-medium whitespace-nowrap", isNotifying ? "text-teal-600" : "text-slate-600")}>
+                                        {isNotifying ? 'Notifying' : 'Notify'}
+                                    </span>
+                                </div>
+                                <div
+                                    onClick={async () => {
+                                        const token = Cookies.get('token');
+                                        if (!token) {
+                                            window.dispatchEvent(new CustomEvent('open-mobile-entry-modal'));
+                                            return;
+                                        }
+                                        try {
+                                            const res = await fetch(`${API_BASE_URL}/api/messages/call-me`, {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Content-Type': 'application/json',
+                                                    'Authorization': `Bearer ${token}`
+                                                },
+                                                body: JSON.stringify({ adId: ad._id })
+                                            });
+                                            const data = await res.json();
+                                            if (data.success) {
+                                                setShowOptionsPopup(false);
+                                                // Open chat window after sending
+                                                window.dispatchEvent(new CustomEvent('open-chat-modal', { detail: { ad } }));
+                                            } else {
+                                                alert(data.message || 'Failed to send request');
+                                            }
+                                        } catch (err) {
+                                            console.error("Error sending call-me request:", err);
+                                        }
+                                    }}
+                                    className="flex flex-col items-center gap-1 cursor-pointer group"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-200 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
+                                        <Phone className="w-5 h-5 text-slate-700 fill-black" />
+                                    </div>
+                                    <span className="text-[10px] text-slate-600 font-medium whitespace-nowrap">Call Me</span>
+                                </div>
+                                <div
+                                    onClick={() => {
+                                        // Scroll to similar ads
+                                        setShowOptionsPopup(false);
+                                        const el = document.getElementById('similar-section');
+                                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                                    }}
+                                    className="flex flex-col items-center gap-1 cursor-pointer group"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-200 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
+                                        <Search className="w-5 h-5 text-slate-700" />
+                                    </div>
+                                    <span className="text-[10px] text-slate-600 font-medium">Similar</span>
+                                </div>
+                                <div
+                                    onClick={() => {
+                                        if (navigator.share) {
+                                            navigator.share({
+                                                title: ad.headline,
+                                                url: window.location.href
+                                            });
+                                        }
+                                    }}
+                                    className="flex flex-col items-center gap-1 cursor-pointer group"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-200 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
+                                        <Share2 className="w-5 h-5 text-slate-700 fill-black" />
+                                    </div>
+                                    <span className="text-[10px] text-slate-600 font-medium">Share</span>
+                                </div>
+                            </div>
+
+                            {/* Bottom Row */}
+                            <div className="grid grid-cols-4 gap-2">
+                                <div
+                                    onClick={async () => {
+                                        const token = Cookies.get('token');
+                                        if (!token) {
+                                            window.dispatchEvent(new CustomEvent('open-mobile-entry-modal'));
+                                            return;
+                                        }
+                                        try {
+                                            const res = await fetch(`${API_BASE_URL}/api/user/favorite/${ad._id}`, {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Content-Type': 'application/json',
+                                                    'Authorization': `Bearer ${token}`
+                                                }
+                                            });
+                                            const data = await res.json();
+                                            if (res.ok) {
+                                                setIsFavorited(data.isFavorited);
+                                                // toast.success(data.message);
+                                            } else {
+                                                alert(data.message || 'Failed to update preferences');
+                                            }
+                                        } catch (err) {
+                                            console.error("Error toggling favorite:", err);
+                                        }
+                                    }}
+                                    className="flex flex-col items-center gap-1 cursor-pointer group"
+                                >
+                                    <div className={cn(
+                                        "w-10 h-10 rounded-full shadow-sm border flex items-center justify-center transition-colors",
+                                        isFavorited
+                                            ? "bg-rose-500 border-rose-600 text-white"
+                                            : "bg-slate-200 border-slate-100 group-hover:bg-slate-300 text-slate-700"
+                                    )}>
+                                        <Heart className={cn("w-5 h-5", isFavorited && "fill-current")} />
+                                    </div>
+                                    <span className={cn("text-[10px] font-medium", isFavorited ? "text-rose-600" : "text-slate-600")}>
+                                        {isFavorited ? 'Saved' : 'Save'}
+                                    </span>
+                                </div>
+                                <div className="flex flex-col items-center gap-1 cursor-pointer group">
+                                    <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-100 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
+                                        <AlertCircle className="w-5 h-5 text-slate-700" />
+                                    </div>
+                                    <span className="text-[10px] text-slate-600 font-medium">Report</span>
+                                </div>
+                                <div className="flex flex-col items-center gap-1 cursor-pointer group">
+                                    <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-100 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
+                                        <UserSquare2 className="w-5 h-5 text-slate-700" />
+                                    </div>
+                                    <span className="text-[10px] text-slate-600 font-medium">Post ID</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* EXPANDED IMAGE OVERLAY */}
@@ -784,7 +1011,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                         )}
                     </div>
 
-                    {/* Thumbnails (Optional, simplified for now) */}
+                    {/* Thumbnails */}
                     <div className="h-20 bg-black/50 overflow-x-auto flex items-center gap-2 px-4 pb-6 pt-2">
                         {images.map((img: string, idx: number) => (
                             <button
@@ -799,6 +1026,37 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                     </div>
                 </div>
             )}
+            {/* Shipping & Safety Info Modal */}
+            <InfoModal
+                isOpen={showShippingModal}
+                onClose={() => setShowShippingModal(false)}
+                title="Shipping & Safety"
+                content={
+                    <div className="space-y-4 pt-4">
+                        <div className="flex items-start gap-4">
+                            <Truck className="w-5 h-5 text-slate-500 mt-0.5 shrink-0" />
+                            <div>
+                                <h4 className="text-[15px] font-bold text-slate-900 mb-1">Shipping Policy</h4>
+                                <p className="text-sm text-slate-600">This merchant can ship to all locations in Bangladesh (BD).</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-4">
+                            <Undo2 className="w-5 h-5 text-slate-500 mt-0.5 shrink-0" />
+                            <div>
+                                <h4 className="text-[15px] font-bold text-slate-900 mb-1">Return Policy</h4>
+                                <p className="text-sm text-slate-600">You can return new and unused items within 30 days of delivery.</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-4">
+                            <Timer className="w-5 h-5 text-slate-500 mt-0.5 shrink-0" />
+                            <div>
+                                <h4 className="text-[15px] font-bold text-slate-900 mb-1">Cancellation Policy</h4>
+                                <p className="text-sm text-slate-600">You can cancel your order within 30 minutes after purchase.</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+            />
         </div>
     );
 }

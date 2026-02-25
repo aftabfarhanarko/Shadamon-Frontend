@@ -347,7 +347,7 @@ export default function ChatMessageModal({ isOpen, onClose, onBack, ad, otherUse
                 <div
                     ref={scrollRef}
                     onScroll={handleScroll}
-                    className="flex-1 overflow-y-auto no-scrollbar bg-white px-4 py-2"
+                    className="flex-1 overflow-y-auto bg-white px-4 py-2"
                 >
                     {/* Safety Warning */}
                     <div className="bg-[#f1f2f4] border border-slate-100 rounded-2xl p-3 flex gap-3 mb-6 relative overflow-hidden mt-2">
@@ -359,7 +359,12 @@ export default function ChatMessageModal({ isOpen, onClose, onBack, ad, otherUse
                         <div className="flex-1">
                             <div className="flex items-center justify-between mb-1">
                                 <span className="text-[12px] font-bold text-slate-800">সতর্ক থাকুন :</span>
-                                <button className="text-[10px] text-blue-500 font-bold hover:underline">সব সেফটি টিপস</button>
+                                <button
+                                    onClick={() => window.dispatchEvent(new CustomEvent('open-info-modal', { detail: { type: 'safety' } }))}
+                                    className="text-[10px] text-blue-500 font-bold hover:underline"
+                                >
+                                    সব সেফটি টিপস
+                                </button>
                             </div>
                             <p className="text-[11px] text-slate-600 leading-[1.3] font-medium">
                                 SHADAMON কখনো চ্যাটে মেসেজ পাঠায় না। কোনো লিঙ্কে ক্লিক করবেন না, OTP/কার্ড তথ্য শেয়ার করবেন না। পণ্য যাচাই ছাড়া পেমেন্ট করবেন না। SHADAMON-এর নিজস্ব ডেলিভারি সেবা নেই।

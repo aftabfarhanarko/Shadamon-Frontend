@@ -48,11 +48,39 @@ export default function FilterModal({
     const [tempLocation, setTempLocation] = useState<string>("");
     const [tempCategory, setTempCategory] = useState<string>("");
 
+    const [allAds, setAllAds] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchAllAds = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/ads/public/all`);
+                const data = await res.json();
+                if (data.success) {
+                    setAllAds(data.data);
+                }
+            } catch (err) {
+                console.error("Error fetching all ads for counts:", err);
+            }
+        };
+        fetchAllAds();
+    }, []);
+
+    // Effect to handle direct view opening from external events
+    useEffect(() => {
+        const handleOpenView = (e: any) => {
+            if (isOpen && e.detail?.view) {
+                setView(e.detail.view);
+            }
+        };
+        window.addEventListener('open-filter-view', handleOpenView);
+        return () => window.removeEventListener('open-filter-view', handleOpenView);
+    }, [isOpen]);
+
     // Reset filters when modal opens with initialFilters
     useEffect(() => {
         if (isOpen) {
             setFilters(initialFilters);
-            setView('main');
+            // Don't reset view to main here if we want to support direct opening
         }
     }, [isOpen, initialFilters]);
 
@@ -130,7 +158,7 @@ export default function FilterModal({
                 </div>
 
                 {/* Body */}
-                <div className="flex-1 overflow-y-auto no-scrollbar">
+                <div className="flex-1 overflow-y-auto">
                     {view === 'main' && (
                         <div className="p-4 space-y-0 pb-0">
                             <p className="text-slate-900 text-[13px]">{translate("Filter according to preference", "পছন্দ অনুযায়ী ফিল্টার করুন")}</p>
@@ -250,7 +278,7 @@ export default function FilterModal({
 
                     {view === 'location' && (
                         <div className="p-0">
-                            <div className="p-4 bg-slate-50 sticky top-0 z-10 border-b border-slate-100">
+                            <div className="p-2.5 bg-slate-50 sticky top-0 z-10 border-b border-slate-100">
                                 <div className="bg-white rounded-lg border border-slate-200 flex items-center px-3 py-2 gap-2">
                                     <Search className="w-4 h-4 text-slate-400" />
                                     <input
@@ -265,35 +293,41 @@ export default function FilterModal({
                             <div className="divide-y divide-slate-100">
                                 <button
                                     onClick={() => { setFilters({ ...filters, location: "", subLocation: "" }); setView('main'); }}
-                                    className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors text-left"
+                                    className="w-full flex items-center justify-between py-1.5 px-4 hover:bg-slate-50 transition-colors text-left"
                                 >
                                     <span className="text-[15px] font-medium text-[#0088cc]">{translate("All Bangladesh", "পুরো বাংলাদেশ")}</span>
                                     {!filters.location && <Check className="w-5 h-5 text-[#0088cc]" />}
                                 </button>
-                                {locations.filter(l => l.name.toLowerCase().includes(searchQuery.toLowerCase())).map(loc => (
-                                    <button
-                                        key={loc._id}
-                                        onClick={() => {
-                                            setTempLocation(loc.name);
-                                            setSearchQuery("");
-                                            setView('location-sub');
-                                        }}
-                                        className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors text-left"
-                                    >
-                                        <span className="text-[15px] font-medium text-slate-800">{loc.name}</span>
-                                        <div className="flex items-center gap-1">
-                                            {filters.location === loc.name && !filters.subLocation && <Check className="w-4 h-4 text-[#0088cc] mr-1" />}
-                                            <ChevronRight className="w-4 h-4 text-slate-400" />
-                                        </div>
-                                    </button>
-                                ))}
+                                {locations.filter(l => l.name.toLowerCase().includes(searchQuery.toLowerCase())).map(loc => {
+                                    const count = allAds.filter(ad => ad.location === loc.name).length;
+                                    return (
+                                        <button
+                                            key={loc._id}
+                                            onClick={() => {
+                                                setTempLocation(loc.name);
+                                                setSearchQuery("");
+                                                setView('location-sub');
+                                            }}
+                                            className="w-full flex items-center justify-between py-1.5 px-4 hover:bg-slate-50 transition-colors text-left"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[15px] font-medium text-slate-800">{loc.name}</span>
+                                                <span className="text-[12px] text-slate-500 font-normal">({count.toLocaleString()})</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                {filters.location === loc.name && !filters.subLocation && <Check className="w-4 h-4 text-[#0088cc] mr-1" />}
+                                                <ChevronRight className="w-4 h-4 text-slate-400" />
+                                            </div>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
 
                     {view === 'location-sub' && (
                         <div className="p-0">
-                            <div className="bg-slate-50 p-4 border-b border-slate-100 flex items-center justify-between">
+                            <div className="bg-slate-50 p-2.5 border-b border-slate-100 flex items-center justify-between">
                                 <h3 className="text-sm font-bold text-slate-800">{tempLocation}</h3>
                                 <button
                                     onClick={() => { setFilters({ ...filters, location: tempLocation, subLocation: "" }); setView('main'); }}
@@ -303,26 +337,32 @@ export default function FilterModal({
                                 </button>
                             </div>
                             <div className="divide-y divide-slate-100">
-                                {locations.find(l => l.name === tempLocation)?.subLocations?.map((sub: any) => (
-                                    <button
-                                        key={sub._id}
-                                        onClick={() => {
-                                            setFilters({ ...filters, location: tempLocation, subLocation: sub.name });
-                                            setView('main');
-                                        }}
-                                        className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors text-left"
-                                    >
-                                        <span className="text-[15px] text-slate-700">{sub.name}</span>
-                                        {filters.location === tempLocation && filters.subLocation === sub.name && <Check className="w-5 h-5 text-[#0088cc]" />}
-                                    </button>
-                                ))}
+                                {locations.find(l => l.name === tempLocation)?.subLocations?.map((sub: any) => {
+                                    const count = allAds.filter(ad => ad.location === tempLocation && ad.subLocation === sub.name).length;
+                                    return (
+                                        <button
+                                            key={sub._id}
+                                            onClick={() => {
+                                                setFilters({ ...filters, location: tempLocation, subLocation: sub.name });
+                                                setView('main');
+                                            }}
+                                            className="w-full flex items-center justify-between py-1.5 px-4 hover:bg-slate-50 transition-colors text-left"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[15px] text-slate-700">{sub.name}</span>
+                                                <span className="text-[12px] text-slate-500 font-normal">({count.toLocaleString()})</span>
+                                            </div>
+                                            {filters.location === tempLocation && filters.subLocation === sub.name && <Check className="w-5 h-5 text-[#0088cc]" />}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
 
                     {view === 'category' && (
                         <div className="p-0">
-                            <div className="p-4 bg-slate-50 sticky top-0 z-10 border-b border-slate-100">
+                            <div className="p-2.5 bg-slate-50 sticky top-0 z-10 border-b border-slate-100">
                                 <div className="bg-white rounded-lg border border-slate-200 flex items-center px-3 py-2 gap-2">
                                     <Search className="w-4 h-4 text-slate-400" />
                                     <input
@@ -337,35 +377,41 @@ export default function FilterModal({
                             <div className="divide-y divide-slate-100">
                                 <button
                                     onClick={() => { setFilters({ ...filters, category: "", subCategory: "" }); setView('main'); }}
-                                    className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors text-left"
+                                    className="w-full flex items-center justify-between py-1.5 px-4 hover:bg-slate-50 transition-colors text-left"
                                 >
                                     <span className="text-[15px] font-medium text-[#0088cc]">{translate("All Categories", "সব ক্যাটাগরি")}</span>
                                     {!filters.category && <Check className="w-5 h-5 text-[#0088cc]" />}
                                 </button>
-                                {categories.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())).map(cat => (
-                                    <button
-                                        key={cat._id}
-                                        onClick={() => {
-                                            setTempCategory(cat.name);
-                                            setSearchQuery("");
-                                            setView('category-sub');
-                                        }}
-                                        className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors text-left"
-                                    >
-                                        <span className="text-[15px] font-medium text-slate-800">{cat.name}</span>
-                                        <div className="flex items-center gap-1">
-                                            {filters.category === cat.name && !filters.subCategory && <Check className="w-4 h-4 text-[#0088cc] mr-1" />}
-                                            <ChevronRight className="w-4 h-4 text-slate-400" />
-                                        </div>
-                                    </button>
-                                ))}
+                                {categories.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())).map(cat => {
+                                    const count = allAds.filter(ad => ad.category === cat.name).length;
+                                    return (
+                                        <button
+                                            key={cat._id}
+                                            onClick={() => {
+                                                setTempCategory(cat.name);
+                                                setSearchQuery("");
+                                                setView('category-sub');
+                                            }}
+                                            className="w-full flex items-center justify-between py-1.5 px-4 hover:bg-slate-50 transition-colors text-left"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[15px] font-medium text-slate-800">{cat.name}</span>
+                                                <span className="text-[12px] text-slate-500 font-normal">({count.toLocaleString()})</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                {filters.category === cat.name && !filters.subCategory && <Check className="w-4 h-4 text-[#0088cc] mr-1" />}
+                                                <ChevronRight className="w-4 h-4 text-slate-400" />
+                                            </div>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
 
                     {view === 'category-sub' && (
                         <div className="p-0">
-                            <div className="bg-slate-50 p-4 border-b border-slate-100 flex items-center justify-between">
+                            <div className="bg-slate-50 p-2.5 border-b border-slate-100 flex items-center justify-between">
                                 <h3 className="text-sm font-bold text-slate-800">{tempCategory}</h3>
                                 <button
                                     onClick={() => { setFilters({ ...filters, category: tempCategory, subCategory: "" }); setView('main'); }}
@@ -375,19 +421,25 @@ export default function FilterModal({
                                 </button>
                             </div>
                             <div className="divide-y divide-slate-100">
-                                {categories.find(c => c.name === tempCategory)?.subcategories?.map((sub: any) => (
-                                    <button
-                                        key={sub._id}
-                                        onClick={() => {
-                                            setFilters({ ...filters, category: tempCategory, subCategory: sub.name });
-                                            setView('main');
-                                        }}
-                                        className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors text-left"
-                                    >
-                                        <span className="text-[15px] text-slate-700">{sub.name}</span>
-                                        {filters.category === tempCategory && filters.subCategory === sub.name && <Check className="w-5 h-5 text-[#0088cc]" />}
-                                    </button>
-                                ))}
+                                {categories.find(c => c.name === tempCategory)?.subcategories?.map((sub: any) => {
+                                    const count = allAds.filter(ad => ad.category === tempCategory && ad.subCategory === sub.name).length;
+                                    return (
+                                        <button
+                                            key={sub._id}
+                                            onClick={() => {
+                                                setFilters({ ...filters, category: tempCategory, subCategory: sub.name });
+                                                setView('main');
+                                            }}
+                                            className="w-full flex items-center justify-between py-1.5 px-4 hover:bg-slate-50 transition-colors text-left"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[15px] text-slate-700">{sub.name}</span>
+                                                <span className="text-[12px] text-slate-500 font-normal">({count.toLocaleString()})</span>
+                                            </div>
+                                            {filters.category === tempCategory && filters.subCategory === sub.name && <Check className="w-5 h-5 text-[#0088cc]" />}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, ArrowLeft, Star, Heart, MapPin, Share2, MoreVertical, Edit2, Plus, ArrowRight, Grid, User, Clock, Settings, FileText, Activity, Trash2, CheckCircle2, ChevronDown, Check, LogOut, ExternalLink } from 'lucide-react';
+import { X, ArrowLeft, Star, Heart, MapPin, Share2, MoreVertical, Edit2, Plus, ArrowRight, Grid, User, Clock, Settings, FileText, Activity, Trash2, CheckCircle2, ChevronDown, Check, LogOut, ExternalLink, Search, Bell } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import Cookies from 'js-cookie';
@@ -12,10 +12,26 @@ import Image from 'next/image';
 import { toast } from 'react-hot-toast';
 import PromoteModal from './PromoteModal';
 import AdDetailsModal from './AdDetailsModal';
+import VerifyProfileModal from './VerifyProfileModal';
+import { RiCheckboxCircleFill } from 'react-icons/ri';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs));
 }
+
+const VerifiedBadge = () => (
+    <div className="relative group/badge flex items-center justify-center -mt-0.5 ml-1">
+        <RiCheckboxCircleFill className="w-5 h-5 text-[#0088cc] shrink-0 cursor-pointer" />
+        <div className="absolute bottom-full left-1/2 -translate-x-[20%] lg:-translate-x-1/2 mb-2 hidden group-hover/badge:block w-[240px] bg-slate-50 border border-slate-200 shadow-xl rounded-xl p-3 z-[100] animate-in fade-in zoom-in-95 duration-200 pointer-events-none text-left">
+            <p className="text-[13px] text-slate-700 font-medium leading-relaxed whitespace-normal break-words">
+                <span className="font-bold text-black">Verified</span> by mobile number & additional checks to ensure authenticity.
+            </p>
+            <div className="absolute top-full left-[20%] lg:left-1/2 -translate-x-1/2 -mt-[1px]">
+                <div className="w-3 h-3 bg-slate-50 border-b border-r border-slate-200 transform rotate-45" />
+            </div>
+        </div>
+    </div>
+);
 
 interface AccountActivityModalProps {
     isOpen: boolean;
@@ -39,10 +55,91 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
     const [userAds, setUserAds] = useState<any[]>([]);
     const [isFollowing, setIsFollowing] = useState(false);
     const [followLoading, setFollowLoading] = useState(false);
+    const [selectedAdForDeletion, setSelectedAdForDeletion] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [isUrlChecking, setIsUrlChecking] = useState(false);
+    const [urlStatus, setUrlStatus] = useState<'idle' | 'available' | 'taken'>('idle');
 
     // Promote Modal State
     const [promoteAd, setPromoteAd] = useState<any>(null);
     const [showPromoteModal, setShowPromoteModal] = useState(false);
+
+    // CV Send State
+    const [pendingCvAd, setPendingCvAd] = useState<any>(null);
+    const [highlightCvFields, setHighlightCvFields] = useState(false);
+
+    useEffect(() => {
+        const handleInitSendCv = (e: CustomEvent) => {
+            const ad = e.detail?.ad;
+            setPendingCvAd(ad);
+            setHighlightCvFields(true);
+            setActiveTab('Profile');
+            window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { activeTab: 'Profile' } }));
+        };
+        window.addEventListener('init-send-cv', handleInitSendCv as EventListener);
+        return () => window.removeEventListener('init-send-cv', handleInitSendCv as EventListener);
+    }, []);
+
+    const handleDeleteAd = async (adId: string) => {
+        const token = Cookies.get('token');
+        if (!token) return;
+        setIsDeleting(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/ads/${adId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await res.json();
+            if (data.success || res.ok) {
+                toast.success(data.message || "Ad marked as deleted");
+                setUserAds(prev => prev.map(ad => ad._id === adId ? { ...ad, status: 'deleted' } : ad));
+                setSelectedAdForDeletion(null);
+            } else {
+                toast.error(data.message || "Failed to delete ad");
+            }
+        } catch (error) {
+            console.error("Error deleting ad", error);
+            toast.error("An error occurred while deleting ad");
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const handleToggleStatus = async (adId: string, currentStatus: string) => {
+        if (!isOwnAccount) return;
+        if (currentStatus === 'deleted') {
+            toast.error("Cannot toggle status of deleted ads");
+            return;
+        }
+
+        const token = Cookies.get('token');
+        if (!token) {
+            window.dispatchEvent(new CustomEvent('open-mobile-entry-modal'));
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/ads/${adId}/toggle-status`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await res.json();
+            if (data.success) {
+                const newStatus = data.data.status;
+                setUserAds(prev => prev.map(ad => ad._id === adId ? { ...ad, status: newStatus } : ad));
+                toast.success(data.message || `Ad is now ${newStatus === 'active' ? 'Active' : 'Paused'}`);
+            } else {
+                toast.error(data.message || "Failed to update status");
+            }
+        } catch (error) {
+            console.error("Error toggling ad status", error);
+            toast.error("An error occurred while updating status");
+        }
+    };
 
     const handlePromoteClick = (ad: any) => {
         const token = Cookies.get('token');
@@ -62,18 +159,32 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
     // Ad Details Modal State
     const [selectedDetailAd, setSelectedDetailAd] = useState<any>(null);
 
-    const handleSeeLiveClick = (ad: any) => {
+    const handleSeeLiveClick = async (ad: any) => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/ads/public/${ad._id}`);
+            const data = await res.json();
+            if (data.success) {
+                setSelectedDetailAd(data.data);
+                return;
+            }
+        } catch (e) {
+            console.error("Error fetching ad for live view:", e);
+        }
         setSelectedDetailAd(ad);
     };
 
     // Activity State
     const [activityData, setActivityData] = useState<any>(null);
     const [categories, setCategories] = useState<any[]>([]);
+    const [locations, setLocations] = useState<any[]>([]);
     const [expandedActivity, setExpandedActivity] = useState<string | null>('followed');
 
     // Rating State
     const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
     const [ratingValue, setRatingValue] = useState(0);
+
+    // Verify Profile Modal State
+    const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
 
     const handleSubmitRating = async () => {
         if (ratingValue === 0) {
@@ -123,6 +234,9 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
             fetchActivityData();
             fetchCategories();
         }
+        if (activeTab === 'Profile') {
+            fetchLocations();
+        }
     }, [activeTab]);
 
     useEffect(() => {
@@ -159,6 +273,18 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
             }
         } catch (error) {
             console.error("Error fetching categories", error);
+        }
+    };
+
+    const fetchLocations = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/locations`);
+            const data = await res.json();
+            if (data.success) {
+                setLocations(data.data);
+            }
+        } catch (error) {
+            console.error("Error fetching locations", error);
         }
     };
 
@@ -240,7 +366,8 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
         storeName: '',
         actionType: 'call',
         sellerPageUrl: '',
-        aboutBusiness: ''
+        aboutBusiness: '',
+        contact: ''
     });
 
     // Refs for file inputs
@@ -265,13 +392,15 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                 storeName: userData.storeName || '',
                 actionType: userData.actionType || 'call',
                 sellerPageUrl: userData.sellerPageUrl || '',
-                aboutBusiness: userData.aboutBusiness || ''
+                aboutBusiness: userData.aboutBusiness || '',
+                contact: userData.contact || ''
             });
         }
     }, [userData, isOwnAccount]);
 
     const handleProfileChange = (field: string, value: any) => {
         setProfileForm(prev => ({ ...prev, [field]: value }));
+        if (field === 'sellerPageUrl') setUrlStatus('idle');
     };
 
     const handleMobileArrayChange = (index: number, value: string) => {
@@ -289,9 +418,66 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
         setProfileForm(prev => ({ ...prev, additionalMobiles: newMobiles }));
     };
 
+    const sendCvMessage = async (userProfileData: any, adData: any) => {
+        const token = Cookies.get('token');
+        if (!token) return;
+
+        const adOwnerId = typeof adData.user === 'object' ? adData.user?._id : adData.user;
+        const userName = userProfileData.name || 'User';
+        const userPhone = userProfileData.mobile || (userProfileData.additionalMobiles?.[0]) || 'Not provided';
+        const userEmail = userProfileData.email || 'Not provided';
+        const userGender = userProfileData.gender || 'Not specified';
+        const userLocation = userProfileData.location || 'Not specified';
+        const userEducation = userProfileData.education || 'Not specified';
+        const userProfession = userProfileData.profession || 'Not specified';
+
+        const message = `Hello, I am interested in your ad: "${adData.headline}". Here is my contact info:
+Name: ${userName}
+Gender: ${userGender}
+Location: ${userLocation}
+Education: ${userEducation}
+Profession: ${userProfession}
+Phone: ${userPhone}
+Email: ${userEmail}
+
+I have sent my CV for your review.`;
+
+        try {
+            const formData = new FormData();
+            formData.append('receiverId', adOwnerId);
+            formData.append('adId', adData._id);
+            formData.append('text', message);
+
+            const res = await fetch(`${API_BASE_URL}/api/messages`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+
+            if (res.ok) {
+                toast.success("CV sent successfully!");
+                setPendingCvAd(null);
+                setHighlightCvFields(false);
+            } else {
+                toast.error("Failed to send CV. Please try again.");
+            }
+        } catch (error) {
+            console.error("Error sending CV:", error);
+            toast.error("Error sending CV");
+        }
+    };
+
     const saveProfile = async () => {
         // Filter empty mobiles
         const filteredMobiles = profileForm.additionalMobiles.filter(m => m.trim() !== '');
+
+        if (pendingCvAd && highlightCvFields) {
+            const hasMobile = profileForm.mobile || filteredMobiles.length > 0;
+            if (!profileForm.gender || !profileForm.location || !profileForm.education || !profileForm.profession || !hasMobile || !profileForm.email) {
+                toast.error("Please fill all mandatory fields (marked in red) to send CV.");
+                return;
+            }
+        }
 
         try {
             const token = Cookies.get('token');
@@ -320,6 +506,10 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                     additionalMobiles: filteredMobiles,
                     ...(data.user || {})
                 }));
+
+                if (pendingCvAd) {
+                    await sendCvMessage({ ...userData, ...profileForm, additionalMobiles: filteredMobiles }, pendingCvAd);
+                }
             } else {
                 toast.error(data.message || 'Update failed');
             }
@@ -523,6 +713,36 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
         router.refresh();
     };
 
+    const handleCheckUrl = async () => {
+        if (!profileForm.sellerPageUrl) return;
+        setIsUrlChecking(true);
+        setUrlStatus('idle');
+        try {
+            const token = Cookies.get('token');
+            const res = await fetch(`${API_BASE_URL}/api/user/check-url`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ url: profileForm.sellerPageUrl })
+            });
+            const data = await res.json();
+            if (data.available) {
+                setUrlStatus('available');
+                toast.success("URL is available!");
+            } else {
+                setUrlStatus('taken');
+                toast.error("URL is already taken.");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to check URL");
+        } finally {
+            setIsUrlChecking(false);
+        }
+    };
+
     // Handle Image Upload
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'banner' | 'logo' | 'storeLogo') => {
         const file = e.target.files?.[0];
@@ -611,8 +831,17 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
     const promotedAds = sortedByViews.slice(0, 5); // Top 5 viewed
     const displayAds = productTab === 'Popular' ? promotedAds : userAds;
 
+    const isCvFieldMissing = (field: string) => {
+        if (!pendingCvAd || !highlightCvFields) return false;
+        if (field === 'mobile') {
+            const hasMobile = profileForm.mobile || profileForm.additionalMobiles.some(m => m.trim() !== '');
+            return !hasMobile;
+        }
+        return !(profileForm as any)[field];
+    };
+
     return (
-        <div className="fixed inset-0 z-[200] flex items-start justify-center pt-20">
+        <div className="fixed inset-0 z-[1100] flex items-start justify-center pt-20">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
@@ -653,7 +882,7 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                 </div>
 
                 {/* Content Area */}
-                <div className="flex-1 overflow-y-auto no-scrollbar bg-[#F1F5F9] relative">
+                <div className="flex-1 overflow-y-auto bg-[#F1F5F9] relative">
                     {loading && (
                         <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#F1F5F9]">
                             <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -730,12 +959,14 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                                     <h3 className="text-lg font-bold text-black leading-tight truncate">
                                                         {displayUser.storeName || displayUser.name}
                                                     </h3>
-                                                    {/* Premium Blue Tick - Commented out as per previous state */}
-                                                    {/* {displayUser.merchantType === 'Premium' && ... } */}
+                                                    {displayUser.mVerified && <VerifiedBadge />}
 
                                                     {/* Get Verified Badge */}
-                                                    {isOwnAccount && (
-                                                        <span className="px-2 py-[2px] bg-white border border-slate-200 text-xs text-black rounded-full shadow-sm">
+                                                    {isOwnAccount && !displayUser.mVerified && (
+                                                        <span
+                                                            onClick={() => setIsVerifyModalOpen(true)}
+                                                            className="px-2 py-[2px] bg-white border border-slate-200 text-xs text-black rounded-full shadow-sm cursor-pointer hover:bg-slate-50 transition-colors"
+                                                        >
                                                             Get Verified
                                                         </span>
                                                     )}
@@ -866,6 +1097,11 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                                             {ad.images && ad.images.length > 0 && (
                                                                 <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-contain" loading="lazy" />
                                                             )}
+                                                            {ad.status === 'pause' && (
+                                                                <div className="absolute top-1 left-1 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
+                                                                    In Review
+                                                                </div>
+                                                            )}
                                                             {productTab === 'Popular' && (
                                                                 <div className="absolute top-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1">
                                                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
@@ -903,7 +1139,12 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                                 >
                                                     <div className="h-40 bg-slate-900 relative">
                                                         {ad.images && ad.images.length > 0 && (
-                                                            <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-contain" loading="lazy" />
+                                                            <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover" loading="lazy" />
+                                                        )}
+                                                        {ad.status === 'pause' && (
+                                                            <div className="absolute top-2 left-2 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                                                                In Review
+                                                            </div>
                                                         )}
                                                         {productTab === 'Popular' && (
                                                             <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded flex items-center gap-1">
@@ -946,6 +1187,11 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                                             <div className="h-24 bg-slate-100 relative">
                                                                 {ad.images && ad.images.length > 0 && (
                                                                     <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover" loading="lazy" />
+                                                                )}
+                                                                {ad.status === 'pause' && (
+                                                                    <div className="absolute top-1 left-1 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
+                                                                        In Review
+                                                                    </div>
                                                                 )}
                                                                 {productTab === 'Popular' && (
                                                                     <div className="absolute top-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1">
@@ -1034,8 +1280,11 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                 </div>
                             </div>
 
-                            {isOwnAccount && (
-                                <button className="w-full bg-[#EBF5FF] text-slate-800 text-sm py-2 rounded mb-3 hover:bg-blue-100 transition-colors">
+                            {isOwnAccount && !displayUser.mVerified && (
+                                <button
+                                    onClick={() => setIsVerifyModalOpen(true)}
+                                    className="w-full bg-[#EBF5FF] text-slate-800 text-sm py-2 rounded mb-3 hover:bg-blue-100 transition-colors"
+                                >
                                     Get Verified Badge
                                 </button>
                             )}
@@ -1075,7 +1324,10 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                                 disabled={!isOwnAccount}
                                                 value={profileForm.gender}
                                                 onChange={(e) => handleProfileChange('gender', e.target.value)}
-                                                className="w-full border border-slate-200 rounded px-2 py-1 text-sm text-black outline-none focus:border-blue-500 bg-slate-50/50 appearance-none"
+                                                className={cn(
+                                                    "w-full border rounded px-2 py-1 text-sm text-black outline-none bg-slate-50/50 appearance-none",
+                                                    isCvFieldMissing('gender') ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:border-blue-500"
+                                                )}
                                             >
                                                 <option value="">Select Gender</option>
                                                 <option value="Male">Male</option>
@@ -1088,25 +1340,45 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                     {/* Location */}
                                     <div className="col-span-1">
                                         <label className="block text-xs text-slate-500 mb-0.5">Location</label>
-                                        <input
-                                            type="text"
-                                            readOnly={!isOwnAccount}
-                                            value={profileForm.location}
-                                            onChange={(e) => handleProfileChange('location', e.target.value)}
-                                            className="w-full border border-slate-200 rounded px-2 py-1 text-sm text-black outline-none focus:border-blue-500 bg-slate-50/50"
-                                        />
+                                        <div className="relative">
+                                            <select
+                                                disabled={!isOwnAccount}
+                                                value={profileForm.location}
+                                                onChange={(e) => handleProfileChange('location', e.target.value)}
+                                                className={cn(
+                                                    "w-full border rounded px-2 py-1 text-sm text-black outline-none bg-slate-50/50 appearance-none",
+                                                    isCvFieldMissing('location') ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:border-blue-500"
+                                                )}
+                                            >
+                                                <option value="">Select Location</option>
+                                                {locations.map((loc: any) => (
+                                                    <option key={loc._id} value={loc.name}>{loc.name}</option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                        </div>
                                     </div>
 
                                     {/* Education */}
                                     <div className="col-span-1">
                                         <label className="block text-xs text-slate-500 mb-0.5">Education</label>
-                                        <input
-                                            type="text"
-                                            readOnly={!isOwnAccount}
-                                            value={profileForm.education}
-                                            onChange={(e) => handleProfileChange('education', e.target.value)}
-                                            className="w-full border border-slate-200 rounded px-2 py-1 text-sm text-black outline-none focus:border-blue-500 bg-slate-50/50"
-                                        />
+                                        <div className="relative">
+                                            <select
+                                                disabled={!isOwnAccount}
+                                                value={profileForm.education}
+                                                onChange={(e) => handleProfileChange('education', e.target.value)}
+                                                className={cn(
+                                                    "w-full border rounded px-2 py-1 text-sm text-black outline-none bg-slate-50/50 appearance-none",
+                                                    isCvFieldMissing('education') ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:border-blue-500"
+                                                )}
+                                            >
+                                                <option value="">Select Education</option>
+                                                {['Less than high school', 'SSC', 'Inter', 'Diploma', 'Undergraduate', 'Associate degree', 'Bachelor', 'Masters', 'Doctorate'].map(edu => (
+                                                    <option key={edu} value={edu}>{edu}</option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                        </div>
                                     </div>
                                     {/* About Yourself */}
                                     <div className="col-span-1">
@@ -1115,8 +1387,8 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                             readOnly={!isOwnAccount}
                                             value={profileForm.aboutYourself}
                                             onChange={(e) => handleProfileChange('aboutYourself', e.target.value)}
-                                            rows={1}
-                                            className="w-full border border-slate-200 rounded px-2 py-1 text-sm text-black outline-none focus:border-blue-500 bg-slate-50/50 resize-none overflow-hidden"
+                                            rows={2}
+                                            className="w-full border border-slate-200 rounded px-2 py-1 text-sm text-black outline-none focus:border-blue-500 bg-slate-50/50 resize-y min-h-[40px]"
                                         />
                                     </div>
 
@@ -1128,7 +1400,10 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                             readOnly={!isOwnAccount}
                                             value={profileForm.profession}
                                             onChange={(e) => handleProfileChange('profession', e.target.value)}
-                                            className="w-full border border-slate-200 rounded px-2 py-1 text-sm text-black outline-none focus:border-blue-500 bg-slate-50/50"
+                                            className={cn(
+                                                "w-full border rounded px-2 py-1 text-sm text-black outline-none bg-slate-50/50",
+                                                isCvFieldMissing('profession') ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:border-blue-500"
+                                            )}
                                         />
                                     </div>
                                     {/* Experience */}
@@ -1138,8 +1413,8 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                             readOnly={!isOwnAccount}
                                             value={profileForm.professionalExperience}
                                             onChange={(e) => handleProfileChange('professionalExperience', e.target.value)}
-                                            rows={1}
-                                            className="w-full border border-slate-200 rounded px-2 py-1 text-sm text-black outline-none focus:border-blue-500 bg-slate-50/50 resize-none overflow-hidden"
+                                            rows={2}
+                                            className="w-full border border-slate-200 rounded px-2 py-1 text-sm text-black outline-none focus:border-blue-500 bg-slate-50/50 resize-y min-h-[40px]"
                                         />
                                     </div>
 
@@ -1152,7 +1427,10 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                                 readOnly={!isOwnAccount}
                                                 value={profileForm.mobile}
                                                 onChange={(e) => handleProfileChange('mobile', e.target.value)}
-                                                className="w-full border border-slate-200 rounded px-2 py-1 text-sm text-black outline-none focus:border-blue-500 bg-slate-50/50 pr-8"
+                                                className={cn(
+                                                    "w-full border rounded px-2 py-1 text-xs text-slate-500 outline-none pr-8 bg-slate-50/50",
+                                                    isCvFieldMissing('mobile') ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:border-blue-500"
+                                                )}
                                             />
                                             <div className="absolute right-2 top-1/2 -translate-y-1/2">
                                                 {/* Keep the toggle or indicator if needed, or just the check if strictly verified. 
@@ -1173,7 +1451,10 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                             readOnly={!isOwnAccount}
                                             value={profileForm.email}
                                             onChange={(e) => handleProfileChange('email', e.target.value)}
-                                            className="w-full border border-slate-200 rounded px-2 py-1 text-sm text-black outline-none focus:border-blue-500 bg-slate-50/50"
+                                            className={cn(
+                                                "w-full border rounded px-2 py-1 text-xs text-slate-500 outline-none bg-slate-50/50",
+                                                isCvFieldMissing('email') ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:border-blue-500"
+                                            )}
                                         />
                                     </div>
                                 </div>
@@ -1202,8 +1483,8 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                 </div>
 
                                 {isOwnAccount && (
-                                    <button onClick={saveProfile} className="w-full bg-blue-500 text-white py-2.5 rounded-lg text-sm hover:bg-blue-600 transition-colors shadow-sm">
-                                        Save
+                                    <button onClick={saveProfile} className="w-full bg-blue-500 text-white py-2.5 rounded-lg text-sm hover:bg-blue-600 transition-colors shadow-sm font-medium">
+                                        {(pendingCvAd && highlightCvFields) ? 'Save and Send CV' : 'Save'}
                                     </button>
                                 )}
                             </div>
@@ -1256,7 +1537,18 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                                 className="flex-1 px-2 py-1 text-sm text-black outline-none bg-transparent font-bold"
                                             />
                                             {profileForm.sellerPageUrl && isOwnAccount && (
-                                                <button className="px-3 py-1 bg-slate-200 text-xs text-slate-600 hover:bg-slate-300">Check</button>
+                                                <button
+                                                    onClick={handleCheckUrl}
+                                                    disabled={isUrlChecking}
+                                                    className={cn(
+                                                        "px-3 py-1 text-xs transition-colors",
+                                                        urlStatus === 'available' ? "bg-green-100 text-green-700 hover:bg-green-200" :
+                                                            urlStatus === 'taken' ? "bg-red-100 text-red-700 hover:bg-red-200" :
+                                                                "bg-slate-200 text-slate-600 hover:bg-slate-300"
+                                                    )}
+                                                >
+                                                    {isUrlChecking ? "..." : urlStatus === 'available' ? "Available" : urlStatus === 'taken' ? "Taken" : "Check"}
+                                                </button>
                                             )}
                                         </div>
                                     </div>
@@ -1270,6 +1562,18 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                                             onChange={(e) => handleProfileChange('aboutBusiness', e.target.value)}
                                             rows={2}
                                             className="w-full border border-slate-200 rounded px-2 py-1 text-sm text-black outline-none focus:border-blue-500 bg-slate-50/50 resize-none"
+                                        />
+                                    </div>
+
+                                    {/* Contact */}
+                                    <div className="col-span-2">
+                                        <label className="block text-xs text-slate-500 mb-0.5">Contact</label>
+                                        <input
+                                            type="text"
+                                            readOnly={!isOwnAccount}
+                                            value={profileForm.contact}
+                                            onChange={(e) => handleProfileChange('contact', e.target.value)}
+                                            className="w-full border border-slate-200 rounded px-2 py-1 text-sm text-black outline-none focus:border-blue-500 bg-slate-50/50"
                                         />
                                     </div>
                                 </div>
@@ -1419,97 +1723,176 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                             {userAds.length > 0 ? (
                                 <div className="space-y-0">
                                     {userAds.map((ad, idx) => (
-                                        <div key={ad._id || idx} className="bg-white rounded-lg overflow-hidden">
-                                            <div className="p-3 flex gap-3">
-                                                {/* Left: Image (Spans height of details + performance) */}
-                                                <div className="w-[150px] shrink-0">
-                                                    <div className="h-[120px] bg-slate-100 relative rounded overflow-hidden group mb-2">
-                                                        {ad.images && ad.images.length > 0 ? (
-                                                            <img
-                                                                src={getImageUrl(ad.images[0]) || undefined}
-                                                                className="w-full h-full object-cover"
-                                                                alt={ad.headline}
-                                                                loading="lazy"
-                                                            />
-                                                        ) : (
-                                                            <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">No Image</div>
-                                                        )}
-                                                        <button
-                                                            onClick={() => handleSeeLiveClick(ad)}
-                                                            className="absolute top-1 left-1 bg-white/90 text-[8px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm text-slate-700 hover:bg-white"
-                                                        >
-                                                            See Live <ExternalLink className="w-2 h-2" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                                {/* Right: Info & Performance */}
-                                                <div className="flex-1 min-w-0 flex flex-col gap-1">
-                                                    {/* Top Details */}
-                                                    <div className="flex flex-col gap-0">
-                                                        <h3 className="text-sm text-black line-clamp-1" title={ad.headline}>
-                                                            {ad.headline}
-                                                        </h3>
-                                                        <div className="text-[11px] text-black truncate">
-                                                            {ad.category || 'Category'}, {ad.location || 'Location'}
+                                        <React.Fragment key={ad._id || idx}>
+                                            <div className={cn(
+                                                "bg-white rounded-lg overflow-hidden transition-all duration-200 mb-2",
+                                                ad.status === 'deleted' && "grayscale opacity-60 bg-slate-50 pointer-events-none"
+                                            )}>
+                                                {/* Admin Notification Dialogue */}
+                                                {ad.notificationDialogue && ad.notificationDialogue.trim() !== '' && (
+                                                    <div className="bg-amber-50 p-2 px-3 flex items-center gap-2 border-b border-amber-100">
+                                                        <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center shrink-0">
+                                                            <Bell className="w-3.5 h-3.5 text-white fill-white" />
                                                         </div>
-                                                        <div className="text-[10px] text-black">
-                                                            Publish {ad.createdAt ? new Date(ad.createdAt).toLocaleDateString('en-GB').replace(/\//g, '.') : 'N/A'}
+                                                        <p className="text-[11px] text-amber-900 leading-tight font-bold">
+                                                            {ad.notificationDialogue}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                                {/* Review Notice - Top of Post */}
+                                                {(ad.status === 'pause' || ad.status === 'review') && (
+                                                    <div className="bg-[#EEF2FF] p-2 px-3 flex items-center gap-2 border-b border-[#E0E7FF]">
+                                                        <div className="w-6 h-6 rounded-full bg-[#3B82F6] flex items-center justify-center shrink-0">
+                                                            <Search className="w-3.5 h-3.5 text-white stroke-[3]" />
+                                                        </div>
+                                                        <p className="text-[11px] leading-tight font-bold">
+                                                            পোস্টটি রিভিউতে আছে, যাচাই করে পাবলিশ করা হবে। এখনই পাবলিশ করে বেশি কাস্টমার পেতে- প্রমোট করুন
+                                                        </p>
+                                                    </div>
+                                                )}
+                                                <div className="p-3 flex gap-3">
+                                                    {/* Left: Image (Spans height of details + performance) */}
+                                                    <div className="w-[150px] shrink-0">
+                                                        <div className="h-[120px] bg-slate-100 relative rounded overflow-hidden group mb-2">
+                                                            {ad.images && ad.images.length > 0 ? (
+                                                                <img
+                                                                    src={getImageUrl(ad.images[0]) || undefined}
+                                                                    className="w-full h-full object-cover"
+                                                                    alt={ad.headline}
+                                                                    loading="lazy"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">No Image</div>
+                                                            )}
+                                                            {ad.status !== 'deleted' && ad.status !== 'pause' && ad.status !== 'review' && (
+                                                                <button
+                                                                    onClick={() => handleSeeLiveClick(ad)}
+                                                                    className="absolute top-1 left-1 bg-white/90 text-[8px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm text-slate-700 hover:bg-white"
+                                                                >
+                                                                    See Live <ExternalLink className="w-2 h-2" />
+                                                                </button>
+                                                            )}
+                                                            {isOwnAccount && ad.status !== 'deleted' && (
+                                                                <div
+                                                                    className="absolute bottom-1 left-1 bg-white rounded-full w-4 h-4 flex items-center justify-center cursor-pointer shadow-sm border border-slate-300"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setSelectedAdForDeletion(selectedAdForDeletion === ad._id ? null : ad._id);
+                                                                    }}
+                                                                >
+                                                                    {selectedAdForDeletion === ad._id && (
+                                                                        <div className="w-2.5 h-2.5 bg-blue-600 rounded-full"></div>
+                                                                    )}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
 
-                                                    {/* Horizontal Divider */}
-                                                    <div className="h-px bg-slate-500 w-[80%] my-0"></div>
-
-                                                    {/* Bottom Subsection: Performance + Actions */}
-                                                    <div className="flex items-start justify-between gap-1">
-                                                        {/* Promote Performance Stats */}
-                                                        <div className="text-[10px] text-black flex-1">
-                                                            <div className="mb-0.5 font-bold">{ad.adType === 'Promoted' ? 'Promote Performance' : 'Ad Performance'}</div>
-                                                            <div className="text-black leading-tight space-y-0.5">
-                                                                {ad.adType === 'Promoted' && (
-                                                                    <div className="flex flex-wrap gap-x-2">
-                                                                        <span>Budget : <span className="text-black">{ad.promoteBudget || 0}</span></span>
-                                                                        <span>From : <span className="text-black">{ad.createdAt ? new Date(ad.createdAt).toLocaleDateString('en-GB').replace(/\//g, '.') : 'N/A'}</span> to <span className="text-black">{ad.promoteEndDate ? new Date(ad.promoteEndDate).toLocaleDateString('en-GB').replace(/\//g, '.') : 'N/A'}</span></span>
-                                                                    </div>
-                                                                )}
-                                                                <div className="flex gap-x-2">
-                                                                    <span>View : <span className="text-black">{ad.dailyViewsCount || 0}</span></span>
-                                                                    <span>Delivery : <span className="text-black">{ad.dailyDeliveryCount || 0}</span></span>
-                                                                    <span>Rate : <span className="text-black">{ad.deliveryCount > 0 ? ((ad.views / ad.deliveryCount) * 100).toFixed(0) : 0}%</span></span>
-                                                                </div>
-                                                                <div>
-                                                                    Lifetime View : <span className="text-black">{ad.views || 0}</span>
-                                                                </div>
+                                                    {/* Right: Info & Performance */}
+                                                    <div className="flex-1 min-w-0 flex flex-col gap-1">
+                                                        {/* Top Details */}
+                                                        <div className="flex flex-col gap-0">
+                                                            <h3 className="text-sm text-black line-clamp-1" title={ad.headline}>
+                                                                {ad.headline}
+                                                            </h3>
+                                                            <div className="text-[11px] text-black truncate">
+                                                                {ad.category || 'Category'}, {ad.location || 'Location'}
+                                                            </div>
+                                                            <div className="text-[10px] text-black">
+                                                                Publish {ad.createdAt ? new Date(ad.createdAt).toLocaleDateString('en-GB').replace(/\//g, '.') : 'N/A'}
                                                             </div>
                                                         </div>
 
-                                                        {/* Actions: Badge & Edit */}
-                                                        <div className="flex flex-col items-end gap-1.5 shrink-0 pt-1">
-                                                            <span className="bg-[#0088cc] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                                                                AD On
-                                                            </span>
-                                                            <button
-                                                                onClick={() => onEditAd?.(ad)}
-                                                                className="text-[10px] text-slate-500 font-bold border border-slate-300 px-3 py-0.5 rounded-full hover:bg-slate-50"
-                                                            >
-                                                                Edit
-                                                            </button>
+
+                                                        {/* Horizontal Divider */}
+                                                        <div className="h-px bg-slate-500 w-[80%] my-0"></div>
+
+                                                        {/* Bottom Subsection: Performance + Actions */}
+                                                        <div className="flex items-start justify-between gap-1">
+                                                            {/* Promote Performance Stats */}
+                                                            <div className="text-[10px] text-black flex-1">
+                                                                {ad.adType === 'Promoted' ? (
+                                                                    <>
+                                                                        <div className="mb-0.5 font-bold">Promote Performance</div>
+                                                                        <div className="text-black leading-tight space-y-0.5">
+                                                                            <div className="flex flex-wrap gap-x-2">
+                                                                                <span>Budget : <span className="text-black">{ad.promoteBudget || 0}</span></span>
+                                                                                <span>From : <span className="text-black">{ad.createdAt ? new Date(ad.createdAt).toLocaleDateString('en-GB').replace(/\//g, '.') : 'N/A'}</span> to <span className="text-black">{ad.promoteEndDate ? new Date(ad.promoteEndDate).toLocaleDateString('en-GB').replace(/\//g, '.') : 'N/A'}</span></span>
+                                                                            </div>
+                                                                            <div className="flex gap-x-2">
+                                                                                <span>View : <span className="text-black">{ad.promotedViews || 0}</span></span>
+                                                                                <span>Delivery : <span className="text-black">{ad.promotedDeliveryCount || 0}</span></span>
+                                                                                <span>Rate : <span className="text-black">{ad.promotedDeliveryCount > 0 ? ((ad.promotedViews / ad.promotedDeliveryCount) * 100).toFixed(0) : 0}%</span></span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </>
+                                                                ) : (
+                                                                    <div className="mb-0.5 font-bold">Ad Performance</div>
+                                                                )}
+                                                                <div className="mt-0.5">
+                                                                    Lifetime View : <span className="text-black">{(ad.views || 0) + (ad.deliveryCount || 0)}</span>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Actions: Badge & Edit */}
+                                                            <div className="flex flex-col items-end gap-1.5 shrink-0 pt-1">
+                                                                <span
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        if (ad.adType === 'Promoted') {
+                                                                            handleToggleStatus(ad._id, ad.status);
+                                                                        }
+                                                                    }}
+                                                                    className={cn(
+                                                                        "text-[10px] font-bold py-0.5 rounded-full w-[65px] inline-flex items-center justify-center transition-all duration-200",
+                                                                        ad.adType === 'Promoted' && ad.status !== 'deleted' && "cursor-pointer hover:opacity-80 active:scale-95",
+                                                                        ad.status === 'pause' ? "bg-amber-100 text-amber-700 ring-1 ring-amber-200" :
+                                                                            ad.status === 'deleted' ? "bg-red-100 text-red-600" : "bg-[#0088cc] text-white shadow-sm"
+                                                                    )}
+                                                                >
+                                                                    {ad.status === 'pause' ? (ad.adType === 'Promoted' ? 'PAUSED' : 'In Review') :
+                                                                        ad.status === 'deleted' ? 'Deleted' : (ad.adType === 'Promoted' ? 'AD On' : 'Free Ad')}
+                                                                </span>
+                                                                <div className="flex items-center gap-1.5">
+                                                                    {selectedAdForDeletion === ad._id && isOwnAccount && ad.status !== 'deleted' && (
+                                                                        <button
+                                                                            onClick={() => handleDeleteAd(ad._id)}
+                                                                            disabled={isDeleting}
+                                                                            className="text-[10px] text-white bg-red-500 font-bold border border-red-500 px-3 py-0.5 rounded-full hover:bg-red-600 disabled:opacity-50 transition-colors"
+                                                                        >
+                                                                            {isDeleting ? 'Deleting...' : 'Delete'}
+                                                                        </button>
+                                                                    )}
+                                                                    {ad.status !== 'deleted' && (
+                                                                        <button
+                                                                            onClick={() => onEditAd?.(ad)}
+                                                                            className="text-[10px] text-slate-500 font-bold border border-slate-300 w-[65px] py-0.5 rounded-full hover:bg-slate-50 flex items-center justify-center"
+                                                                        >
+                                                                            Edit
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
 
-                                            {/* Full Width Button */}
-                                            <div className="px-3 pb-3 pt-0">
-                                                <button
-                                                    onClick={() => handlePromoteClick(ad)}
-                                                    className="w-full bg-[#3B82F6] text-white text-[13px] font-medium py-1.5 rounded-md text-center hover:bg-blue-600 transition-colors shadow-sm"
-                                                >
-                                                    Promote / Learning / Promoting
-                                                </button>
+                                                {/* Full Width Button */}
+                                                <div className="px-3 pb-3 pt-0">
+                                                    <button
+                                                        onClick={() => handlePromoteClick(ad)}
+                                                        disabled={ad.status === 'deleted'}
+                                                        className={cn(
+                                                            "w-full text-white text-[13px] font-medium py-1.5 rounded-md text-center transition-colors shadow-sm",
+                                                            ad.status === 'deleted' ? "bg-slate-400 cursor-not-allowed" : "bg-[#3B82F6] hover:bg-blue-600"
+                                                        )}
+                                                    >
+                                                        {ad.status === 'deleted' ? 'Post Deleted' : 'Promote / Learning / Promoting'}
+                                                    </button>
+                                                </div>
                                             </div>
-                                        </div>
+                                            {idx < userAds.length - 1 && <div className="h-[6px] bg-slate-300 my-0" />}
+                                        </React.Fragment>
                                     ))}
                                 </div>
                             ) : (
@@ -1791,6 +2174,14 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                         </button>
                     </div>
                 </div>
+            )}
+
+            {isVerifyModalOpen && userData && (
+                <VerifyProfileModal
+                    isOpen={isVerifyModalOpen}
+                    onClose={() => setIsVerifyModalOpen(false)}
+                    user={userData}
+                />
             )}
         </div>
     );

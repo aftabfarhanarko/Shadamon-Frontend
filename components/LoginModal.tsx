@@ -152,7 +152,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
     };
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-start justify-center pt-20">
+        <div className="fixed inset-0 z-[1100] flex items-start justify-center pt-20">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
@@ -173,7 +173,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
                 </div>
 
                 {/* Main Content Area - No Scroll needed */}
-                <div className="flex-1 overflow-y-auto no-scrollbar px-6 pb-32">
+                <div className="flex-1 overflow-y-auto px-6 pb-32">
 
                     {/* Shield Logo - Shrunken */}
                     <div className="flex flex-col items-center mb-4">
@@ -254,7 +254,10 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
 
                     {/* Secondary Actions */}
                     <div className="flex items-center justify-between text-[11px] text-black px-1 mb-4">
-                        <button className="hover:underline">HelpChat</button>
+                        <button
+                            className="hover:underline"
+                            onClick={() => window.open('https://m.me/shadamon.bd', '_blank')}
+                        >HelpChat</button>
                         <button className="hover:underline">Forgot Password?</button>
                     </div>
 
@@ -306,7 +309,10 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
                 </div>
 
                 {/* Floating Chat Icon */}
-                <div className="absolute right-5 bottom-20 z-[210]">
+                <div
+                    className="absolute right-5 bottom-20 z-[210] cursor-pointer"
+                    onClick={() => window.open('https://m.me/shadamon.bd', '_blank')}
+                >
                     <div className="flex flex-col items-center">
                         <button className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-white shadow-xl hover:scale-105 active:scale-95 transition-all mb-1">
                             <MessageCircle className="w-5 h-5 fill-white" />

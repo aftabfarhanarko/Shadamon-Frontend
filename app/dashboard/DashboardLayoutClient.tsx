@@ -24,6 +24,7 @@ import VerificationModal from '../../components/VerificationModal';
 import AdDetailsModal from '../../components/AdDetailsModal';
 import MessageModal from '../../components/MessageModal';
 import ChatMessageModal from '../../components/ChatMessageModal';
+import InfoModal from '../../components/InfoModal';
 
 
 import { API_BASE_URL } from '../../utils/apiConfig';
@@ -79,6 +80,53 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
     const [mobileEntryReason, setMobileEntryReason] = useState<'post_ad' | 'account' | 'message'>('post_ad');
 
+    const [infoModal, setInfoModal] = useState<{ isOpen: boolean; title: string; content: string }>({
+        isOpen: false,
+        title: '',
+        content: ''
+    });
+
+    const openInfoModal = (type: 'about' | 'terms' | 'privacy' | 'contact' | 'safety') => {
+        const contentMap = {
+            about: {
+                title: language === 'bn' ? 'আমাদের সম্পর্কে' : 'About Us',
+                content: language === 'bn'
+                    ? 'শাদামন বাংলাদেশের একটি ক্রমবর্ধমান অনলাইন মার্কেটপ্লেস। আমরা ক্রেতা এবং বিক্রেতাদের সংযোগ করি যাতে কেনাবেচা সবার জন্য সহজ, দ্রুত এবং নিরাপদ হয়।'
+                    : 'Shadamon is a growing online marketplace in Bangladesh. We connect buyers and sellers to make trade easier, faster, and more secure for everyone.'
+            },
+            terms: {
+                title: language === 'bn' ? 'শর্তাবলী' : 'Terms & Conditions',
+                content: language === 'bn'
+                    ? 'শাদামন ব্যবহার করার মাধ্যমে আপনি সঠিক পণ্য পোস্ট করা, অন্য ব্যবহারকারীদের প্রতি শ্রদ্ধা প্রদর্শন এবং আমাদের কমিউনিটি স্ট্যান্ডার্ড অনুসরণ করতে সম্মত হন। প্রতারণামূলক কার্যক্রম একাউন্ট বাতিলের কারণ হতে পারে।'
+                    : 'By using Shadamon, you agree to post authentic items, respect other users, and follow our community standards. Fraudulent activities will lead to account termination.'
+            },
+            privacy: {
+                title: language === 'bn' ? 'প্রাইভেসি পলিসি' : 'Privacy Policy',
+                content: language === 'bn'
+                    ? 'আপনার প্রাইভেসি আমাদের কাছে অত্যন্ত গুরুত্বপূর্ণ। আমরা শুধুমাত্র আপনার অভিজ্ঞতা উন্নত করার জন্য প্রয়োজনীয় তথ্য সংগ্রহ করি এবং আপনার তথ্য তৃতীয় পক্ষের কাছে বিক্রি করি না।'
+                    : 'Your privacy is important to us. We only collect necessary information to improve your experience and never sell your data to third parties.'
+            },
+            contact: {
+                title: language === 'bn' ? 'যোগাযোগ' : 'Contact Us',
+                content: language === 'bn'
+                    ? 'সাহায্য প্রয়োজন? সাপোর্ট চ্যাট, ইমেইল বা আমাদের হটলাইনের মাধ্যমে আমাদের সাথে যোগাযোগ করুন। আমাদের টিম আপনাকে সাহায্য করার জন্য সর্বদা প্রস্তুত।'
+                    : 'Need help? Reach out to us via Support Chat, Email, or our Hotline. Our team is always ready to assist you.'
+            },
+            safety: {
+                title: language === 'bn' ? 'নিরাপদ থাকুন' : 'Safety Tips',
+                content: language === 'bn'
+                    ? 'সর্বদা জনাকীর্ণ স্থানে দেখা করুন। পণ্যটি কেনার আগে ভালো করে যাচাই করে নিন। পণ্য হাতে পাওয়ার আগে কোনো অগ্রিম টাকা (বিকাশ/রকেট) পাঠাবেন না।'
+                    : 'Always meet in public places. Inspect the item thoroughly before paying. Never send money in advance (bkash/rocket) without receiving the product.'
+            }
+        };
+        const selected = contentMap[type];
+        setInfoModal({
+            isOpen: true,
+            title: selected.title,
+            content: selected.content
+        });
+    };
+
 
     const [searchQuery, setSearchQuery] = useState('');
     const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -91,8 +139,13 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     useEffect(() => {
         const handleOpenAccount = (e: CustomEvent) => {
             const userId = e.detail?.userId;
+            const activeTab = e.detail?.activeTab;
             setViewingUserId(userId);
-            setAccountModalInitialTab('Page');
+            if (activeTab) {
+                setAccountModalInitialTab(activeTab);
+            } else {
+                setAccountModalInitialTab('Page');
+            }
 
             setIsAccountModalOpen(true);
 
@@ -118,13 +171,33 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         };
         window.addEventListener('open-chat-modal', handleOpenChat as EventListener);
 
+        const handleOpenInfo = (e: CustomEvent) => {
+            openInfoModal(e.detail?.type);
+        };
+        window.addEventListener('open-info-modal', handleOpenInfo as EventListener);
+
+        const handleOpenPostAd = (e: CustomEvent) => {
+            setAdToEdit(e.detail?.ad || null);
+            setIsPostAdModalOpen(true);
+        };
+        window.addEventListener('open-post-ad-modal', handleOpenPostAd as EventListener);
+
+        const handleOpenPromote = (e: CustomEvent) => {
+            setAdToPromote(e.detail?.ad || null);
+            setIsPromoteModalOpen(true);
+        };
+        window.addEventListener('open-promote-modal', handleOpenPromote as EventListener);
+
         return () => {
             window.removeEventListener('open-account-modal', handleOpenAccount as EventListener);
             window.removeEventListener('open-mobile-entry-modal', handleOpenMobileEntry);
             window.removeEventListener('open-chat-modal', handleOpenChat as EventListener);
+            window.removeEventListener('open-info-modal', handleOpenInfo as EventListener);
+            window.removeEventListener('open-post-ad-modal', handleOpenPostAd as EventListener);
+            window.removeEventListener('open-promote-modal', handleOpenPromote as EventListener);
         };
 
-    }, []);
+    }, [language, router]);
 
     // Handle clicking outside of search to close suggestions
     useEffect(() => {
@@ -429,14 +502,18 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                 <Menu className="w-6 h-6" />
                             </button>
 
-                            <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
+                            <Link
+                                href="/dashboard"
+                                className="flex items-center gap-2 shrink-0"
+                                onClick={() => window.dispatchEvent(new Event('reset-saved-search'))}
+                            >
                                 <span className="text-3xl font-bold text-[#1A202C] tracking-tighter">shadamon</span>
-                                <div className="hidden lg:flex items-center border-l border-slate-300 pl-2 h-8 self-center">
+                                {/* <div className="hidden lg:flex items-center border-l border-slate-300 pl-2 h-8 self-center">
                                     <div className="flex flex-col -space-y-1">
                                         <span className="text-sm font-bold text-black">{totalAds.toLocaleString()}</span>
                                         <span className="text-xs text-black tracking-tight">Product</span>
                                     </div>
-                                </div>
+                                </div> */}
                             </Link>
                         </div>
 
@@ -611,9 +688,20 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 </Link>
             </nav>
 
-            {/* Main Content Area */}
-            <main className="flex-1 w-full max-w-[1320px] mx-auto px-4 pt-4 pb-0 overflow-hidden">
-                {children}
+            {/* Main Content Area - Full width scroller to show scrollbar on the far right edge of the screen */}
+            <main
+                id="main-dashboard-scroller"
+                className="flex-1 w-full overflow-y-auto"
+                onScroll={(e) => {
+                    const scrollTop = e.currentTarget.scrollTop;
+                    const clamped = Math.min(scrollTop, 64);
+                    setHeaderOffset(clamped);
+                    window.dispatchEvent(new CustomEvent('center-scroll', { detail: { offset: clamped } }));
+                }}
+            >
+                <div className="max-w-[1320px] mx-auto px-4 pt-4">
+                    {children}
+                </div>
             </main>
 
             {/* Mobile Sidebar (Drawer) */}
@@ -741,13 +829,9 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     // Dispatch custom event to tell Dashboard to refetch
                     window.dispatchEvent(new Event('refresh-ads'));
 
-                    // After short delay to allow background refresh, open promote modal
-                    setTimeout(() => {
-                        if (newAd) {
-                            setAdToPromote(newAd);
-                            setIsPromoteModalOpen(true);
-                        }
-                    }, 500);
+                    // Open Account Activity Modal and go to Post tab
+                    setAccountModalInitialTab('Post');
+                    setIsAccountModalOpen(true);
                 }}
             />
 
@@ -913,6 +997,13 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 }}
                 ad={chatAd}
                 otherUser={chatOtherUser}
+            />
+
+            <InfoModal
+                isOpen={infoModal.isOpen}
+                onClose={() => setInfoModal(prev => ({ ...prev, isOpen: false }))}
+                title={infoModal.title}
+                content={infoModal.content}
             />
 
 

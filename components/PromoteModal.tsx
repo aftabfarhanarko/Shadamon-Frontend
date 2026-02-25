@@ -11,6 +11,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { format } from 'date-fns';
 import AdDetailsModal from './AdDetailsModal';
+import InfoModal from './InfoModal';
 
 // Helper for class merging
 function cn(...inputs: ClassValue[]) {
@@ -40,6 +41,8 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
     const [isVerifyBadge, setIsVerifyBadge] = useState(false);
     const [isHighlight, setIsHighlight] = useState(false);
     const [highlightType, setHighlightType] = useState<'Hot Sale' | 'Discount' | 'Urgent'>('Hot Sale');
+    const [trafficLink, setTrafficLink] = useState('');
+    const [trafficButtonType, setTrafficButtonType] = useState('Learn More');
     const [isPostLevel, setIsPostLevel] = useState(false);
     const [showPremier, setShowPremier] = useState(false);
     const [premierSettings, setPremierSettings] = useState<any>({
@@ -55,19 +58,29 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
     const [maxAmount, setMaxAmount] = useState(5000);
     const [gapAmount, setGapAmount] = useState(50); // Step for slider
     const [showManualPayment, setShowManualPayment] = useState(false);
+    const [showHelpline, setShowHelpline] = useState(false);
     const [isEditingBudget, setIsEditingBudget] = useState(false);
     const [activeSection, setActiveSection] = useState<'promoteType' | 'location' | null>(null);
     const [selectedDetailAd, setSelectedDetailAd] = useState<any>(null);
+
+    // Info Modal States
+    const [showPrivacy, setShowPrivacy] = useState(false);
+    const [showTnC, setShowTnC] = useState(false);
+    const [showRefund, setShowRefund] = useState(false);
 
     // Initialize/Reset & Fetch Configs
     useEffect(() => {
         if (isOpen) {
             setPromoteType('call_msg');
+            setTrafficLink('');
+            setTrafficButtonType('Learn More');
             setIsAllBangladesh(true);
             setSelectedLocations([]);
             setDurationDays(1);
             updateEndDate(1);
+            setAmount(gapAmount * 2);
             setShowManualPayment(false);
+            setShowHelpline(false);
             setIsEditingBudget(false);
             setActiveSection(null);
             fetchConfigs();
@@ -175,12 +188,16 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
     const handlePromote = async () => {
         try {
             const token = Cookies.get('token');
-            const payload = {
+
+            // Collect all promotion settings
+            const promotionDetails = {
                 promoteType,
+                trafficLink: promoteType === 'traffic' ? trafficLink : undefined,
+                trafficButtonType: promoteType === 'traffic' ? trafficButtonType : undefined,
                 targetLocations: isAllBangladesh ? ['All Bangladesh'] : selectedLocations,
                 promoteDuration: durationDays,
                 promoteEndDate: endDate,
-                promoteBudget: amount * durationDays, // Sending total ad budget
+                promoteBudget: amount * durationDays,
                 dailyBudget: amount,
                 estimatedReach: `${estimatedMinViews}-${estimatedMaxViews}`,
                 isVerifyBadge,
@@ -191,23 +208,29 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                 totalAmount
             };
 
-            const response = await fetch(`${API_BASE_URL}/api/ads/${ad._id}/promote`, {
-                method: 'PUT',
+            const response = await fetch(`${API_BASE_URL}/api/payment/init`, {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    adId: ad._id,
+                    totalAmount,
+                    userName: ad.userName || "Customer",
+                    userMobile: ad.phone || "01700000000",
+                    description: `Promotion for Ad: ${ad.headline}`,
+                    promotionDetails
+                })
             });
 
             const data = await response.json();
 
-            if (response.ok && data.success) {
-                toast.success(t('promote_success') || "Ad promoted successfully!");
-                onClose();
-                window.location.reload();
+            if (response.ok && data.success && data.url) {
+                // Redirect to SSL Commerz Gateway
+                window.location.href = data.url;
             } else {
-                toast.error(data.message || "Failed to promote ad");
+                toast.error(data.message || "Failed to initialize payment");
             }
 
         } catch (error) {
@@ -221,7 +244,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
     const mainImage = (ad.images && ad.images.length > 0 ? getImageUrl(ad.images[0]) : null) || "https://via.placeholder.com/150";
 
     return (
-        <div className="fixed inset-0 z-[999] flex items-start justify-center pt-20">
+        <div className="fixed inset-0 z-[1000] flex items-start justify-center pt-20">
             {/* Backdrop */}
             <div className="fixed inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
@@ -242,7 +265,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                 </div>
 
                 {/* Content - Scrollable */}
-                <div className="flex-1 overflow-y-auto no-scrollbar p-3 space-y-3 pb-24 bg-white">
+                <div className="flex-1 overflow-y-auto p-3 space-y-3 pb-24 bg-white">
 
                     {/* 1. Notifications Stack */}
                     {/* <div className="space-y-2">
@@ -278,7 +301,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                 <Gift className="w-3 h-3 text-white" />
                             </div>
                             <p className="text-[11px] text-slate-700 leading-tight">
-                                You Get $100 Ad Free boucher. Promote this Post. <span className="font-bold">Valid Till Today</span>
+                                You Get ৳100 Ad Free boucher. Promote this Post. <span className="font-bold">Valid Till Today</span>
                             </p>
                         </div>
                     </div> */}
@@ -318,28 +341,28 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
 
                     {/* 3. Ad Config Card */}
                     <div className="bg-white rounded-lg p-0">
-                        <div className="flex gap-3 mb-3">
-                            <div className="w-24 h-16 rounded overflow-hidden shrink-0 relative">
-                                <img src={mainImage} className="w-full h-full object-cover" alt="ad" loading="lazy" />
-                                <div className="absolute bottom-1 left-1 w-3 h-3 bg-white rounded-full border border-slate-400"></div>
+                        <div className="flex gap-3 mb-3 items-stretch">
+                            <div className="w-[110px] rounded overflow-hidden shrink-0 relative">
+                                <img src={mainImage} className="w-full h-full object-cover absolute inset-0" alt="ad" loading="lazy" />
                                 <button
                                     onClick={() => setSelectedDetailAd(ad)}
-                                    className="absolute top-1 left-1 bg-white/90 text-[8px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm text-slate-700 hover:bg-white"
+                                    className="absolute top-1 left-1 bg-white/90 text-[8px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm text-slate-700 hover:bg-white z-10"
                                 >
                                     See Live <ExternalLink className="w-2 h-2" />
                                 </button>
                             </div>
-                            <div className="flex-1 min-w-0">
-                                <h4 className="text-xs text-black truncate ">{ad.headline}</h4>
-                                <div className="text-[11px] text-black truncate">
-                                    {ad.category || 'Category'}, {ad.location || 'Location'}
+                            <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
+                                <div>
+                                    <h4 className="text-xs text-black leading-tight font-bold mb-0.5 line-clamp-2">{ad.headline}</h4>
+                                    <div className="text-[11px] text-slate-600 truncate leading-tight">
+                                        {ad.category || 'Category'}, {ad.location || 'Location'}
+                                    </div>
                                 </div>
-                                <div className="text-[10px] text-black leading-tight">
+                                <div className="text-[10px] text-black leading-tight space-y-0.5 mt-2">
                                     <div>Publish {ad.createdAt ? format(new Date(ad.createdAt), 'dd.MM.yyyy') : format(new Date(), 'dd.MM.yyyy')}</div>
                                     <div>Duration {format(new Date(), 'dd.MM.yyyy')} to {endDate ? format(new Date(endDate), 'dd.MM.yyyy') : '...'}</div>
-                                    <div className="text-slate-700">Promote Amount ${amount}</div>
+                                    <div className="text-slate-800 font-bold pt-0.5">Promote Amount ৳{amount}</div>
                                 </div>
-                                <div className="text-xs text-slate-900 mt-1">View : 55214</div>
                             </div>
                         </div>
 
@@ -355,7 +378,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                 >
                                     <div className="flex flex-col">
                                         <span className="text-[9px] text-slate-500">Promote Type</span>
-                                        <span className="text-[11px] text-slate-700">{promoteType === 'call_msg' ? 'Call & Message' : 'Visit Traffic'}</span>
+                                        <span className="text-[11px] text-slate-700 font-bold">{promoteType === 'call_msg' ? 'Call & Message' : 'Visit Traffic'}</span>
                                     </div>
                                     <Edit2 className={cn("w-3 h-3 transition-colors", activeSection === 'promoteType' ? 'text-[#0088cc]' : 'text-slate-400')} />
                                 </div>
@@ -408,6 +431,33 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                                     <span className="text-[11px] text-slate-700">Traffic</span>
                                                 </label>
                                             </div>
+
+                                            {promoteType === 'traffic' && (
+                                                <div className="mt-3 flex items-center gap-2 bg-[#F4F6F8] p-2 rounded-md border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+                                                    <span className="text-[11px] font-bold text-slate-600 shrink-0">URL</span>
+                                                    <input
+                                                        type="url"
+                                                        value={trafficLink}
+                                                        onChange={(e) => setTrafficLink(e.target.value)}
+                                                        placeholder="www.example.com"
+                                                        className="flex-1 min-w-0 text-[11px] px-2 py-1.5 border border-slate-300 rounded focus:border-[#0088cc] outline-none transition-colors"
+                                                    />
+                                                    <span className="text-[11px] font-bold text-slate-600 shrink-0 pl-1">Hit Button</span>
+                                                    <select
+                                                        value={trafficButtonType}
+                                                        onChange={(e) => setTrafficButtonType(e.target.value)}
+                                                        className="w-[90px] shrink-0 text-[11px] px-2 py-1.5 border border-slate-300 rounded focus:border-[#0088cc] outline-none bg-white transition-colors cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2210%22%20height%3D%226%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M1%201l4%204%204-4%22%20stroke%3D%22%2364748B%22%20stroke-width%3D%221.5%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:right_6px_center]"
+                                                    >
+                                                        <option value="Detail">Detail</option>
+                                                        <option value="Learn More">Learn More</option>
+                                                        <option value="Shop Now">Shop Now</option>
+                                                        <option value="Book Now">Book Now</option>
+                                                        <option value="Contact Us">Contact Us</option>
+                                                        <option value="Sign Up">Sign Up</option>
+                                                        <option value="Visit Store">Visit Store</option>
+                                                    </select>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
@@ -518,7 +568,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                 </div>
                                 <div className="flex flex-col items-center mb-1">
                                     <div className="flex items-center justify-center gap-1 text-2xl font-black text-[#0088cc] mb-2">
-                                        <span className="text-sm pt-1">$</span>
+                                        <span className="text-sm pt-1">৳</span>
                                         {isEditingBudget ? (
                                             <input
                                                 type="number"
@@ -561,8 +611,8 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                     </div>
 
                                     <div className="w-full flex justify-between text-[10px] text-slate-400 -mt-4">
-                                        <span>${minAmount.toFixed(2)}</span>
-                                        <span>${maxAmount.toFixed(2)}</span>
+                                        <span>৳{minAmount.toFixed(2)}</span>
+                                        <span>৳{maxAmount.toFixed(2)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -581,36 +631,36 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                 <div className="space-y-3 pt-2 bg-slate-50 -mt-[1px] rounded-b px-3 py-3 animate-in fade-in zoom-in-95 duration-200">
                                     {/* Verify Badge */}
                                     <label className="flex items-start gap-2 cursor-pointer group">
-                                        <div className={cn("w-4 h-4 rounded border flex items-center justify-center mt-0.5 transition-colors", isVerifyBadge ? 'bg-[#0088cc] border-[#0088cc]' : 'border-slate-400 bg-white')}>
-                                            {isVerifyBadge && <Check className="w-3 h-3 text-white" />}
+                                        <div className={cn("w-5 h-5 rounded border flex items-center justify-center mt-0.5 transition-colors", isVerifyBadge ? 'bg-[#0088cc] border-[#0088cc]' : 'border-slate-400 bg-white')}>
+                                            {isVerifyBadge && <Check className="w-3.5 h-3.5 text-white" />}
                                         </div>
                                         <input type="checkbox" className="hidden" checked={isVerifyBadge} onChange={() => setIsVerifyBadge(!isVerifyBadge)} />
-                                        <span className="text-[11px] font-bold text-slate-700 group-hover:text-slate-900">
-                                            প্রোফাইলে ভেরিফাই ব্যাজ যোগ (+ ${premierSettings.verifyBadgePrice}/বছর)
+                                        <span className="text-xs font-bold text-slate-700 group-hover:text-slate-900 mt-0.5">
+                                            প্রোফাইলে ভেরিফাই ব্যাজ যোগ (+ ৳{premierSettings.verifyBadgePrice}/বছর)
                                         </span>
                                     </label>
 
                                     {/* Highlight Post */}
                                     <label className="flex items-start gap-2 cursor-pointer group">
-                                        <div className={cn("w-4 h-4 rounded border flex items-center justify-center mt-0.5 transition-colors", isHighlight ? 'bg-[#0088cc] border-[#0088cc]' : 'border-slate-400 bg-white')}>
-                                            {isHighlight && <Check className="w-3 h-3 text-white" />}
+                                        <div className={cn("w-5 h-5 rounded border flex items-center justify-center mt-0.5 transition-colors", isHighlight ? 'bg-[#0088cc] border-[#0088cc]' : 'border-slate-400 bg-white')}>
+                                            {isHighlight && <Check className="w-3.5 h-3.5 text-white" />}
                                         </div>
                                         <input type="checkbox" className="hidden" checked={isHighlight} onChange={() => setIsHighlight(!isHighlight)} />
-                                        <span className="text-[11px] font-bold text-slate-700 group-hover:text-slate-900">
-                                            পোস্টটি হাইলাইট করুন (+ ${premierSettings.highlightPostPrice})
+                                        <span className="text-xs font-bold text-slate-700 group-hover:text-slate-900 mt-0.5">
+                                            পোস্টটি হাইলাইট করুন (+ ৳{premierSettings.highlightPostPrice})
                                         </span>
                                     </label>
 
                                     {/* Post Level / Labels */}
                                     <div>
                                         <label className="flex items-start gap-2 cursor-pointer group mb-2">
-                                            <div className={cn("w-4 h-4 rounded border flex items-center justify-center mt-0.5 transition-colors", isPostLevel ? 'bg-[#0088cc] border-[#0088cc]' : 'border-slate-400 bg-white')}>
-                                                {isPostLevel && <Check className="w-3 h-3 text-white" />}
+                                            <div className={cn("w-5 h-5 rounded border flex items-center justify-center mt-0.5 transition-colors", isPostLevel ? 'bg-[#0088cc] border-[#0088cc]' : 'border-slate-400 bg-white')}>
+                                                {isPostLevel && <Check className="w-3.5 h-3.5 text-white" />}
                                             </div>
                                             <input type="checkbox" className="hidden" checked={isPostLevel} onChange={() => setIsPostLevel(!isPostLevel)} />
-                                            <span className="text-[11px] font-bold text-slate-700 group-hover:text-slate-900 flex items-center gap-2">
+                                            <span className="text-xs font-bold text-slate-700 group-hover:text-slate-900 flex items-center gap-2 mt-0.5">
                                                 পোস্ট লেভেল যোগ করুন
-                                                <Triangle className={cn("w-3 h-3 text-black fill-black transition-transform duration-200 rotate-180", isPostLevel && "rotate-0")} />
+                                                <Triangle className={cn("w-3.5 h-3.5 text-black fill-black transition-transform duration-200 rotate-180", isPostLevel && "rotate-0")} />
                                             </span>
                                         </label>
 
@@ -618,8 +668,8 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                             <div className="pl-6 space-y-1.5 mb-2 animate-in slide-in-from-top-2 fade-in">
                                                 {premierSettings.labels.map((label: any) => (
                                                     <label key={label._id} className="flex items-center gap-2 cursor-pointer">
-                                                        <div className={cn("w-3 h-3 rounded-full border flex items-center justify-center", selectedLabel?._id === label._id ? 'border-[#0088cc]' : 'border-slate-400')}>
-                                                            {selectedLabel?._id === label._id && <div className="w-1.5 h-1.5 rounded-full bg-[#0088cc]" />}
+                                                        <div className={cn("w-3.5 h-3.5 rounded-full border flex items-center justify-center", selectedLabel?._id === label._id ? 'border-[#0088cc]' : 'border-slate-400')}>
+                                                            {selectedLabel?._id === label._id && <div className="w-2 h-2 rounded-full bg-[#0088cc]" />}
                                                         </div>
                                                         <input
                                                             type="radio"
@@ -628,7 +678,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                                             checked={selectedLabel?._id === label._id}
                                                             onChange={() => setSelectedLabel(label)}
                                                         />
-                                                        <span className="text-[10px] text-slate-600">{label.name} (+ ${label.price})</span>
+                                                        <span className="text-xs text-slate-600">{label.name} (+ ৳{label.price})</span>
                                                     </label>
                                                 ))}
                                             </div>
@@ -638,7 +688,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                     {/* Free Ad Credits Offers */}
                                     {premierSettings.freeAdCredits && premierSettings.freeAdCredits.filter((c: any) => c.status).length > 0 && (
                                         <div className="space-y-2 mt-4 pt-2 border-t border-slate-200">
-                                            <h4 className="text-[10px] font-bold text-emerald-600 uppercase">Available Offers</h4>
+                                            <h4 className="text-xs font-bold text-slate-700 uppercase">Available Offers</h4>
                                             {premierSettings.freeAdCredits
                                                 .filter((c: any) => {
                                                     if (!c.status) return false;
@@ -651,16 +701,16 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                                 .map((offer: any, idx: number) => (
                                                     <div key={idx} className="flex items-center justify-between bg-white border border-emerald-100 p-2 rounded">
                                                         <div className="flex flex-col">
-                                                            <span className="text-[10px] font-bold text-slate-800">
-                                                                ${offer.amount} Free Ad Credit ({offer.forValue === 'All' ? 'All Ads' : offer.forValue})
+                                                            <span className="text-xs font-bold text-slate-800">
+                                                                ৳{offer.amount} Free Ad Credit ({offer.forValue === 'All' ? 'All Ads' : offer.forValue})
                                                             </span>
                                                             {offer.endDate && (
-                                                                <span className="text-[8px] text-slate-500">Valid till: {format(new Date(offer.endDate), 'dd MMM, yyyy')}</span>
+                                                                <span className="text-[10px] text-slate-500">Valid till: {format(new Date(offer.endDate), 'dd MMM, yyyy')}</span>
                                                             )}
                                                         </div>
                                                         <button
-                                                            onClick={() => toast.success(`Offer $${offer.amount} Applied!`)}
-                                                            className="bg-[#FF3B30] text-white text-[9px] font-bold px-2 py-1 rounded shadow-sm hover:bg-red-600 transition-colors"
+                                                            onClick={() => toast.success(`Offer ৳${offer.amount} Applied!`)}
+                                                            className="bg-[#FF3B30] text-white text-[11px] font-bold px-3 py-1.5 rounded shadow-sm hover:bg-red-600 transition-colors"
                                                         >
                                                             Apply
                                                         </button>
@@ -676,7 +726,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                     {/* 4. Payment Action */}
                     <div className="mt-2 rounded-lg overflow-hidden flex">
                         <div className="bg-[#B8CCF2] w-1/3 flex items-center justify-center p-3">
-                            <span className="text-sm font-bold text-slate-800">Total : ${totalAmount}</span>
+                            <span className="text-sm font-bold text-slate-800">Total : ৳{totalAmount}</span>
                         </div>
                         <button
                             onClick={handlePromote}
@@ -685,21 +735,36 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                             Pay Now
                         </button>
                     </div>
-                    <p className="text-[8px] text-slate-400 text-center mt-1">
-                        By Proceeding you agree to the Privacy, T & C, Return & Refund
+                    <p className="text-[12px] text-slate-400 text-center mt-1">
+                        By Proceeding you agree to the{' '}
+                        <span className="text-[#0088cc] cursor-pointer hover:underline" onClick={() => setShowPrivacy(true)}>Privacy</span>
+                        {', '}
+                        <span className="text-[#0088cc] cursor-pointer hover:underline" onClick={() => setShowTnC(true)}>T & C</span>
+                        {', '}
+                        <span className="text-[#0088cc] cursor-pointer hover:underline" onClick={() => setShowRefund(true)}>Return & Refund</span>
                     </p>
 
                     {/* 5. Support & Manual Pay */}
                     <div className="mt-6 pt-4 border-t border-slate-400 space-y-4">
                         <div className="flex justify-between px-4 text-[11px] text-slate-500 font-medium">
-                            <span className="cursor-pointer hover:text-slate-800">HelpChat</span>
+                            <span
+                                className="cursor-pointer hover:text-slate-800"
+                                onClick={() => window.open('https://m.me/shadamon.bd', '_blank')}
+                            >
+                                HelpChat
+                            </span>
                             <span
                                 className={cn("cursor-pointer transition-colors", showManualPayment ? "text-blue-600 font-bold" : "hover:text-slate-800")}
                                 onClick={() => setShowManualPayment(!showManualPayment)}
                             >
                                 Pay Manual
                             </span>
-                            <span className="cursor-pointer hover:text-slate-800">Helpline</span>
+                            <span
+                                className="cursor-pointer hover:text-slate-800"
+                                onClick={() => setShowHelpline(!showHelpline)}
+                            >
+                                {showHelpline ? "01752842084" : "Helpline"}
+                            </span>
                         </div>
 
                         {showManualPayment && (
@@ -709,16 +774,19 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                     যে প্যাকেজটি কিনতে চান, সমপরিমান টাকা পাঠিয়ে
                                     জুট কম কে সরাণরি।
                                 </p>
-                                <div className="space-y-0.5 text-xs text-slate-700">
+                                <div className="space-y-0.5 text-xs text-slate-700 mb-4">
                                     <div><span className="font-bold">বিকাশ নাম্বার:</span> 0173 266 1224</div>
                                     <div><span className="font-bold">রকেট নাম্বার:</span> 0173 266 1224-3</div>
                                 </div>
+
+                                <button
+                                    onClick={() => window.open('https://m.me/shadamon.bd', '_blank')}
+                                    className="w-full bg-[#0088cc] text-white font-bold py-3 rounded-lg shadow-sm hover:bg-[#0077b5] transition-colors"
+                                >
+                                    Message us
+                                </button>
                             </div>
                         )}
-
-                        <button className="w-full bg-[#0088cc] text-white font-bold py-3 rounded-lg shadow-sm hover:bg-[#0077b5] transition-colors mb-6">
-                            Message us
-                        </button>
 
 
                     </div>
@@ -732,6 +800,41 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                     ad={selectedDetailAd}
                 />
             )}
+
+            {/* Info Modals */}
+            <InfoModal
+                isOpen={showPrivacy}
+                onClose={() => setShowPrivacy(false)}
+                title="Privacy Policy"
+                content={
+                    <div className="p-4 text-sm text-slate-600 space-y-3">
+                        <p>Your privacy is important to us. This policy explains what information we collect when you use our services.</p>
+                        <p>We collect information to provide better services to our users. We do not sell your personal data.</p>
+                    </div>
+                }
+            />
+            <InfoModal
+                isOpen={showTnC}
+                onClose={() => setShowTnC(false)}
+                title="Terms & Conditions"
+                content={
+                    <div className="p-4 text-sm text-slate-600 space-y-3">
+                        <p>These terms and conditions outline the rules and regulations for the use of our platform.</p>
+                        <p>By accessing this platform we assume you accept these terms and conditions. Do not continue to use if you do not agree.</p>
+                    </div>
+                }
+            />
+            <InfoModal
+                isOpen={showRefund}
+                onClose={() => setShowRefund(false)}
+                title="Return & Refund Policy"
+                content={
+                    <div className="p-4 text-sm text-slate-600 space-y-3">
+                        <p>Thank you for shopping with us. If you are not entirely satisfied with your purchase, we're here to help.</p>
+                        <p>You have an allotted time period to return an item from the date you received it. Eligibility applies.</p>
+                    </div>
+                }
+            />
         </div>
     );
 }

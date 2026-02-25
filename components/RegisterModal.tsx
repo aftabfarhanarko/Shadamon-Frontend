@@ -128,7 +128,14 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, initia
             }
         }
 
-        setFormData(prev => ({ ...prev, [e.target.name]: value }));
+        setFormData(prev => {
+            const updated = { ...prev, [e.target.name]: value };
+            // If user enters name, set storeName to name by default
+            if (e.target.name === 'name') {
+                updated.storeName = value;
+            }
+            return updated;
+        });
     };
 
     const handleContinue = (e: React.FormEvent) => {
@@ -187,7 +194,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, initia
     };
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-start justify-center pt-20">
+        <div className="fixed inset-0 z-[1100] flex items-start justify-center pt-20">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
@@ -211,7 +218,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, initia
                 </div>
 
                 {/* Main Content Area */}
-                <div className="flex-1 overflow-y-auto no-scrollbar px-6 pb-32">
+                <div className="flex-1 overflow-y-auto px-6 pb-32">
 
                     {/* Shield Logo - Shrunken */}
                     <div className="flex flex-col items-center mb-4">
@@ -396,7 +403,10 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, initia
                     </p>
 
                     <div className="flex items-center justify-center gap-2 mb-4 text-[11px] text-black">
-                        <button className="hover:text-black">HelpChat</button>
+                        <button
+                            className="hover:text-black"
+                            onClick={() => window.open('https://m.me/shadamon.bd', '_blank')}
+                        >HelpChat</button>
                         <span>|</span>
                         <button className="hover:text-black">HelpLine</button>
                     </div>
@@ -414,7 +424,10 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, initia
                 </div>
 
                 {/* Floating Chat Icon */}
-                <div className="absolute right-5 bottom-20 z-[210]">
+                <div
+                    className="absolute right-5 bottom-20 z-[210] cursor-pointer"
+                    onClick={() => window.open('https://m.me/shadamon.bd', '_blank')}
+                >
                     <div className="flex flex-col items-center">
                         <button className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-white shadow-xl hover:scale-105 active:scale-95 transition-all mb-1">
                             <MessageCircle className="w-5 h-5 fill-white" />

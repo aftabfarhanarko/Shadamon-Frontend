@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
     Home, CheckCircle2, Store, Smartphone, Grid, Package, ChevronDown, ChevronRight,
-    Search, MapPin, Menu, X, Plus, Inbox, User, Globe, Clock, Eye, ArrowRight, ArrowUp, SlidersHorizontal
+    Search, MapPin, Menu, X, Plus, Inbox, User, Globe, Clock, Eye, ArrowRight, ArrowUp, SlidersHorizontal, Bookmark
 } from 'lucide-react';
 import { RiCheckboxCircleFill } from 'react-icons/ri';
 import { clsx, type ClassValue } from 'clsx';
@@ -22,6 +22,21 @@ import Image from 'next/image';
 import LatestFreeAdPromo from '../../components/LatestFreeAdPromo';
 import AdDetailsModal from '../../components/AdDetailsModal';
 import FilterModal, { FilterState } from '../../components/FilterModal';
+import Cookies from 'js-cookie';
+
+const VerifiedBadge = () => (
+    <div className="relative group/badge flex items-center justify-center -mt-0.5">
+        <RiCheckboxCircleFill className="w-4 h-4 text-[#0088cc] shrink-0 cursor-pointer" />
+        <div className="absolute bottom-full left-1/2 -translate-x-[20%] lg:-translate-x-1/2 mb-2 hidden group-hover/badge:block w-[220px] sm:w-[240px] bg-slate-50 border border-slate-200 shadow-xl rounded-xl p-3 z-[100] animate-in fade-in zoom-in-95 duration-200 pointer-events-none text-left">
+            <p className="text-[13px] text-slate-700 font-medium leading-relaxed whitespace-normal">
+                <span className="font-bold text-black">Verified</span> by mobile number & additional checks to ensure authenticity.
+            </p>
+            <div className="absolute top-full left-[20%] lg:left-1/2 -translate-x-1/2 -mt-[1px]">
+                <div className="w-3 h-3 bg-slate-50 border-b border-r border-slate-200 transform rotate-45" />
+            </div>
+        </div>
+    </div>
+);
 
 interface SubItem {
     _id: string;
@@ -50,7 +65,7 @@ interface ActiveAd {
     images: string[];
     price?: number;
     category: string;
-    subcategory?: string;
+    subCategory?: string;
     location: string;
     subLocation?: string;
     user: {
@@ -59,6 +74,7 @@ interface ActiveAd {
         storeName?: string;
         photo?: string;
         verifiedBy?: string;
+        mVerified?: boolean;
     };
     deliveryCount: number;
     createdAt: string;
@@ -70,7 +86,12 @@ interface PremiumUser {
     name: string;
     storeName?: string;
     photo?: string;
-    merchantType: 'Premium';
+    merchantType?: 'Premium';
+    verifiedBy?: string;
+    mVerified?: boolean;
+    hasPromotedAds?: boolean;
+    profileViews?: number;
+    isFollowing?: boolean;
 }
 
 export default function DashboardClient() {
@@ -103,25 +124,143 @@ export default function DashboardClient() {
         search: ""
     });
 
+    const [isViewingSavedSearch, setIsViewingSavedSearch] = useState(false);
+    const [savedAdsData, setSavedAdsData] = useState<ActiveAd[]>([]);
+
+    const openInfoModal = (type: 'about' | 'terms' | 'privacy' | 'contact' | 'safety') => {
+        window.dispatchEvent(new CustomEvent('open-info-modal', { detail: { type } }));
+    };
+
+    useEffect(() => {
+        const saved = localStorage.getItem('saved_search_ads');
+        if (saved) {
+            try {
+                setSavedAdsData(JSON.parse(saved));
+            } catch (e) {
+                console.error("Error parsing saved ads", e);
+            }
+        }
+    }, []);
+
+    const handleSaveSearch = () => {
+        if (savedAdsData.length === 0) {
+            localStorage.setItem('saved_search_ads', JSON.stringify(ads));
+            setSavedAdsData(ads);
+            setIsViewingSavedSearch(false);
+        } else if (!isViewingSavedSearch) {
+            setIsViewingSavedSearch(true);
+        } else {
+            setIsViewingSavedSearch(false);
+        }
+    };
+
+    const handleResetSavedSearch = React.useCallback(() => {
+        setIsViewingSavedSearch(false);
+        setSavedAdsData([]);
+        localStorage.removeItem('saved_search_ads');
+    }, []);
+
+    const createSlug = (text: string) => {
+        if (!text) return "";
+        return text
+            .toString()
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, '-')     // Replace spaces with -
+            .replace(/[^\u0980-\u09FF\w-]+/g, '') // Remove all non-word chars (keeping Bangla range)
+            .replace(/--+/g, '-')     // Replace multiple - with single -
+            .replace(/^-+/, '')       // Trim - from start of text
+            .replace(/-+$/, '');      // Trim - from end of text
+    };
+
+    // Initialize filters from URL on mount
+    useEffect(() => {
+        const urlCategory = searchParams.get('category');
+        const urlSubCategory = searchParams.get('subCategory');
+        const urlLocation = searchParams.get('location');
+        const urlSubLocation = searchParams.get('subLocation');
+        const urlSearch = searchParams.get('search');
+
+        const currentFilters = {
+            category: searchParams.get('category') || "",
+            subCategory: searchParams.get('subCategory') || "",
+            location: searchParams.get('location') || "",
+            subLocation: searchParams.get('subLocation') || "",
+            search: searchParams.get('search') || ""
+        };
+
+        // Only update state if values actually changed to avoid cycles
+        if (
+            currentFilters.category !== filters.category ||
+            currentFilters.subCategory !== filters.subCategory ||
+            currentFilters.location !== filters.location ||
+            currentFilters.subLocation !== filters.subLocation ||
+            currentFilters.search !== filters.search
+        ) {
+            setFilters(prev => ({
+                ...prev,
+                ...currentFilters
+            }));
+
+            // Handle sidebar expansion
+            if (currentFilters.category && categories.length > 0) {
+                const cat = categories.find(c => c.name === currentFilters.category);
+                if (cat) setExpandedCategory(cat._id);
+            }
+            if (currentFilters.location && locations.length > 0) {
+                const loc = locations.find(l => l.name === currentFilters.location);
+                if (loc) setExpandedLocation(loc._id);
+            }
+        }
+    }, [searchParams, categories.length, locations.length]);
+
+    // Update URL when filters change
+    useEffect(() => {
+        const params = new URLSearchParams();
+        if (filters.category) params.set('category', filters.category);
+        if (filters.subCategory) params.set('subCategory', filters.subCategory);
+        if (filters.location) params.set('location', filters.location);
+        if (filters.subLocation) params.set('subLocation', filters.subLocation);
+        if (filters.search) params.set('search', filters.search);
+
+        // Keep the ad param if it exists
+        const adParam = searchParams.get('ad');
+        if (adParam) params.set('ad', adParam);
+
+        const queryString = params.toString();
+        const newUrl = queryString ? `/dashboard?${queryString}` : '/dashboard';
+
+        const currentQuery = searchParams.toString();
+        if (queryString !== currentQuery) {
+            router.push(newUrl, { scroll: false });
+        }
+    }, [filters, searchParams, router]);
+
     // Effect to handle URL-based modal opening
     useEffect(() => {
-        const adId = searchParams.get('ad');
-        if (adId) {
-            // Check if ad is already available in the loaded list
-            const foundAd = ads.find(a => a._id === adId);
-            if (foundAd) {
-                setSelectedAd(foundAd);
-            } else {
-                // Fetch specific ad if not in list (e.g. direct link)
-                fetch(`${API_BASE_URL}/api/ads/public/${adId}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            setSelectedAd(data.data);
-                        }
-                    })
-                    .catch(err => console.error("Error fetching specific ad:", err));
-            }
+        const adParam = searchParams.get('ad');
+        if (adParam) {
+            // Extract ID from slug--ID format if present
+            const idMatch = adParam.match(/--([a-f\d]{24})$/i);
+            const adId = idMatch ? idMatch[1] : adParam;
+
+            // Always fetch to increment views and get fresh data
+            fetch(`${API_BASE_URL}/api/ads/public/${adId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        setSelectedAd(data.data);
+                    } else {
+                        // Fallback to local data if fetch fails
+                        const foundAd = ads.find(a => a._id === adId);
+                        if (foundAd) setSelectedAd(foundAd);
+                    }
+                })
+                .catch(err => {
+                    console.error("Error fetching specific ad:", err);
+                    const foundAd = ads.find(a => a._id === adId);
+                    if (foundAd) setSelectedAd(foundAd);
+                });
         } else {
             setSelectedAd(null);
         }
@@ -176,13 +315,106 @@ export default function DashboardClient() {
 
             if (userRes.success) setPremiumUsers(userRes.data);
             if (adsRes.success) setAds(adsRes.data);
-            if (allAdsRes.success) setTotalAds(allAdsRes.data);
+            if (allAdsRes.success) {
+                const allAdsData = allAdsRes.data;
+                setTotalAds(allAdsData);
+
+                // 1. Get unique users from all ads
+                const userMap = new Map<string, PremiumUser>();
+                allAdsData.forEach((ad: ActiveAd) => {
+                    if (!ad.user?._id) return;
+                    if (!userMap.has(ad.user._id)) {
+                        userMap.set(ad.user._id, {
+                            _id: ad.user._id,
+                            name: ad.user.name,
+                            photo: ad.user.photo,
+                            storeName: ad.user.storeName,
+                            verifiedBy: ad.user.verifiedBy,
+                            mVerified: ad.user.mVerified,
+                            hasPromotedAds: false
+                        });
+                    }
+                    if (ad.adType === 'Promoted') {
+                        const u = userMap.get(ad.user._id);
+                        if (u) u.hasPromotedAds = true;
+                    }
+                });
+
+                // 2. Separate promoted and free sellers
+                const sellers = Array.from(userMap.values());
+                const promotedSellers = sellers.filter(s => s.hasPromotedAds);
+                const freeSellers = sellers.filter(s => !s.hasPromotedAds);
+
+                // 3. Shuffle both for randomness
+                const shuffledPromoted = [...promotedSellers].sort(() => Math.random() - 0.5);
+                const shuffledFree = [...freeSellers].sort(() => Math.random() - 0.5);
+
+                // 4. Combine and take top 10
+                const top10Sellers = [...shuffledPromoted, ...shuffledFree].slice(0, 10);
+
+                // 5. Check following status if logged in
+                const token = Cookies.get('token');
+                if (token) {
+                    try {
+                        const meRes = await fetch(`${API_BASE_URL}/api/user/me`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const meData = await meRes.json();
+                        if (meRes.ok && meData.following) {
+                            top10Sellers.forEach(u => {
+                                u.isFollowing = meData.following.includes(u._id);
+                            });
+                        }
+                    } catch (e) { }
+                }
+
+                setPremiumUsers(top10Sellers);
+            }
         } catch (error) {
             console.error("Failed to load dashboard data", error);
         } finally {
             setLoading(false);
         }
     }, [language, filters]);
+
+    const handleProfileClick = async (userId: string) => {
+        // Increment view count optimistically
+        setPremiumUsers(prev => prev.map(u =>
+            u._id === userId ? { ...u, profileViews: (u.profileViews || 0) + 1 } : u
+        ));
+
+        // Send to backend
+        try {
+            fetch(`${API_BASE_URL}/api/user/profile/${userId}/view`, { method: 'POST' });
+        } catch (e) { }
+
+        // Open modal
+        window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId } }));
+    };
+
+    const handleFollowUser = async (e: React.MouseEvent, userId: string) => {
+        e.stopPropagation();
+        const token = Cookies.get('token');
+        if (!token) {
+            window.dispatchEvent(new CustomEvent('open-mobile-entry-modal'));
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/user/follow/${userId}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setPremiumUsers(prev => prev.map(u =>
+                    u._id === userId ? { ...u, isFollowing: data.isFollowing } : u
+                ));
+            }
+        } catch (error) {
+            console.error("Follow error", error);
+        }
+    };
 
     useEffect(() => {
         fetchData();
@@ -198,11 +430,13 @@ export default function DashboardClient() {
 
         window.addEventListener('refresh-ads', handleRefresh);
         window.addEventListener('show-search-results', handleSearch as EventListener);
+        window.addEventListener('reset-saved-search', handleResetSavedSearch);
         return () => {
             window.removeEventListener('refresh-ads', handleRefresh);
             window.removeEventListener('show-search-results', handleSearch as EventListener);
+            window.removeEventListener('reset-saved-search', handleResetSavedSearch);
         };
-    }, [fetchData]);
+    }, [fetchData, handleResetSavedSearch]);
 
     const toggleCategory = (id: string) => {
         setExpandedCategory(expandedCategory === id ? 'main' : id);
@@ -213,9 +447,9 @@ export default function DashboardClient() {
     };
 
     return (
-        <div className="h-full flex flex-col lg:flex-row items-start justify-center overflow-hidden">
+        <div className="flex flex-col lg:flex-row items-start justify-center w-full">
             {/* Left Sidebar - 300px */}
-            <div className="hidden lg:block w-[300px] flex-none h-full overflow-y-auto no-scrollbar pb-10">
+            <div className="hidden lg:block w-[300px] flex-none sticky top-4 h-[calc(100vh-32px)] overflow-y-auto no-scrollbar pb-10">
                 <div className="flex flex-col min-h-full space-y-4">
                     <div className="flex-1 space-y-4">
                         {/* 1. All Categories & Locations Card */}
@@ -233,12 +467,17 @@ export default function DashboardClient() {
 
                                     {expandedCategory !== null && (
                                         <div className="pl-1 space-y-1">
-                                            <div
-                                                className="text-sm text-black ml-4 tracking-wider cursor-pointer hover:text-[#0088cc] transition-colors"
-                                                onClick={() => setFilters({ ...filters, category: "", subCategory: "" })}
+                                            <Link
+                                                href="/dashboard"
+                                                scroll={false}
+                                                className="block text-sm text-black ml-4 tracking-wider cursor-pointer hover:text-[#0088cc] transition-colors"
+                                                onClick={() => {
+                                                    setFilters({ ...filters, category: "", subCategory: "" });
+                                                    handleResetSavedSearch();
+                                                }}
                                             >
                                                 {t('all_categories')}
-                                            </div>
+                                            </Link>
 
                                             {categories.map((cat, idx) => {
                                                 // Assign icons based on name or index to match image
@@ -246,11 +485,14 @@ export default function DashboardClient() {
 
                                                 return (
                                                     <div key={cat._id} className="space-y-1">
-                                                        <div
+                                                        <Link
+                                                            href={`/dashboard?category=${cat.name}`}
+                                                            scroll={false}
                                                             className="flex items-center justify-between group cursor-pointer"
                                                             onClick={() => {
                                                                 toggleCategory(cat._id);
                                                                 setFilters({ ...filters, category: cat.name, subCategory: "" });
+                                                                setActiveSelectorTab('category');
                                                             }}
                                                         >
                                                             <div className="flex items-center gap-1 text-sm text-[#0088cc] font-medium hover:underline">
@@ -270,24 +512,32 @@ export default function DashboardClient() {
                                                             {cat.subcategories.length > 0 && (
                                                                 <ChevronDown className={cn("w-3.5 h-3.5 text-black transition-all", expandedCategory === cat._id && "rotate-180")} />
                                                             )}
-                                                        </div>
+                                                        </Link>
 
                                                         {/* Subcategories with correct indentation and bullet points */}
-                                                        {expandedCategory === cat._id && cat.subcategories.length > 0 && (
-                                                            <div className="pl-6 space-y-1 border-l border-slate-100 ml-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                                                                {cat.subcategories.map(sub => (
-                                                                    <div
-                                                                        key={sub._id}
-                                                                        className="flex items-center gap-1 text-sm text-[#0088cc] hover:underline cursor-pointer group"
-                                                                        onClick={() => setFilters({ ...filters, category: cat.name, subCategory: sub.name })}
-                                                                    >
-                                                                        <div className={cn("w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-[#0088cc] transition-colors", filters.subCategory === sub.name && "bg-[#0088cc]")} />
-                                                                        <span className={cn(filters.subCategory === sub.name && "text-black")}>{sub.name}</span>
-                                                                        <span className="text-black">({totalAds.filter(ad => ad.subcategory === sub.name).length.toLocaleString()})</span>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        )}
+                                                        {
+                                                            expandedCategory === cat._id && cat.subcategories.length > 0 && (
+                                                                <div className="pl-6 space-y-1 border-l border-slate-100 ml-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                                    {cat.subcategories.map(sub => (
+                                                                        <Link
+                                                                            key={sub._id}
+                                                                            href={`/dashboard?category=${cat.name}&subCategory=${sub.name}`}
+                                                                            scroll={false}
+                                                                            className="flex items-center gap-1 text-sm text-[#0088cc] hover:underline cursor-pointer group"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setFilters({ ...filters, category: cat.name, subCategory: sub.name });
+                                                                                setActiveSelectorTab('category');
+                                                                            }}
+                                                                        >
+                                                                            <div className={cn("w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-[#0088cc] transition-colors", filters.subCategory === sub.name && "bg-[#0088cc]")} />
+                                                                            <span className={cn(filters.subCategory === sub.name && "text-black")}>{sub.name}</span>
+                                                                            <span className="text-black">({totalAds.filter(ad => ad.subCategory === sub.name).length.toLocaleString()})</span>
+                                                                        </Link>
+                                                                    ))}
+                                                                </div>
+                                                            )
+                                                        }
                                                     </div>
                                                 );
                                             })}
@@ -306,20 +556,28 @@ export default function DashboardClient() {
 
                                     {expandedLocation !== null && (
                                         <div className="pl-1 space-y-1">
-                                            <div
-                                                className="text-sm text-black ml-4 tracking-wider cursor-pointer hover:text-[#0088cc] transition-colors"
-                                                onClick={() => setFilters({ ...filters, location: "", subLocation: "" })}
+                                            <Link
+                                                href="/dashboard"
+                                                scroll={false}
+                                                className="block text-sm text-black ml-4 tracking-wider cursor-pointer hover:text-[#0088cc] transition-colors"
+                                                onClick={() => {
+                                                    setFilters({ ...filters, location: "", subLocation: "" });
+                                                    handleResetSavedSearch();
+                                                }}
                                             >
                                                 {t('all_bangladesh')}
-                                            </div>
+                                            </Link>
 
                                             {locations.map(loc => (
                                                 <div key={loc._id} className="space-y-1">
-                                                    <div
+                                                    <Link
+                                                        href={`/dashboard?location=${loc.name}`}
+                                                        scroll={false}
                                                         className="flex items-center justify-between group cursor-pointer"
                                                         onClick={() => {
                                                             toggleLocation(loc._id);
                                                             setFilters({ ...filters, location: loc.name, subLocation: "" });
+                                                            setActiveSelectorTab('location');
                                                         }}
                                                     >
                                                         <div className="flex items-center gap-1 text-sm text-[#0088cc] font-medium hover:underline">
@@ -329,21 +587,27 @@ export default function DashboardClient() {
                                                         {loc.subLocations.length > 0 && (
                                                             <ChevronDown className={cn("w-3.5 h-3.5 text-black transition-all", expandedLocation === loc._id && "rotate-180")} />
                                                         )}
-                                                    </div>
+                                                    </Link>
 
                                                     {/* Dynamic Sub-locations matching image style */}
                                                     {expandedLocation === loc._id && loc.subLocations.length > 0 && (
                                                         <div className="pl-6 space-y-1 border-l border-slate-100 ml-2 animate-in fade-in slide-in-from-top-1 duration-200">
                                                             {loc.subLocations.map(sub => (
-                                                                <div
+                                                                <Link
                                                                     key={sub._id}
+                                                                    href={`/dashboard?location=${loc.name}&subLocation=${sub.name}`}
+                                                                    scroll={false}
                                                                     className="flex items-center gap-1 text-sm text-[#0088cc] hover:underline cursor-pointer group"
-                                                                    onClick={() => setFilters({ ...filters, location: loc.name, subLocation: sub.name })}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setFilters({ ...filters, location: loc.name, subLocation: sub.name });
+                                                                        setActiveSelectorTab('location');
+                                                                    }}
                                                                 >
                                                                     <div className={cn("w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-[#0088cc] transition-colors", filters.subLocation === sub.name && "bg-[#0088cc]")} />
                                                                     <span className={cn(filters.subLocation === sub.name && "text-black")}>{sub.name}</span>
                                                                     <span className="text-black">({totalAds.filter(ad => ad.subLocation === sub.name).length.toLocaleString()})</span>
-                                                                </div>
+                                                                </Link>
                                                             ))}
                                                         </div>
                                                     )}
@@ -390,14 +654,24 @@ export default function DashboardClient() {
                     {/* 3. Footer Links & Apps Card */}
                     <div className="bg-white rounded-lg p-3 space-y-4">
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-black font-medium">
-                            <Link href="/about" className="hover:text-black transition-colors">{t('about_us')}</Link>
+                            <button onClick={() => openInfoModal('about')} className="hover:text-black transition-colors">{t('about_us')}</button>
                             <span>•</span>
-                            <Link href="/terms" className="hover:text-black transition-colors">{t('terms_and_con')}</Link>
+                            <button onClick={() => openInfoModal('terms')} className="hover:text-black transition-colors">{t('terms_and_con')}</button>
                             <span>•</span>
-                            <Link href="/privacy" className="hover:text-black transition-colors">{t('privacy_policy')}</Link>
-                            <Link href="/contact" className="hover:text-black transition-colors">{t('contact_us')}</Link>
+                            <button onClick={() => openInfoModal('privacy')} className="hover:text-black transition-colors">{t('privacy_policy')}</button>
                             <span>•</span>
-                            <Link href="/promote" className="hover:text-black transition-colors">Promote</Link>
+                            <button onClick={() => openInfoModal('contact')} className="hover:text-black transition-colors">{t('contact_us')}</button>
+                            <span>•</span>
+                            <button onClick={() => openInfoModal('safety')} className="hover:text-black transition-colors">
+                                {language === 'bn' ? 'নিরাপদ থাকুন' : 'Safety Tips'}
+                            </button>
+                            <span>•</span>
+                            <button
+                                onClick={() => window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { activeTab: 'Post' } }))}
+                                className="hover:text-black transition-colors"
+                            >
+                                {t('promote')}
+                            </button>
                         </div>
 
                         <div className="space-y-2.5">
@@ -439,31 +713,67 @@ export default function DashboardClient() {
             {/* Center Content - Feed / Ads: 565px */}
             <div
                 id="center-feed-container"
-                onScroll={(e) => {
-                    const scrollTop = e.currentTarget.scrollTop;
-                    const clamped = Math.min(scrollTop, 64);
-                    setHeaderOffset(clamped);
-                    window.dispatchEvent(new CustomEvent('center-scroll', { detail: { offset: clamped } }));
-                }}
-                className="w-full lg:w-[565px] flex-none h-full overflow-y-auto no-scrollbar space-y-4 pb-32 lg:pb-20"
+                className="w-full lg:w-[565px] flex-none space-y-4 pb-32 lg:pb-20"
             >
 
                 {/* Secondary Filter Bar */}
-                <div className="bg-white rounded-lg flex divide-x divide-slate-100 overflow-hidden sticky top-0 z-30 shadow-sm">
-                    <button className="flex-1 px-4 py-2.5 flex items-center justify-center gap-3 hover:bg-slate-50 transition-colors">
+                <div className="bg-white rounded-lg flex divide-x divide-slate-100 overflow-hidden sticky top-4 z-30 shadow-sm">
+                    <button
+                        onClick={() => {
+                            setIsFilterModalOpen(true);
+                            setTimeout(() => {
+                                window.dispatchEvent(new CustomEvent('open-filter-view', { detail: { view: 'category' } }));
+                            }, 50);
+                        }}
+                        className="flex-1 px-4 py-2.5 flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors group"
+                    >
                         <Grid className="w-5 h-5 text-black" />
-                        <span className="text-sm text-black">{filters.category || "Categorie"}</span>
+                        <div className="flex items-center gap-1">
+                            <span className="text-sm text-black">{filters.category ? (filters.subCategory || filters.category) : (language === 'bn' ? 'ক্যাটাগরি' : 'Category')}</span>
+                            {filters.category && (
+                                <div
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setFilters(prev => ({ ...prev, category: "", subCategory: "" }));
+                                    }}
+                                    className="p-0.5 rounded-full hover:bg-slate-200 transition-colors"
+                                >
+                                    <X className="w-3.5 h-3.5 text-slate-500" />
+                                </div>
+                            )}
+                        </div>
                     </button>
-                    <button className="flex-1 px-4 py-2.5 flex items-center justify-center gap-3 hover:bg-slate-50 transition-colors">
+                    <button
+                        onClick={() => {
+                            setIsFilterModalOpen(true);
+                            setTimeout(() => {
+                                window.dispatchEvent(new CustomEvent('open-filter-view', { detail: { view: 'location' } }));
+                            }, 100);
+                        }}
+                        className="flex-1 px-4 py-2.5 flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors group"
+                    >
                         <MapPin className="w-5 h-5 text-black" />
-                        <span className="text-sm text-black">{filters.location || "Location"}</span>
+                        <div className="flex items-center gap-1">
+                            <span className="text-sm text-black">{filters.location ? (filters.subLocation || filters.location) : (language === 'bn' ? 'লোকেশন' : 'Location')}</span>
+                            {filters.location && (
+                                <div
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setFilters(prev => ({ ...prev, location: "", subLocation: "" }));
+                                    }}
+                                    className="p-0.5 rounded-full hover:bg-slate-200 transition-colors"
+                                >
+                                    <X className="w-3.5 h-3.5 text-slate-500" />
+                                </div>
+                            )}
+                        </div>
                     </button>
                     <button
                         onClick={() => setIsFilterModalOpen(true)}
                         className="flex-1 px-4 py-2.5 flex items-center justify-center gap-3 hover:bg-slate-50 transition-colors"
                     >
                         <SlidersHorizontal className="w-5 h-5 text-black" />
-                        <span className="text-sm text-black">Filter</span>
+                        <span className="text-sm text-black">{language === 'bn' ? 'ফিল্টার' : 'Filter'}</span>
                     </button>
                 </div>
 
@@ -511,13 +821,23 @@ export default function DashboardClient() {
                                     .sort((a, b) => (a.name === filters.category ? -1 : b.name === filters.category ? 1 : 0))
                                     .slice(0, 5)
                                     .map((cat) => (
-                                        <div
+                                        <Link
                                             key={cat._id}
+                                            href={cat.name === filters.category ? '/dashboard' : `/dashboard?category=${cat.name}`}
+                                            scroll={false}
                                             className={cn(
                                                 "flex flex-col items-center gap-2 flex-none group cursor-pointer",
                                                 cat.name === filters.category && "relative"
                                             )}
-                                            onClick={() => setFilters({ ...filters, category: cat.name === filters.category ? "" : cat.name, subCategory: "" })}
+                                            onClick={() => {
+                                                const isSelected = cat.name === filters.category;
+                                                setFilters({ ...filters, category: isSelected ? "" : cat.name, subCategory: "" });
+                                                if (!isSelected) {
+                                                    setExpandedCategory(cat._id);
+                                                } else {
+                                                    setExpandedCategory('main');
+                                                }
+                                            }}
                                         >
                                             <div className={cn(
                                                 "w-[72px] h-[72px] rounded-full border-2 p-1 transition-all",
@@ -545,20 +865,30 @@ export default function DashboardClient() {
                                                 "text-[11px] font-bold text-center max-w-[72px] truncate transition-colors",
                                                 cat.name === filters.category ? "text-[#0088cc]" : "text-black"
                                             )}>{cat.name}</span>
-                                        </div>
+                                        </Link>
                                     ))
                             ) : (
                                 [...locations]
                                     .sort((a, b) => (a.name === filters.location ? -1 : b.name === filters.location ? 1 : 0))
                                     .slice(0, 5)
                                     .map((loc) => (
-                                        <div
+                                        <Link
                                             key={loc._id}
+                                            href={loc.name === filters.location ? '/dashboard' : `/dashboard?location=${loc.name}`}
+                                            scroll={false}
                                             className={cn(
                                                 "flex flex-col items-center gap-2 flex-none group cursor-pointer",
                                                 loc.name === filters.location && "relative"
                                             )}
-                                            onClick={() => setFilters({ ...filters, location: loc.name === filters.location ? "" : loc.name, subLocation: "" })}
+                                            onClick={() => {
+                                                const isSelected = loc.name === filters.location;
+                                                setFilters({ ...filters, location: isSelected ? "" : loc.name, subLocation: "" });
+                                                if (!isSelected) {
+                                                    setExpandedLocation(loc._id);
+                                                } else {
+                                                    setExpandedLocation(null);
+                                                }
+                                            }}
                                         >
                                             <div className={cn(
                                                 "w-[72px] h-[72px] rounded-full border-2 p-1 transition-all",
@@ -586,7 +916,7 @@ export default function DashboardClient() {
                                                 "text-[11px] font-bold text-center max-w-[72px] truncate transition-colors",
                                                 loc.name === filters.location ? "text-[#0088cc]" : "text-black"
                                             )}>{loc.name}</span>
-                                        </div>
+                                        </Link>
                                     ))
                             )}
                         </div>
@@ -620,24 +950,28 @@ export default function DashboardClient() {
                     </div>
                 ) : (
                     (() => {
-                        // 1. Sort: Promoted First
-                        const sortedAds = [...ads].sort((a, b) => {
-                            if (a.adType === 'Promoted' && b.adType !== 'Promoted') return -1;
-                            if (a.adType !== 'Promoted' && b.adType === 'Promoted') return 1;
-                            return 0;
-                        });
-
-                        // 2. Chunking Logic (1 Big + 3 Small pattern)
+                        const displayAdsList = isViewingSavedSearch ? savedAdsData : ads;
+                        // 2. Interleaved Chunking Logic (1 Big + 5 Promoted + 5 Free pattern)
+                        const promotedPool = [...displayAdsList.filter(ad => ad.adType === 'Promoted')];
+                        const freePool = [...displayAdsList.filter(ad => ad.adType !== 'Promoted')];
                         const chunks = [];
-                        for (let i = 0; i < sortedAds.length; i += 4) {
-                            chunks.push(sortedAds.slice(i, i + 4));
+
+                        while (promotedPool.length > 0 || freePool.length > 0) {
+                            const bigAd = promotedPool.shift() || freePool.shift();
+                            const promotedSmall = promotedPool.splice(0, 5);
+                            const freeSmall = freePool.splice(0, 5);
+                            chunks.push({ bigAd, promotedSmall, freeSmall });
                         }
+
+                        const categoriesWithAds = categories.filter(cat =>
+                            ads.some(ad => ad.category === cat.name)
+                        );
 
                         return (
                             <div className="space-y-1">
                                 {/* Feed Header */}
                                 <div className="flex items-center justify-between">
-                                    <div className="text-sm text-black flex items-center gap-1">
+                                    {/* <div className="text-sm text-black flex items-center gap-1">
                                         <span className="border-slate-200">
                                             {filters.category ? (filters.subCategory || filters.category) : (language === 'bn' ? 'সব ক্যাটাগরি' : 'All Category')}
                                         </span>
@@ -645,239 +979,232 @@ export default function DashboardClient() {
                                         <span className="border-slate-200">
                                             {filters.location ? (filters.subLocation || filters.location) : (language === 'bn' ? 'পুরো বাংলাদেশ' : 'All Bangladesh')}
                                         </span>
+                                    </div> */}
+                                    <div className="text-sm text-black flex items-center gap-1">
+                                        <span>
+                                            {language === 'bn'
+                                                ? `${displayAdsList.length.toLocaleString('bn-BD')} টি বিজ্ঞাপন দেখছেন`
+                                                : `Viewing ${displayAdsList.length.toLocaleString('en-US')} ads`}
+                                        </span>
                                     </div>
-                                    <button className="flex items-center gap-1.5 text-xs text-black px-3 py-1.5 rounded-full">
-                                        <div className="w-2.5 h-2.5 rounded-full border-2 border-[#0088cc]"></div>
-                                        {language === 'bn' ? 'সার্চ সেভ করুন' : 'Save Search'}
+                                    <button
+                                        onClick={handleSaveSearch}
+                                        className={cn(
+                                            "flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition-colors",
+                                            isViewingSavedSearch
+                                                ? "bg-blue-600 text-white hover:bg-blue-700"
+                                                : "text-black bg-white border border-slate-200 hover:bg-slate-50"
+                                        )}
+                                    >
+                                        <Bookmark
+                                            className={cn(
+                                                "w-3.5 h-3.5 transition-all",
+                                                savedAdsData.length > 0 ? "fill-blue-600 text-blue-600" : "text-slate-400",
+                                                isViewingSavedSearch && "fill-white text-white"
+                                            )}
+                                        />
+                                        {savedAdsData.length === 0
+                                            ? (language === 'bn' ? 'সেভ সার্চ' : 'Save Search')
+                                            : !isViewingSavedSearch
+                                                ? (language === 'bn' ? 'সেভ করা সার্চ দেখুন' : 'show saved search')
+                                                : (language === 'bn' ? 'সেভ করা সার্চ দেখাচ্ছে' : 'Showing save searched')
+                                        }
                                     </button>
                                 </div>
 
-                                {chunks.map((chunk, chunkIndex) => (
-                                    <div key={chunkIndex} className="flex flex-col gap-4">
-
-                                        {/* Big Card (First item of chunk) */}
-                                        {chunk[0] && (
-                                            <div
-                                                className="bg-white rounded-xl overflow-hidden cursor-pointer group"
-                                                onClick={() => router.push(`?ad=${chunk[0]._id}`, { scroll: false })}
-                                            >
-                                                {/* Image */}
-                                                <div className="relative h-[315px] w-full bg-slate-900">
-                                                    {getImageUrl(chunk[0].images?.[0]) && (
-                                                        <img
-                                                            src={getImageUrl(chunk[0].images?.[0]) || undefined}
-                                                            alt={chunk[0].headline}
-                                                            className="w-full h-full object-contain"
-                                                            loading="lazy"
-                                                        />
-                                                    )}
-                                                    {/* Corner Icon */}
-                                                    <div className="absolute bottom-0 right-0 p-2">
-                                                        <div className="bg-[#0088cc] p-1.5 rounded-tl-lg rounded-br-lg">
-                                                            <User className="w-4 h-4 text-white" />
+                                {chunks.map((chunk, chunkIndex) => {
+                                    const categoryToShow = categoriesWithAds[chunkIndex % categoriesWithAds.length];
+                                    return (
+                                        <div key={chunkIndex} className="flex flex-col gap-4">
+                                            {/* Big Card */}
+                                            {chunk.bigAd && (
+                                                <Link
+                                                    href={`?ad=${createSlug(chunk.bigAd.headline)}--${chunk.bigAd._id}`}
+                                                    scroll={false}
+                                                    className="bg-white rounded-xl cursor-pointer group block border border-slate-100 shadow-sm"
+                                                >
+                                                    <div className="relative h-[315px] w-full bg-black rounded-t-xl overflow-hidden">
+                                                        {getImageUrl(chunk.bigAd.images?.[0]) && (
+                                                            <img
+                                                                src={getImageUrl(chunk.bigAd.images?.[0]) || undefined}
+                                                                alt={chunk.bigAd.headline}
+                                                                className="w-full h-full object-contain"
+                                                                loading="lazy"
+                                                            />
+                                                        )}
+                                                        <div className="absolute bottom-0 right-0 p-2">
+                                                            <div className="bg-[#0088cc] p-1.5 rounded-tl-lg rounded-br-lg">
+                                                                <User className="w-4 h-4 text-white" />
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-
-                                                {/* Content */}
-                                                <div className="p-3">
-                                                    <div className="flex items-start justify-between">
-                                                        <div>
-                                                            <div className="flex items-center gap-1 text-[11px] text-black mb-0.5">
-                                                                <span>{chunk[0].adType === 'Promoted' ? 'Promoted By' : 'Post By'}</span>
-                                                                <span
-                                                                    className="font-bold text-black cursor-pointer hover:text-blue-600 hover:underline"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: chunk[0].user?._id } }));
-                                                                    }}
-                                                                >
-                                                                    {chunk[0].user?.name || 'User'}
-                                                                </span>
-                                                                {/* {premiumUsers.some((u: any) => u._id === chunk[0].user?._id && u.merchantType === 'Premium') && (
-                                                                    <CheckCircle2 className="w-3 h-3 text-blue-500" />
-                                                                )} */}
-                                                            </div>
-                                                            <h3 className="font-bold text-lg text-black leading-tight mb-0.5">
-                                                                {chunk[0].headline}
-                                                            </h3>
-                                                            <div className="font-bold text-base text-black mb-1">
-                                                                $ {chunk[0].price?.toLocaleString() || 'N/A'}
-                                                            </div>
-                                                            <div className="flex items-center gap-3 text-[10px] text-black">
-                                                                <div className="flex items-center gap-1">
-                                                                    <MapPin className="w-3 h-3 text-black" />
-                                                                    {chunk[0].location}
+                                                    <div className="p-3">
+                                                        <div className="flex items-start justify-between">
+                                                            <div>
+                                                                <div className="flex items-center gap-1 text-[11px] text-black mb-0.5">
+                                                                    <span>{chunk.bigAd.adType === 'Promoted' ? 'Promoted By' : 'Post By'}</span>
+                                                                    <span
+                                                                        className="font-bold text-black cursor-pointer hover:text-blue-600 hover:underline"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: chunk.bigAd?.user?._id } }));
+                                                                        }}
+                                                                    >
+                                                                        {chunk.bigAd.user?.storeName || chunk.bigAd.user?.name || 'User'}
+                                                                    </span>
+                                                                    {chunk.bigAd.user?.mVerified && <VerifiedBadge />}
                                                                 </div>
-                                                                <div className="flex items-center gap-1">
-                                                                    <Grid className="w-3 h-3 text-black" />
-                                                                    {chunk[0].category}
+                                                                <h3 className="font-bold text-lg text-black leading-tight mb-0.5">{chunk.bigAd.headline}</h3>
+                                                                <div className="font-bold text-base text-black mb-1">৳ {chunk.bigAd.price?.toLocaleString() || 'N/A'}</div>
+                                                                <div className="flex items-center gap-3 text-[10px] text-black">
+                                                                    <div className="flex items-center gap-1"><MapPin className="w-3 h-3 text-black" />{chunk.bigAd.location}</div>
+                                                                    <div className="flex items-center gap-1"><Grid className="w-3 h-3 text-black" />{chunk.bigAd.category}</div>
                                                                 </div>
                                                             </div>
+                                                            <button className="border border-slate-300 text-black bg-gray-200 px-3 py-1 rounded text-xs font-bold hover:bg-slate-50">Detail</button>
                                                         </div>
-                                                        <button className="border border-slate-300 text-black bg-gray-200 px-3 py-1 rounded text-xs font-bold hover:bg-slate-50">
-                                                            Detail
+                                                    </div>
+                                                </Link>
+                                            )}
+
+                                            {/* Promoted Small Cards */}
+                                            {chunk.promotedSmall.length > 0 && (
+                                                <div className="flex flex-col gap-2 bg-white rounded-lg pb-2">
+                                                    {chunk.promotedSmall.map((ad) => (
+                                                        <Link
+                                                            key={ad._id}
+                                                            href={`?ad=${createSlug(ad.headline)}--${ad._id}`}
+                                                            scroll={false}
+                                                            className="bg-white rounded-lg p-3 pb-0 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50"
+                                                        >
+                                                            <div className="w-[200px] h-[130px] bg-black rounded-lg overflow-hidden shrink-0 relative group-hover:bg-black transition-colors">
+                                                                {getImageUrl(ad.images?.[0]) && (
+                                                                    <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="w-full h-full object-contain" loading="lazy" />
+                                                                )}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                                                <div className="flex items-center gap-1 text-[10px] text-black mb-0.5">
+                                                                    <span>Promoted By</span>
+                                                                    <span className="font-bold text-black hover:text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id } })); }}>{ad.user?.storeName || ad.user?.name || 'User'}</span>
+                                                                    {ad.user?.mVerified && <VerifiedBadge />}
+                                                                </div>
+                                                                <h4 className="text-sm text-black truncate mb-0.5">{ad.headline}</h4>
+                                                                <div className="text-sm text-black mb-1">৳ {ad.price?.toLocaleString() || 'N/A'}</div>
+                                                                <div className="flex items-center gap-2 text-[10px] text-black">
+                                                                    <div className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" /><span className="truncate max-w-[80px]">{ad.location}</span></div>
+                                                                    <div className="flex items-center gap-0.5"><Grid className="w-2.5 h-2.5" /><span className="truncate max-w-[80px]">{ad.category}</span></div>
+                                                                    <div className="ml-auto text-black"></div>
+                                                                </div>
+                                                            </div>
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Free Small Cards */}
+                                            {chunk.freeSmall.length > 0 && (
+                                                <div className="flex flex-col gap-2 bg-white rounded-lg pb-2">
+                                                    {chunk.freeSmall.map((ad) => (
+                                                        <Link
+                                                            key={ad._id}
+                                                            href={`?ad=${createSlug(ad.headline)}--${ad._id}`}
+                                                            scroll={false}
+                                                            className="bg-white rounded-lg p-3 pb-0 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50"
+                                                        >
+                                                            <div className="w-[200px] h-[130px] bg-black rounded-lg overflow-hidden shrink-0 relative group-hover:bg-black transition-colors">
+                                                                {getImageUrl(ad.images?.[0]) && (
+                                                                    <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="w-full h-full object-contain" loading="lazy" />
+                                                                )}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                                                <div className="flex items-center gap-1 text-[10px] text-black mb-0.5">
+                                                                    <span>Post By</span>
+                                                                    <span className="font-bold text-black hover:text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id } })); }}>{ad.user?.storeName || ad.user?.name || 'User'}</span>
+                                                                    {ad.user?.mVerified && <VerifiedBadge />}
+                                                                </div>
+                                                                <h4 className="text-sm text-black truncate mb-0.5">{ad.headline}</h4>
+                                                                <div className="text-sm text-black mb-1">৳ {ad.price?.toLocaleString() || 'N/A'}</div>
+                                                                <div className="flex items-center gap-2 text-[10px] text-black">
+                                                                    <div className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" /><span className="truncate max-w-[80px]">{ad.location}</span></div>
+                                                                    <div className="flex items-center gap-0.5"><Grid className="w-2.5 h-2.5" /><span className="truncate max-w-[80px]">{ad.category}</span></div>
+                                                                    <div className="ml-auto text-black">{timeAgo(ad.createdAt, language as 'en' | 'bn')}</div>
+                                                                </div>
+                                                            </div>
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Category Slider for this chunk */}
+                                            {categoryToShow && (
+                                                <div className="bg-white relative group/cat rounded-lg p-2 pb-0 mt-2">
+                                                    <div className="bg-white flex items-center justify-between px-2 mb-2">
+                                                        <h3 className="text-sm font-medium text-black">{categoryToShow.name}</h3>
+                                                        <button
+                                                            onClick={() => {
+                                                                const params = new URLSearchParams(searchParams.toString());
+                                                                params.set('category', categoryToShow.name);
+                                                                router.push(`/dashboard?${params.toString()}`, { scroll: false });
+                                                                setFilters(prev => ({ ...prev, category: categoryToShow.name }));
+                                                            }}
+                                                            className="text-xs text-black hover:underline"
+                                                        >
+                                                            {language === 'bn' ? 'সব দেখুন' : 'See All'}
+                                                        </button>
+                                                    </div>
+                                                    <div className="relative">
+                                                        <div
+                                                            id={`feed-scroll-${categoryToShow._id}-${chunkIndex}`}
+                                                            className="flex gap-3 overflow-x-auto no-scrollbar scroll-smooth pb-2"
+                                                        >
+                                                            {ads.filter(ad => ad.category === categoryToShow.name).map(ad => (
+                                                                <div
+                                                                    key={ad._id}
+                                                                    className="min-w-[240px] w-[240px] bg-white border border-slate-200 rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                                                                    onClick={() => router.push(`?ad=${createSlug(ad.headline)}--${ad._id}`, { scroll: false })}
+                                                                >
+                                                                    <div className="h-40 bg-black relative">
+                                                                        {getImageUrl(ad.images?.[0]) && (
+                                                                            <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="w-full h-full object-contain" loading="lazy" />
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="p-2.5">
+                                                                        <h4 className="text-black truncate text-sm mb-0.5">{ad.headline}</h4>
+                                                                        <p className="text-black text-sm">TK {ad.price?.toLocaleString() || 'N/A'}</p>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        <button
+                                                            onClick={() => {
+                                                                const el = document.getElementById(`feed-scroll-${categoryToShow._id}-${chunkIndex}`);
+                                                                if (el) el.scrollBy({ left: 250, behavior: 'smooth' });
+                                                            }}
+                                                            className="absolute -right-3 top-[43%] -translate-y-1/2 w-9 h-9 bg-white shadow-md rounded-full flex items-center justify-center text-black z-20 border border-slate-100 hover:bg-slate-50"
+                                                        >
+                                                            <ChevronRight className="w-5 h-5" />
                                                         </button>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        )}
-
-                                        {/* Small Cards Wrapper (Next 3 items) */}
-                                        {chunk.length > 1 && (
-                                            <div className="flex flex-col gap-2 bg-white rounded-lg pb-2">
-                                                {chunk.slice(1).map((ad) => (
-                                                    <div
-                                                        key={ad._id}
-                                                        className="bg-white rounded-lg p-3 pb-0 flex gap-2 cursor-pointer"
-                                                        onClick={() => router.push(`?ad=${ad._id}`, { scroll: false })}
-                                                    >
-                                                        {/* Image */}
-                                                        <div className="w-[200px] h-[130px] bg-slate-900 rounded-lg overflow-hidden shrink-0 relative group-hover:bg-black transition-colors">
-                                                            {getImageUrl(ad.images?.[0]) && (
-                                                                <img
-                                                                    src={getImageUrl(ad.images?.[0]) || undefined}
-                                                                    alt={ad.headline}
-                                                                    className="w-full h-full object-contain"
-                                                                    loading="lazy"
-                                                                />
-                                                            )}
-                                                        </div>
-
-                                                        {/* Content */}
-                                                        <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                                            <div className="flex items-center gap-1 text-[10px] text-black mb-0.5">
-                                                                <span>{ad.adType === 'Promoted' ? 'Promoted By' : 'Post By'}</span>
-                                                                <span
-                                                                    className="font-bold text-black cursor-pointer hover:text-blue-600 hover:underline"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id } }));
-                                                                    }}
-                                                                >
-                                                                    {ad.user?.name || 'User'}
-                                                                </span>
-                                                                {/* {premiumUsers.some((u: any) => u._id === ad.user?._id && u.merchantType === 'Premium') && (
-                                                                    <CheckCircle2 className="w-2.5 h-2.5 text-blue-500" />
-                                                                )} */}
-                                                            </div>
-                                                            <h4 className="text-sm text-black truncate mb-0.5">{ad.headline}</h4>
-                                                            <div className="text-sm text-black mb-1">
-                                                                $ {ad.price?.toLocaleString() || 'N/A'}
-                                                            </div>
-                                                            <div className="flex items-center gap-2 text-[10px] text-black">
-                                                                <div className="flex items-center gap-0.5">
-                                                                    <MapPin className="w-2.5 h-2.5" />
-                                                                    <span className="truncate max-w-[80px]">{ad.location}</span>
-                                                                </div>
-                                                                <div className="flex items-center gap-0.5">
-                                                                    <Grid className="w-2.5 h-2.5" />
-                                                                    <span className="truncate max-w-[80px]">{ad.category}</span>
-                                                                </div>
-                                                                <div className="ml-auto text-black">
-                                                                    {timeAgo(ad.createdAt, language as 'en' | 'bn')}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-
-                                    </div>
-                                ))
-                                }
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         );
                     })()
                 )}
 
-                {/* Category Based Ads Section */}
-                {(() => {
-                    const [visibleCategoryCount, setVisibleCategoryCount] = React.useState(3);
-                    const categoriesWithAds = categories.filter(cat =>
-                        ads.some(ad => ad.category === cat.name)
-                    );
-                    const visibleCategories = categoriesWithAds.slice(0, visibleCategoryCount);
 
-                    return (
-                        <div className="mt-2 space-y-2">
-                            {visibleCategories.map(cat => {
-                                const categoryAds = ads.filter(ad => ad.category === cat.name);
-                                return (
-                                    <div key={cat._id} className="bg-white relative group/cat rounded-lg p-2 pb-0">
-                                        <div className="bg-white flex items-center justify-between px-2 mb-2">
-                                            <h3 className="text-sm font-medium text-black">{cat.name}</h3>
-                                            <button className="text-xs text-black ">See All</button>
-                                        </div>
-
-                                        <div className="relative">
-                                            <div
-                                                id={`scroll-${cat._id}`}
-                                                className="flex gap-3 overflow-x-auto no-scrollbar scroll-smooth"
-                                            >
-                                                {categoryAds.map(ad => (
-                                                    <div
-                                                        key={ad._id}
-                                                        className="min-w-[240px] w-[240px] bg-white border border-slate-200 rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-                                                        onClick={() => router.push(`?ad=${ad._id}`, { scroll: false })}
-                                                    >
-                                                        <div className="h-40 bg-slate-100 relative">
-                                                            {getImageUrl(ad.images?.[0]) && (
-                                                                <img
-                                                                    src={getImageUrl(ad.images?.[0]) || undefined}
-                                                                    alt={ad.headline}
-                                                                    className="w-full h-full object-cover"
-                                                                    loading="lazy"
-                                                                />
-                                                            )}
-                                                        </div>
-                                                        <div className="p-2.5">
-                                                            <h4 className="text-black truncate text-sm mb-0.5">{ad.headline}</h4>
-                                                            <p className="text-black text-sm">TK {ad.price?.toLocaleString() || 'N/A'}</p>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            {/* Right Scroll Button - Fixed & Always Visible */}
-                                            {categoryAds.length > 2 && (
-                                                <button
-                                                    onClick={() => {
-                                                        const el = document.getElementById(`scroll-${cat._id}`);
-                                                        if (el) el.scrollBy({ left: 250, behavior: 'smooth' });
-                                                    }}
-                                                    className="absolute -right-3 top-[40%] -translate-y-1/2 w-9 h-9 bg-white shadow-md rounded-full flex items-center justify-center text-black z-20 border border-slate-100 hover:bg-slate-50 opacity-100"
-                                                >
-                                                    <ChevronRight className="w-5 h-5" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-
-                            {visibleCategoryCount < categoriesWithAds.length && (
-                                <div className="pt-2">
-                                    <button
-                                        onClick={() => setVisibleCategoryCount(prev => prev + 1)}
-                                        className="w-full flex items-center justify-center gap-2 bg-white py-3 rounded-lg"
-                                    >
-                                        <div className="w-4 h-4 rounded-full bg-white border border-black flex items-center justify-center">
-                                            <ChevronRight className="w-3 h-3 text-black" />
-                                        </div>
-                                        <span className="text-black font-medium text-sm">Load More</span>
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })()}
 
                 <AdDetailsModal
                     isOpen={!!selectedAd}
                     onClose={() => {
                         setSelectedAd(null);
-                        router.push('/dashboard', { scroll: false });
+                        const params = new URLSearchParams(searchParams.toString());
+                        params.delete('ad');
+                        const queryString = params.toString();
+                        router.push(queryString ? `/dashboard?${queryString}` : '/dashboard', { scroll: false });
                     }}
                     ad={selectedAd}
                 />
@@ -891,15 +1218,25 @@ export default function DashboardClient() {
                     onApply={(newFilters) => {
                         setFilters(newFilters);
                         setIsFilterModalOpen(false);
+
+                        // Sync sidebar expansion
+                        if (newFilters.category) {
+                            const cat = categories.find(c => c.name === newFilters.category);
+                            if (cat) setExpandedCategory(cat._id);
+                        }
+                        if (newFilters.location) {
+                            const loc = locations.find(l => l.name === newFilters.location);
+                            if (loc) setExpandedLocation(loc._id);
+                        }
                     }}
                 />
             </div>
 
             {/* Gap 2: 50px */}
             <div className="hidden lg:block w-[50px] flex-none relative self-stretch">
-                <div className="sticky top-[82vh] pl-1">
+                <div className="sticky top-[85vh] pl-1">
                     <button
-                        onClick={() => document.getElementById('center-feed-container')?.scrollTo({ top: 0, behavior: 'smooth' })}
+                        onClick={() => document.getElementById('main-dashboard-scroller')?.scrollTo({ top: 0, behavior: 'smooth' })}
                         className="w-10 h-10 bg-[#0088cc] rounded-full shadow-md flex items-center justify-center hover:bg-[#0077b5] transition-colors"
                     >
                         <ArrowUp className="w-6 h-6 text-white" strokeWidth={2.5} />
@@ -908,10 +1245,10 @@ export default function DashboardClient() {
             </div>
 
             {/* Right Sidebar - Popular Seller: 230px */}
-            <div className="hidden lg:block w-[230px] flex-none h-full overflow-y-auto no-scrollbar pb-10">
+            <div className="hidden lg:block w-[230px] flex-none sticky top-4 h-[calc(100vh-32px)] overflow-y-auto no-scrollbar pb-10">
                 <div className="bg-white rounded-lg overflow-hidden w-full">
                     <div className="p-3 pb-1">
-                        <h3 className="text-base text-black">{t('popular_seller')}</h3>
+                        <h3 className="text-sm text-black">{t('popular_seller')}</h3>
                     </div>
 
                     <div className="space-y-3 px-3 pb-3">
@@ -922,7 +1259,7 @@ export default function DashboardClient() {
                         ) : (
                             premiumUsers.map((user, idx) => (
                                 <div key={user._id} className="flex gap-3">
-                                    <div className="shrink-0 cursor-pointer" onClick={() => window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: user._id } }))}>
+                                    <div className="shrink-0 cursor-pointer" onClick={() => handleProfileClick(user._id)}>
                                         <div className="w-14 h-14 rounded-full overflow-hidden border border-slate-100 bg-slate-50 relative group">
                                             {user.photo ? (
                                                 <img
@@ -939,18 +1276,29 @@ export default function DashboardClient() {
                                         </div>
                                     </div>
                                     <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                        <div className="flex items-center gap-1.5 leading-tight">
-                                            <h4 className="font-bold text-black text-[15px] truncate">
+                                        <div
+                                            className="flex items-center gap-1.5 leading-tight cursor-pointer group/name"
+                                            onClick={() => handleProfileClick(user._id)}
+                                        >
+                                            <h4 className="font-bold text-black text-[15px] truncate group-hover/name:text-[#0088cc] transition-colors">
                                                 {user.name.split(' ')[0]}
                                             </h4>
-                                            <RiCheckboxCircleFill className="w-4 h-4 text-[#0088cc] shrink-0" />
+                                            {user.mVerified && <VerifiedBadge />}
                                         </div>
                                         <p className="text-[11px] text-black -mt-0.5">
-                                            {7000 + (idx * 137)} {t('visited')}
+                                            {user.profileViews || 0} {t('visited')}
                                         </p>
-                                        <button className="mt-1 flex items-center justify-center gap-1 px-3 py-1 border border-slate-200 rounded-full text-[11px] font-bold text-black hover:bg-slate-50 hover:border-slate-300 transition-all w-fit">
-                                            <span className="text-base leading-none -mt-0.5">+</span>
-                                            {t('follow')}
+                                        <button
+                                            onClick={(e) => handleFollowUser(e, user._id)}
+                                            className={cn(
+                                                "mt-1 flex items-center justify-center gap-1 px-3 py-1 border rounded-full text-[11px] font-bold transition-all w-fit",
+                                                user.isFollowing
+                                                    ? "bg-slate-100 text-black border-black"
+                                                    : "border-black text-black hover:bg-slate-50 hover:border-slate-300"
+                                            )}
+                                        >
+                                            {!user.isFollowing && <span className="text-base leading-none -mt-0.5">+</span>}
+                                            {user.isFollowing ? t('Unfollow') : t('Follow')}
                                         </button>
                                     </div>
                                 </div>

@@ -78,11 +78,16 @@ export default function LatestFreeAdPromo() {
                         <RiLockFill className="w-4 h-4 text-slate-500" />
                         <span className="text-[14px] text-slate-700 font-medium">Your Post Preview, only you can See that</span>
                     </div>
-                    <button className="text-[14px] text-slate-600 font-medium hover:underline">All Post</button>
+                    <button
+                        onClick={() => window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: user?._id, activeTab: 'Post' } }))}
+                        className="text-[14px] text-slate-600 font-medium hover:underline"
+                    >
+                        {language === 'bn' ? 'সব পোস্ট' : 'All Post'}
+                    </button>
                 </div>
 
                 {/* 2. Main Image Section */}
-                <div className="relative aspect-[16/9] bg-slate-900 mx-1 rounded-lg overflow-hidden mt-1">
+                <div className="relative aspect-[16/9] bg-black mx-1 rounded-lg overflow-hidden mt-1">
                     {mainImage ? (
                         <img
                             src={mainImage}
@@ -100,7 +105,7 @@ export default function LatestFreeAdPromo() {
                         <div className="w-1 bg-white mr-2 self-stretch rounded-full" />
                         <div className="text-white drop-shadow-md">
                             <h2 className="text-[18px] leading-tight font-medium">{latestAd.headline}</h2>
-                            <p className="text-[14px] mt-0">$ {latestAd.price || '0.00'}</p>
+                            <p className="text-[14px] mt-0">৳ {latestAd.price || '0.00'}</p>
                         </div>
                     </div>
                 </div>

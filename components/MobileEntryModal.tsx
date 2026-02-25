@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, ArrowLeft, Smartphone, Loader2, ChevronDown, MessageCircle } from 'lucide-react';
 import { API_BASE_URL } from '../utils/apiConfig';
 import toast from 'react-hot-toast';
+import InfoModal from './InfoModal';
 
 interface MobileEntryModalProps {
     isOpen: boolean;
@@ -15,6 +16,7 @@ interface MobileEntryModalProps {
 export default function MobileEntryModal({ isOpen, onClose, onUserExists, onUserNew }: MobileEntryModalProps) {
     const [mobile, setMobile] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showInfoModal, setShowInfoModal] = useState(false);
 
     if (!isOpen) return null;
 
@@ -72,7 +74,7 @@ export default function MobileEntryModal({ isOpen, onClose, onUserExists, onUser
     };
 
     return (
-        <div className="fixed inset-0 z-[250] flex items-start justify-center pt-20">
+        <div className="fixed inset-0 z-[1100] flex items-start justify-center pt-20">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
@@ -92,9 +94,9 @@ export default function MobileEntryModal({ isOpen, onClose, onUserExists, onUser
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto no-scrollbar px-6 pb-32">
+                <div className="flex-1 overflow-y-auto px-6 pb-32">
                     {/* Shield Logo - Shrunken */}
-                    <div className="flex flex-col items-center mb-4">
+                    <div className="mt-4 flex flex-col items-center mb-4">
                         <div className="relative w-[70px] h-[70px] mb-1 flex items-center justify-center">
                             <svg viewBox="0 0 100 120" className="absolute inset-0 w-full h-full">
                                 <path
@@ -126,7 +128,7 @@ export default function MobileEntryModal({ isOpen, onClose, onUserExists, onUser
                         <p className="text-[12px] text-black mt-1">Enter mobile number to continue</p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-3 mb-6">
+                    <form onSubmit={handleSubmit} className="space-y-3 mb-3">
                         <div className="relative flex items-center bg-white border border-slate-500 rounded-md overflow-hidden">
                             <div className="flex items-center gap-1 px-3 py-2.5 border-r border-slate-500 bg-slate-50/50">
                                 <span className="text-[13px] font-medium text-black">+88</span>
@@ -152,13 +154,16 @@ export default function MobileEntryModal({ isOpen, onClose, onUserExists, onUser
                         </button>
                     </form>
 
-                    <p className="text-[10px] text-black text-center mb-6">
+                    <p className="text-[10px] text-black text-center mb-6 cursor-pointer select-none" onClick={() => setShowInfoModal(true)}>
                         By continuing you agree to our <span className="text-black font-medium underline">Term & Condition</span>
                     </p>
                 </div>
 
                 {/* Floating Chat Icon */}
-                <div className="absolute right-5 bottom-20 z-[210]">
+                <div
+                    className="absolute right-5 bottom-20 z-[210] cursor-pointer"
+                    onClick={() => window.open('https://m.me/shadamon.bd', '_blank')}
+                >
                     <div className="flex flex-col items-center">
                         <button className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-white shadow-xl hover:scale-105 active:scale-95 transition-all mb-1">
                             <MessageCircle className="w-5 h-5 fill-white" />
@@ -166,6 +171,37 @@ export default function MobileEntryModal({ isOpen, onClose, onUserExists, onUser
                         <button className="text-[11px] text-black font-bold">HelpChat</button>
                     </div>
                 </div>
+                {/* Info Modal for Terms */}
+                <InfoModal
+                    isOpen={showInfoModal}
+                    onClose={() => setShowInfoModal(false)}
+                    title="Terms & Conditions"
+                    content={
+                        <div className="space-y-4">
+                            <section>
+                                <h3 className="font-bold text-black mb-2">1. Agreement to Terms</h3>
+                                <p>By accessing or using Shadamon, you agree to be bound by these Terms and Conditions and our Privacy Policy. If you do not agree, please do not use our services.</p>
+                            </section>
+                            <section>
+                                <h3 className="font-bold text-black mb-2">2. Posting Rules</h3>
+                                <ul className="list-disc pl-5 space-y-1">
+                                    <li>Do not post duplicate ads.</li>
+                                    <li>Ensure all information provided is accurate and not misleading.</li>
+                                    <li>Prohibited items cannot be listed on the platform.</li>
+                                    <li>We reserve the right to remove any ad that violates our policies.</li>
+                                </ul>
+                            </section>
+                            <section>
+                                <h3 className="font-bold text-black mb-2">3. User Responsibilities</h3>
+                                <p>You are responsible for maintaining the confidentiality of your account and for all activities that occur under your account.</p>
+                            </section>
+                            <section>
+                                <h3 className="font-bold text-black mb-2">4. Privacy</h3>
+                                <p>Your privacy is important to us. Please review our Privacy Policy to understand how we collect and use your data.</p>
+                            </section>
+                        </div>
+                    }
+                />
             </div>
         </div>
     );
