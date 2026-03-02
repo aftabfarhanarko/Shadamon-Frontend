@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   description: "The ultimate marketing platform",
 };
 
+import { SettingsProvider } from "./context/SettingsContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -35,10 +37,12 @@ export default function RootLayout({
         }} />
         <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-        <LanguageProvider>
-          {children}
-          <Toaster position="top-center" reverseOrder={false} />
-        </LanguageProvider>
+        <SettingsProvider>
+          <LanguageProvider>
+            {children}
+            <Toaster position="top-center" reverseOrder={false} />
+          </LanguageProvider>
+        </SettingsProvider>
       </body>
     </html>
   );

@@ -23,6 +23,7 @@ import LatestFreeAdPromo from '../../components/LatestFreeAdPromo';
 import AdDetailsModal from '../../components/AdDetailsModal';
 import FilterModal, { FilterState } from '../../components/FilterModal';
 import Cookies from 'js-cookie';
+import { useSettings } from '../context/SettingsContext';
 
 const VerifiedBadge = () => (
     <div className="relative group/badge flex items-center justify-center -mt-0.5">
@@ -98,6 +99,7 @@ export default function DashboardClient() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { t, language } = useLanguage();
+    const { settings } = useSettings();
 
     const [categories, setCategories] = useState<Category[]>([]);
     const [locations, setLocations] = useState<Location[]>([]);
@@ -314,7 +316,27 @@ export default function DashboardClient() {
             }
 
             if (userRes.success) setPremiumUsers(userRes.data);
-            if (adsRes.success) setAds(adsRes.data);
+            if (adsRes.success) {
+                // Filter ads by session repeat view limit
+                const limit = settings.userRepeatAdViewTime || 0;
+                let filteredAds = adsRes.data;
+
+                if (limit > 0) {
+                    const sessionViews = JSON.parse(sessionStorage.getItem('ad_session_views') || '{}');
+                    filteredAds = adsRes.data.filter((ad: ActiveAd) => {
+                        const views = sessionViews[ad._id] || 0;
+                        return views < limit;
+                    });
+
+                    // Count this delivery/view for the remaining ads
+                    filteredAds.forEach((ad: ActiveAd) => {
+                        sessionViews[ad._id] = (sessionViews[ad._id] || 0) + 1;
+                    });
+                    sessionStorage.setItem('ad_session_views', JSON.stringify(sessionViews));
+                }
+
+                setAds(filteredAds);
+            }
             if (allAdsRes.success) {
                 const allAdsData = allAdsRes.data;
                 setTotalAds(allAdsData);
@@ -1034,7 +1056,15 @@ export default function DashboardClient() {
                                                         )}
                                                         <div className="absolute bottom-0 right-0 p-2">
                                                             <div className="bg-[#0088cc] p-1.5 rounded-tl-lg rounded-br-lg">
-                                                                <User className="w-4 h-4 text-white" />
+                                                                {settings.watermarkLogo ? (
+                                                                    <img
+                                                                        src={getImageUrl(settings.watermarkLogo)}
+                                                                        alt="Watermark"
+                                                                        className="w-4 h-4 object-contain"
+                                                                    />
+                                                                ) : (
+                                                                    <User className="w-4 h-4 text-white" />
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1245,8 +1275,8 @@ export default function DashboardClient() {
             </div>
 
             {/* Right Sidebar - Popular Seller: 230px */}
-            <div className="hidden lg:block w-[230px] flex-none sticky top-4 h-[calc(100vh-32px)] overflow-y-auto no-scrollbar pb-10">
-                <div className="bg-white rounded-lg overflow-hidden w-full">
+            <div className="hidden lg:block w-[230px] flex-none sticky top-4 h-[calc(100vh-32px)] overflow-y-auto no-scrollbar pb-10 z-40">
+                <div className="bg-white rounded-lg w-full">
                     <div className="p-3 pb-1">
                         <h3 className="text-sm text-black">{t('popular_seller')}</h3>
                     </div>

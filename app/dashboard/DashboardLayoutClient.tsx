@@ -14,6 +14,7 @@ import { io } from 'socket.io-client';
 import { useLanguage } from '../context/LanguageContext';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useSettings } from '../context/SettingsContext';
 import PostAdModal from '../../components/PostAdModal';
 import PromoteModal from '../../components/PromoteModal';
 import LoginModal from '../../components/LoginModal';
@@ -215,6 +216,8 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
     const [socket, setSocket] = useState<any>(null);
 
+    const { settings, fetchDashboardSettings } = useSettings();
+
     // Socket.io for notifications
     useEffect(() => {
         const token = Cookies.get('token');
@@ -275,6 +278,10 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         };
         fetchMeta();
     }, []);
+
+    useEffect(() => {
+        fetchDashboardSettings();
+    }, [fetchDashboardSettings]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -341,6 +348,40 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             setIsAccountModalOpen(true);
         }
     }, [searchParams]);
+
+    // Apply Site Settings (Favicon, etc)
+    useEffect(() => {
+        if (settings.favIcon) {
+            const faviconUrl = getImageUrl(settings.favIcon);
+
+            // Standard favicon
+            let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+            if (!link) {
+                link = document.createElement('link');
+                link.rel = 'icon';
+                document.getElementsByTagName('head')[0].appendChild(link);
+            }
+            link.href = faviconUrl;
+
+            // Apple Touch Icon
+            let appleIcon: HTMLLinkElement | null = document.querySelector("link[rel='apple-touch-icon']");
+            if (!appleIcon) {
+                appleIcon = document.createElement('link');
+                appleIcon.rel = 'apple-touch-icon';
+                document.getElementsByTagName('head')[0].appendChild(appleIcon);
+            }
+            appleIcon.href = faviconUrl;
+
+            // Shortcut icon
+            let shortcutIcon: HTMLLinkElement | null = document.querySelector("link[rel='shortcut icon']");
+            if (!shortcutIcon) {
+                shortcutIcon = document.createElement('link');
+                shortcutIcon.rel = 'shortcut icon';
+                document.getElementsByTagName('head')[0].appendChild(shortcutIcon);
+            }
+            shortcutIcon.href = faviconUrl;
+        }
+    }, [settings.favIcon]);
 
     // Handle Search Suggestions
     useEffect(() => {
@@ -507,13 +548,17 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                 className="flex items-center gap-2 shrink-0"
                                 onClick={() => window.dispatchEvent(new Event('reset-saved-search'))}
                             >
-                                <span className="text-3xl font-bold text-[#1A202C] tracking-tighter">shadamon</span>
-                                {/* <div className="hidden lg:flex items-center border-l border-slate-300 pl-2 h-8 self-center">
-                                    <div className="flex flex-col -space-y-1">
-                                        <span className="text-sm font-bold text-black">{totalAds.toLocaleString()}</span>
-                                        <span className="text-xs text-black tracking-tight">Product</span>
+                                {settings.siteLogo ? (
+                                    <div className="h-10 w-auto">
+                                        <img
+                                            src={getImageUrl(settings.siteLogo)}
+                                            alt="Logo"
+                                            className="h-full w-auto object-contain"
+                                        />
                                     </div>
-                                </div> */}
+                                ) : (
+                                    <span className="text-3xl font-bold text-[#1A202C] tracking-tighter">shadamon</span>
+                                )}
                             </Link>
                         </div>
 

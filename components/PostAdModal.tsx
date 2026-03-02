@@ -8,6 +8,7 @@ import { twMerge } from 'tailwind-merge';
 import Cookies from 'js-cookie';
 import { API_BASE_URL } from '../utils/apiConfig';
 import { getImageUrl } from '../utils/imageUrl';
+import { useSettings } from '../app/context/SettingsContext';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs));
@@ -62,6 +63,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [existingImages, setExistingImages] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingData, setLoadingData] = useState(false);
+    const { settings, fetchPostAdSettings } = useSettings();
 
     // Form State
     const [headline, setHeadline] = useState("");
@@ -150,6 +152,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
 
     useEffect(() => {
         if (isOpen) {
+            fetchPostAdSettings();
             fetchData();
             checkUser();
             if (editAd) {
@@ -297,8 +300,9 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             const newFiles = Array.from(e.target.files);
-            if (images.length + existingImages.length + newFiles.length > 10) {
-                toast.error("Maximum 10 images allowed");
+            const limit = settings.productPhotoLimit || 10;
+            if (images.length + existingImages.length + newFiles.length > limit) {
+                toast.error(`Maximum ${limit} images allowed`);
                 return;
             }
             setImages([...images, ...newFiles]);
@@ -509,6 +513,22 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         // Basic validation before OTP
         if (!headline || !phone || (!isUserLoggedIn && !password)) {
             toast.error("Please fill in required fields");
+            return;
+        }
+
+        // Check blocked words
+        const headlineLower = headline.toLowerCase();
+        const descLower = description.toLowerCase();
+
+        const blockedHeadlineFound = (settings.blockCheckInHeadline || []).find(word => headlineLower.includes(word.toLowerCase()));
+        if (blockedHeadlineFound) {
+            toast.error(`Headline contains restricted word: ${blockedHeadlineFound}`);
+            return;
+        }
+
+        const blockedDescFound = (settings.blockCheckInDescription || []).find(word => descLower.includes(word.toLowerCase()));
+        if (blockedDescFound) {
+            toast.error(`Description contains restricted word: ${blockedDescFound}`);
             return;
         }
 
@@ -966,6 +986,14 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                 placeholder="Headline"
                                                 value={headline}
                                                 onChange={(e) => setHeadline(e.target.value)}
+                                                onBlur={(e) => {
+                                                    const val = e.target.value.toLowerCase();
+                                                    const blocked = settings.blockCheckInHeadline || [];
+                                                    const found = blocked.find(word => val.includes(word.toLowerCase()));
+                                                    if (found) {
+                                                        toast.error(`Headline contains restricted word: ${found}`);
+                                                    }
+                                                }}
                                                 className="w-full pl-4 py-1 text-sm text-black placeholder:text-slate-400 focus:outline-none bg-white"
                                             />
                                         </div>
@@ -975,6 +1003,14 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                 placeholder="Description"
                                                 value={description}
                                                 onChange={(e) => setDescription(e.target.value)}
+                                                onBlur={(e) => {
+                                                    const val = e.target.value.toLowerCase();
+                                                    const blocked = settings.blockCheckInDescription || [];
+                                                    const found = blocked.find(word => val.includes(word.toLowerCase()));
+                                                    if (found) {
+                                                        toast.error(`Description contains restricted word: ${found}`);
+                                                    }
+                                                }}
                                                 className="w-full text-sm text-black placeholder:text-slate-400 focus:outline-none px-1 bg-white resize-y min-h-[100px] block"
                                             />
                                             <p className="text-[10px] text-black mt-2 px-1 leading-tight">*A nice & Detail Description Might Help your Product Sell Faster</p>
