@@ -175,8 +175,31 @@ export default function DashboardClient() {
             .replace(/-+$/, '');      // Trim - from end of text
     };
 
+    const getAdUrl = (ad: any) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('ad', `${createSlug(ad.headline)}--${ad._id}`);
+        return `?${params.toString()}`;
+    };
+
+    const getCategoryUrl = (catName: string, subCatName: string = "") => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (catName) params.set('category', catName); else params.delete('category');
+        if (subCatName) params.set('subCategory', subCatName); else params.delete('subCategory');
+        const str = params.toString();
+        return str ? `/dashboard?${str}` : '/dashboard';
+    };
+
+    const getLocationUrl = (locName: string, subLocName: string = "") => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (locName) params.set('location', locName); else params.delete('location');
+        if (subLocName) params.set('subLocation', subLocName); else params.delete('subLocation');
+        const str = params.toString();
+        return str ? `/dashboard?${str}` : '/dashboard';
+    };
+
     // Initialize filters from URL on mount
     useEffect(() => {
+
         const urlCategory = searchParams.get('category');
         const urlSubCategory = searchParams.get('subCategory');
         const urlLocation = searchParams.get('location');
@@ -184,11 +207,11 @@ export default function DashboardClient() {
         const urlSearch = searchParams.get('search');
 
         const currentFilters = {
-            category: searchParams.get('category') || "",
-            subCategory: searchParams.get('subCategory') || "",
-            location: searchParams.get('location') || "",
-            subLocation: searchParams.get('subLocation') || "",
-            search: searchParams.get('search') || ""
+            category: urlCategory || "",
+            subCategory: urlSubCategory || "",
+            location: urlLocation || "",
+            subLocation: urlSubLocation || "",
+            search: urlSearch || ""
         };
 
         // Only update state if values actually changed to avoid cycles
@@ -217,7 +240,13 @@ export default function DashboardClient() {
     }, [searchParams, categories.length, locations.length]);
 
     // Update URL when filters change
+    const isInitialMount = useRef(true);
     useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
+
         const params = new URLSearchParams();
         if (filters.category) params.set('category', filters.category);
         if (filters.subCategory) params.set('subCategory', filters.subCategory);
@@ -236,7 +265,8 @@ export default function DashboardClient() {
         if (queryString !== currentQuery) {
             router.push(newUrl, { scroll: false });
         }
-    }, [filters, searchParams, router]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filters, router]);
 
     // Effect to handle URL-based modal opening
     useEffect(() => {
@@ -289,14 +319,12 @@ export default function DashboardClient() {
             if (filters.sort) params.append('sort', filters.sort);
             if (filters.search) params.append('search', filters.search);
 
-            const [catRes, subCatRes, locRes, subLocRes, userRes, adsRes, allAdsRes] = await Promise.all([
+            const [catRes, subCatRes, locRes, subLocRes, adsRes] = await Promise.all([
                 fetch(`${API_BASE_URL}/api/categories`).then(res => res.json()),
                 fetch(`${API_BASE_URL}/api/categories/sub`).then(res => res.json()),
                 fetch(`${API_BASE_URL}/api/locations`).then(res => res.json()),
                 fetch(`${API_BASE_URL}/api/locations/sub`).then(res => res.json()),
-                fetch(`${API_BASE_URL}/api/user/premium`).then(res => res.json()),
                 fetch(`${API_BASE_URL}/api/ads/public/all?${params.toString()}`).then(res => res.json()),
-                fetch(`${API_BASE_URL}/api/ads/public/all`).then(res => res.json())
             ]);
 
             if (catRes.success && subCatRes.success) {
@@ -315,7 +343,6 @@ export default function DashboardClient() {
                 setLocations(locs);
             }
 
-            if (userRes.success) setPremiumUsers(userRes.data);
             if (adsRes.success) {
                 // Filter ads by session repeat view limit
                 const limit = settings.userRepeatAdViewTime || 0;
@@ -337,6 +364,17 @@ export default function DashboardClient() {
 
                 setAds(filteredAds);
             }
+        } catch (error) {
+            console.error("Failed to load dashboard data", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [language, filters]);
+
+    const fetchInitialData = React.useCallback(async () => {
+        try {
+            const allAdsRes = await fetch(`${API_BASE_URL}/api/ads/public/all`).then(res => res.json());
+
             if (allAdsRes.success) {
                 const allAdsData = allAdsRes.data;
                 setTotalAds(allAdsData);
@@ -393,11 +431,9 @@ export default function DashboardClient() {
                 setPremiumUsers(top10Sellers);
             }
         } catch (error) {
-            console.error("Failed to load dashboard data", error);
-        } finally {
-            setLoading(false);
+            console.error("Failed to load initial data", error);
         }
-    }, [language, filters]);
+    }, []);
 
     const handleProfileClick = async (userId: string) => {
         // Increment view count optimistically
@@ -440,9 +476,11 @@ export default function DashboardClient() {
 
     useEffect(() => {
         fetchData();
+        fetchInitialData();
 
         const handleRefresh = () => {
             fetchData();
+            fetchInitialData();
         };
 
         const handleSearch = (e: any) => {
@@ -490,7 +528,7 @@ export default function DashboardClient() {
                                     {expandedCategory !== null && (
                                         <div className="pl-1 space-y-1">
                                             <Link
-                                                href="/dashboard"
+                                                href={getCategoryUrl("")}
                                                 scroll={false}
                                                 className="block text-sm text-black ml-4 tracking-wider cursor-pointer hover:text-[#0088cc] transition-colors"
                                                 onClick={() => {
@@ -508,7 +546,7 @@ export default function DashboardClient() {
                                                 return (
                                                     <div key={cat._id} className="space-y-1">
                                                         <Link
-                                                            href={`/dashboard?category=${cat.name}`}
+                                                            href={getCategoryUrl(cat.name)}
                                                             scroll={false}
                                                             className="flex items-center justify-between group cursor-pointer"
                                                             onClick={() => {
@@ -543,7 +581,7 @@ export default function DashboardClient() {
                                                                     {cat.subcategories.map(sub => (
                                                                         <Link
                                                                             key={sub._id}
-                                                                            href={`/dashboard?category=${cat.name}&subCategory=${sub.name}`}
+                                                                            href={getCategoryUrl(cat.name, sub.name)}
                                                                             scroll={false}
                                                                             className="flex items-center gap-1 text-sm text-[#0088cc] hover:underline cursor-pointer group"
                                                                             onClick={(e) => {
@@ -579,7 +617,7 @@ export default function DashboardClient() {
                                     {expandedLocation !== null && (
                                         <div className="pl-1 space-y-1">
                                             <Link
-                                                href="/dashboard"
+                                                href={getLocationUrl("")}
                                                 scroll={false}
                                                 className="block text-sm text-black ml-4 tracking-wider cursor-pointer hover:text-[#0088cc] transition-colors"
                                                 onClick={() => {
@@ -593,7 +631,7 @@ export default function DashboardClient() {
                                             {locations.map(loc => (
                                                 <div key={loc._id} className="space-y-1">
                                                     <Link
-                                                        href={`/dashboard?location=${loc.name}`}
+                                                        href={getLocationUrl(loc.name)}
                                                         scroll={false}
                                                         className="flex items-center justify-between group cursor-pointer"
                                                         onClick={() => {
@@ -617,7 +655,7 @@ export default function DashboardClient() {
                                                             {loc.subLocations.map(sub => (
                                                                 <Link
                                                                     key={sub._id}
-                                                                    href={`/dashboard?location=${loc.name}&subLocation=${sub.name}`}
+                                                                    href={getLocationUrl(loc.name, sub.name)}
                                                                     scroll={false}
                                                                     className="flex items-center gap-1 text-sm text-[#0088cc] hover:underline cursor-pointer group"
                                                                     onClick={(e) => {
@@ -845,7 +883,7 @@ export default function DashboardClient() {
                                     .map((cat) => (
                                         <Link
                                             key={cat._id}
-                                            href={cat.name === filters.category ? '/dashboard' : `/dashboard?category=${cat.name}`}
+                                            href={cat.name === filters.category ? getCategoryUrl("") : getCategoryUrl(cat.name)}
                                             scroll={false}
                                             className={cn(
                                                 "flex flex-col items-center gap-2 flex-none group cursor-pointer",
@@ -896,7 +934,7 @@ export default function DashboardClient() {
                                     .map((loc) => (
                                         <Link
                                             key={loc._id}
-                                            href={loc.name === filters.location ? '/dashboard' : `/dashboard?location=${loc.name}`}
+                                            href={loc.name === filters.location ? getLocationUrl("") : getLocationUrl(loc.name)}
                                             scroll={false}
                                             className={cn(
                                                 "flex flex-col items-center gap-2 flex-none group cursor-pointer",
@@ -1041,7 +1079,7 @@ export default function DashboardClient() {
                                             {/* Big Card */}
                                             {chunk.bigAd && (
                                                 <Link
-                                                    href={`?ad=${createSlug(chunk.bigAd.headline)}--${chunk.bigAd._id}`}
+                                                    href={getAdUrl(chunk.bigAd)}
                                                     scroll={false}
                                                     className="bg-white rounded-xl cursor-pointer group block border border-slate-100 shadow-sm"
                                                 >
@@ -1103,7 +1141,7 @@ export default function DashboardClient() {
                                                     {chunk.promotedSmall.map((ad) => (
                                                         <Link
                                                             key={ad._id}
-                                                            href={`?ad=${createSlug(ad.headline)}--${ad._id}`}
+                                                            href={getAdUrl(ad)}
                                                             scroll={false}
                                                             className="bg-white rounded-lg p-3 pb-0 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50"
                                                         >
@@ -1137,7 +1175,7 @@ export default function DashboardClient() {
                                                     {chunk.freeSmall.map((ad) => (
                                                         <Link
                                                             key={ad._id}
-                                                            href={`?ad=${createSlug(ad.headline)}--${ad._id}`}
+                                                            href={getAdUrl(ad)}
                                                             scroll={false}
                                                             className="bg-white rounded-lg p-3 pb-0 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50"
                                                         >
@@ -1191,7 +1229,7 @@ export default function DashboardClient() {
                                                                 <div
                                                                     key={ad._id}
                                                                     className="min-w-[240px] w-[240px] bg-white border border-slate-200 rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-                                                                    onClick={() => router.push(`?ad=${createSlug(ad.headline)}--${ad._id}`, { scroll: false })}
+                                                                    onClick={() => router.push(getAdUrl(ad), { scroll: false })}
                                                                 >
                                                                     <div className="h-40 bg-black relative">
                                                                         {getImageUrl(ad.images?.[0]) && (
