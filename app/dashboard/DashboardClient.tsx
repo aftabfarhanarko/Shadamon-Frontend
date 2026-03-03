@@ -76,6 +76,7 @@ interface ActiveAd {
         photo?: string;
         verifiedBy?: string;
         mVerified?: boolean;
+        sellerPageUrl?: string;
     };
     deliveryCount: number;
     createdAt: string;
@@ -93,6 +94,7 @@ interface PremiumUser {
     hasPromotedAds?: boolean;
     profileViews?: number;
     isFollowing?: boolean;
+    sellerPageUrl?: string;
 }
 
 export default function DashboardClient() {
@@ -211,7 +213,9 @@ export default function DashboardClient() {
             subCategory: urlSubCategory || "",
             location: urlLocation || "",
             subLocation: urlSubLocation || "",
-            search: urlSearch || ""
+            search: urlSearch || "",
+            promoteTag: searchParams.get('promoteTag') || "All",
+            sort: searchParams.get('sort') || "newest"
         };
 
         // Only update state if values actually changed to avoid cycles
@@ -220,7 +224,9 @@ export default function DashboardClient() {
             currentFilters.subCategory !== filters.subCategory ||
             currentFilters.location !== filters.location ||
             currentFilters.subLocation !== filters.subLocation ||
-            currentFilters.search !== filters.search
+            currentFilters.search !== filters.search ||
+            currentFilters.promoteTag !== filters.promoteTag ||
+            currentFilters.sort !== filters.sort
         ) {
             setFilters(prev => ({
                 ...prev,
@@ -253,6 +259,8 @@ export default function DashboardClient() {
         if (filters.location) params.set('location', filters.location);
         if (filters.subLocation) params.set('subLocation', filters.subLocation);
         if (filters.search) params.set('search', filters.search);
+        if (filters.promoteTag && filters.promoteTag !== 'All') params.set('promoteTag', filters.promoteTag);
+        if (filters.sort && filters.sort !== 'newest') params.set('sort', filters.sort);
 
         // Keep the ad param if it exists
         const adParam = searchParams.get('ad');
@@ -348,18 +356,26 @@ export default function DashboardClient() {
                 const limit = settings.userRepeatAdViewTime || 0;
                 let filteredAds = adsRes.data;
 
-                if (limit > 0) {
+                const isFiltering = !!(filters.category || filters.location || filters.search || (filters.promoteTag && filters.promoteTag !== 'All'));
+                if (limit > 0 && !isFiltering) {
                     const sessionViews = JSON.parse(sessionStorage.getItem('ad_session_views') || '{}');
-                    filteredAds = adsRes.data.filter((ad: ActiveAd) => {
+                    const filtered = adsRes.data.filter((ad: ActiveAd) => {
                         const views = sessionViews[ad._id] || 0;
                         return views < limit;
                     });
 
-                    // Count this delivery/view for the remaining ads
-                    filteredAds.forEach((ad: ActiveAd) => {
-                        sessionViews[ad._id] = (sessionViews[ad._id] || 0) + 1;
-                    });
-                    sessionStorage.setItem('ad_session_views', JSON.stringify(sessionViews));
+                    // Only apply filtering if it doesn't leave the user with an empty screen when they actually have data
+                    if (filtered.length > 0) {
+                        filteredAds = filtered;
+                        // Count this delivery/view ONLY for the ads that will be shown
+                        filteredAds.forEach((ad: ActiveAd) => {
+                            sessionViews[ad._id] = (sessionViews[ad._id] || 0) + 1;
+                        });
+                        sessionStorage.setItem('ad_session_views', JSON.stringify(sessionViews));
+                    } else if (adsRes.data.length > 0) {
+                        // If everything was filtered out but we have ads, just show the ads and don't increment (fresh start)
+                        filteredAds = adsRes.data;
+                    }
                 }
 
                 setAds(filteredAds);
@@ -391,7 +407,8 @@ export default function DashboardClient() {
                             storeName: ad.user.storeName,
                             verifiedBy: ad.user.verifiedBy,
                             mVerified: ad.user.mVerified,
-                            hasPromotedAds: false
+                            hasPromotedAds: false,
+                            sellerPageUrl: ad.user.sellerPageUrl
                         });
                     }
                     if (ad.adType === 'Promoted') {
@@ -435,7 +452,7 @@ export default function DashboardClient() {
         }
     }, []);
 
-    const handleProfileClick = async (userId: string) => {
+    const handleProfileClick = async (userId: string, sellerPageUrl?: string) => {
         // Increment view count optimistically
         setPremiumUsers(prev => prev.map(u =>
             u._id === userId ? { ...u, profileViews: (u.profileViews || 0) + 1 } : u
@@ -447,7 +464,7 @@ export default function DashboardClient() {
         } catch (e) { }
 
         // Open modal
-        window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId } }));
+        window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId, sellerPageUrl } }));
     };
 
     const handleFollowUser = async (e: React.MouseEvent, userId: string) => {
@@ -1115,7 +1132,7 @@ export default function DashboardClient() {
                                                                         className="font-bold text-black cursor-pointer hover:text-blue-600 hover:underline"
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
-                                                                            window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: chunk.bigAd?.user?._id } }));
+                                                                            window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: chunk.bigAd?.user?._id, sellerPageUrl: chunk.bigAd?.user?.sellerPageUrl } }));
                                                                         }}
                                                                     >
                                                                         {chunk.bigAd.user?.storeName || chunk.bigAd.user?.name || 'User'}
@@ -1153,7 +1170,7 @@ export default function DashboardClient() {
                                                             <div className="flex-1 min-w-0 flex flex-col justify-center">
                                                                 <div className="flex items-center gap-1 text-[10px] text-black mb-0.5">
                                                                     <span>Promoted By</span>
-                                                                    <span className="font-bold text-black hover:text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id } })); }}>{ad.user?.storeName || ad.user?.name || 'User'}</span>
+                                                                    <span className="font-bold text-black hover:text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id, sellerPageUrl: ad.user?.sellerPageUrl } })); }}>{ad.user?.storeName || ad.user?.name || 'User'}</span>
                                                                     {ad.user?.mVerified && <VerifiedBadge />}
                                                                 </div>
                                                                 <h4 className="text-sm text-black truncate mb-0.5">{ad.headline}</h4>
@@ -1187,7 +1204,7 @@ export default function DashboardClient() {
                                                             <div className="flex-1 min-w-0 flex flex-col justify-center">
                                                                 <div className="flex items-center gap-1 text-[10px] text-black mb-0.5">
                                                                     <span>Post By</span>
-                                                                    <span className="font-bold text-black hover:text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id } })); }}>{ad.user?.storeName || ad.user?.name || 'User'}</span>
+                                                                    <span className="font-bold text-black hover:text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id, sellerPageUrl: ad.user?.sellerPageUrl } })); }}>{ad.user?.storeName || ad.user?.name || 'User'}</span>
                                                                     {ad.user?.mVerified && <VerifiedBadge />}
                                                                 </div>
                                                                 <h4 className="text-sm text-black truncate mb-0.5">{ad.headline}</h4>
@@ -1327,7 +1344,7 @@ export default function DashboardClient() {
                         ) : (
                             premiumUsers.map((user, idx) => (
                                 <div key={user._id} className="flex gap-3">
-                                    <div className="shrink-0 cursor-pointer" onClick={() => handleProfileClick(user._id)}>
+                                    <div className="shrink-0 cursor-pointer" onClick={() => handleProfileClick(user._id, user.sellerPageUrl)}>
                                         <div className="w-14 h-14 rounded-full overflow-hidden border border-slate-100 bg-slate-50 relative group">
                                             {user.photo ? (
                                                 <img
@@ -1346,7 +1363,7 @@ export default function DashboardClient() {
                                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                                         <div
                                             className="flex items-center gap-1.5 leading-tight cursor-pointer group/name"
-                                            onClick={() => handleProfileClick(user._id)}
+                                            onClick={() => handleProfileClick(user._id, user.sellerPageUrl)}
                                         >
                                             <h4 className="font-bold text-black text-[15px] truncate group-hover/name:text-[#0088cc] transition-colors">
                                                 {user.name.split(' ')[0]}

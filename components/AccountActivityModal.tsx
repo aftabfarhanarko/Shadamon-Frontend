@@ -577,7 +577,8 @@ I have sent my CV for your review.`;
                             setUserData(profileData);
 
                             // Check if current user is following this target user
-                            if (currentUser && currentUser.following && currentUser.following.includes(targetUserId)) {
+                            const actualId = profileData._id;
+                            if (currentUser && currentUser.following && currentUser.following.includes(actualId)) {
                                 setIsFollowing(true);
                             } else {
                                 setIsFollowing(false);
@@ -588,12 +589,27 @@ I have sent my CV for your review.`;
                     }
                 }
 
-                // Update URL if missing or different (for own account mostly)
-                const params = new URLSearchParams(window.location.search);
-                const currentProfileParam = params.get('profile');
-                if (isOpen && currentProfileParam !== targetUserId) {
-                    params.set('profile', targetUserId);
-                    router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
+                // Update URL if missing or different (optimized for sellerPageUrl)
+                const currentPath = window.location.pathname;
+                const searchStr = window.location.search;
+                const resolvedUser = userData || (isOwnAccount ? currentUser : null);
+
+                if (isOpen && resolvedUser) {
+                    const sellerUrl = resolvedUser.sellerPageUrl;
+                    const userIdVal = resolvedUser._id;
+
+                    if (sellerUrl) {
+                        const expectedPath = `/dashboard/${sellerUrl}`;
+                        if (currentPath !== expectedPath) {
+                            router.push(`${expectedPath}${searchStr}`, { scroll: false });
+                        }
+                    } else {
+                        const params = new URLSearchParams(searchStr);
+                        if (params.get('profile') !== userIdVal && currentPath === '/dashboard') {
+                            params.set('profile', userIdVal);
+                            router.push(`/dashboard?${params.toString()}`, { scroll: false });
+                        }
+                    }
                 }
 
                 if (isOwnAccount) {
@@ -606,12 +622,22 @@ I have sent my CV for your review.`;
                     const adsRes = await fetch(`${API_BASE_URL}/api/ads/public/all`);
                     const adsData = await adsRes.json();
                     if (adsData.success) {
-                        const userPublicAds = adsData.data.filter((ad: any) => ad.user?._id === targetUserId || ad.user === targetUserId);
+                        const userPublicAds = adsData.data.filter((ad: any) => {
+                            const adUser = ad.user || {};
+                            const adUserId = adUser._id || ad.user;
+                            const adUserUrl = adUser.sellerPageUrl;
+
+                            // If we have resolved user data, use the unique _id
+                            if (userData?._id) return adUserId === userData._id;
+
+                            // Otherwise fallback to targetUserId which might be ID or username
+                            if (targetUserId.match(/^[0-9a-fA-F]{24}$/)) {
+                                return adUserId === targetUserId;
+                            } else {
+                                return adUserUrl === targetUserId;
+                            }
+                        });
                         setUserAds(userPublicAds);
-                        // If public profile fetch failed, fallback to ad user data (though profile fetch is better)
-                        if (!userData && userPublicAds.length > 0 && !userData) {
-                            // Keep existing fallback logic just in case, but profile fetch above should handle it
-                        }
                     }
                 }
             }

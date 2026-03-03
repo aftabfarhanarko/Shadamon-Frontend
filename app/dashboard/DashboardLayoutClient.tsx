@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import {
     User, Search, Bell, MessageSquare, Globe,
     Home, Plus, Inbox, LogOut, Settings, Menu, X,
@@ -58,6 +58,8 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     const { t, language, setLanguage } = useLanguage();
     const router = useRouter();
     const searchParams = useSearchParams();
+    const dynamicParams = useParams();
+    const dynamicUsername = dynamicParams?.username as string;
     const [isPostAdModalOpen, setIsPostAdModalOpen] = useState(false);
     const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -140,6 +142,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     useEffect(() => {
         const handleOpenAccount = (e: CustomEvent) => {
             const userId = e.detail?.userId;
+            const sellerPageUrl = e.detail?.sellerPageUrl;
             const activeTab = e.detail?.activeTab;
             setViewingUserId(userId);
             if (activeTab) {
@@ -151,7 +154,9 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             setIsAccountModalOpen(true);
 
             // Update URL with profile param
-            if (userId) {
+            if (sellerPageUrl) {
+                router.push(`/dashboard/${sellerPageUrl}${window.location.search}`, { scroll: false });
+            } else if (userId) {
                 const params = new URLSearchParams(window.location.search);
                 params.set('profile', userId);
                 router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
@@ -343,11 +348,11 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             router.replace(`${window.location.pathname}?${params.toString()}`, { scroll: false });
         }
 
-        if (profileId) {
-            setViewingUserId(profileId);
+        if (profileId || dynamicUsername) {
+            setViewingUserId(profileId || dynamicUsername);
             setIsAccountModalOpen(true);
         }
-    }, [searchParams]);
+    }, [searchParams, dynamicUsername]);
 
     // Apply Site Settings (Favicon, etc)
     useEffect(() => {
@@ -999,7 +1004,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     setViewingUserId(undefined);
                     const params = new URLSearchParams(window.location.search);
                     params.delete('profile');
-                    router.replace(`${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`, { scroll: false });
+                    router.replace(`/dashboard${params.toString() ? `?${params.toString()}` : ''}`, { scroll: false });
                 }}
                 userId={viewingUserId}
                 onOpenPostAd={() => {
