@@ -208,18 +208,26 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             ]);
 
             if (catRes.success && subCatRes.success) {
-                const cats = catRes.data.map((c: any) => ({
-                    ...c,
-                    subcategories: subCatRes.data.filter((sc: any) => (sc.category?._id || sc.category) === c._id)
-                }));
+                const cats = catRes.data
+                    .map((c: any) => ({
+                        ...c,
+                        subcategories: subCatRes.data
+                            .filter((sc: any) => (sc.category?._id || sc.category) === c._id)
+                            .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+                    }))
+                    .sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
                 setCategories(cats);
             }
 
             if (locRes.success && subLocRes.success) {
-                const locs = locRes.data.map((l: any) => ({
-                    ...l,
-                    subLocations: subLocRes.data.filter((sl: any) => (sl.location?._id || sl.location) === l._id)
-                }));
+                const locs = locRes.data
+                    .map((l: any) => ({
+                        ...l,
+                        subLocations: subLocRes.data
+                            .filter((sl: any) => (sl.location?._id || sl.location) === l._id)
+                            .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+                    }))
+                    .sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
                 setLocations(locs);
             }
         } catch (error) {
@@ -434,7 +442,11 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             const data = await response.json();
 
             if (response.ok && data.success) {
-                toast.success(editAd ? "Ad updated!" : "Ad posted successfully!");
+                if (data.limitReached) {
+                    toast.success("Ad posted! It's currently paused as you've reached the free limit for this category.");
+                } else {
+                    toast.success(editAd ? "Ad updated!" : "Ad posted successfully!");
+                }
                 if (onSuccess) onSuccess(data.data || data.ad);
                 onClose();
             } else {

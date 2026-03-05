@@ -56,6 +56,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
     const [isFavorited, setIsFavorited] = useState(false);
     const [isNotifying, setIsNotifying] = useState(false);
     const [showShippingModal, setShowShippingModal] = useState(false);
+    const [subcategories, setSubcategories] = useState<any[]>([]);
 
     const [actionButtons, setActionButtons] = useState<string[]>(['Call', 'Chat']);
     const { t } = useLanguage();
@@ -138,6 +139,8 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                 buttonTypeRaw = matchedSub.buttonType;
                             }
                         }
+
+                        setSubcategories(data.data);
 
                         if (buttonTypeRaw) {
                             const buttons = buttonTypeRaw.split(',').map((s: string) => s.trim());
@@ -570,12 +573,27 @@ I have sent my CV for your review.`;
                                             const featuresObj = typeof ad.features === 'string' ? JSON.parse(ad.features) : (ad.features || {});
                                             if (Object.keys(featuresObj).length === 0) return null;
 
+                                            // Find subcategory to get feature order
+                                            const subCatIdentifier = typeof ad.subCategory === 'object' ? ad.subCategory?._id : ad.subCategory;
+                                            const matchedSub = subcategories.find((s: any) => s._id === subCatIdentifier || s.name === subCatIdentifier);
+                                            const orderedFeatureNames = matchedSub?.features?.map((f: any) => f.name) || [];
+
+                                            // Sort features based on subcategory feature order
+                                            const sortedFeatures = Object.entries(featuresObj).sort(([keyA], [keyB]) => {
+                                                const indexA = orderedFeatureNames.indexOf(keyA);
+                                                const indexB = orderedFeatureNames.indexOf(keyB);
+                                                if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                                                if (indexA !== -1) return -1;
+                                                if (indexB !== -1) return 1;
+                                                return 0;
+                                            });
+
                                             return (
-                                                <div className="grid grid-cols-3 gap-x-3 gap-y-1 mt-2 mb-2 p-0 pt-1 rounded-lg">
-                                                    {Object.entries(featuresObj).map(([key, value]) => (
-                                                        <div key={key} className="flex items-center gap-1.5 min-w-0">
+                                                <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2 mb-2 p-0 pt-1 rounded-lg">
+                                                    {sortedFeatures.map(([key, value]) => (
+                                                        <div key={key} className="flex items-center gap-1.5">
                                                             <span className="text-xs text-black whitespace-nowrap shrink-0">{key}:</span>
-                                                            <span className="text-xs text-black truncate">{String(value)}</span>
+                                                            <span className="text-xs text-black">{String(value)}</span>
                                                         </div>
                                                     ))}
                                                 </div>

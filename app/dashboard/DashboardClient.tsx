@@ -76,8 +76,8 @@ interface ActiveAd {
         photo?: string;
         verifiedBy?: string;
         mVerified?: boolean;
-        sellerPageUrl?: string;
     };
+
     deliveryCount: number;
     createdAt: string;
     adType: 'Free' | 'Promoted';
@@ -94,8 +94,8 @@ interface PremiumUser {
     hasPromotedAds?: boolean;
     profileViews?: number;
     isFollowing?: boolean;
-    sellerPageUrl?: string;
 }
+
 
 export default function DashboardClient() {
     const router = useRouter();
@@ -336,18 +336,26 @@ export default function DashboardClient() {
             ]);
 
             if (catRes.success && subCatRes.success) {
-                const cats = catRes.data.map((c: any) => ({
-                    ...c,
-                    subcategories: subCatRes.data.filter((sc: any) => (sc.category?._id || sc.category) === c._id)
-                }));
+                const cats = catRes.data
+                    .map((c: any) => ({
+                        ...c,
+                        subcategories: subCatRes.data
+                            .filter((sc: any) => (sc.category?._id || sc.category) === c._id)
+                            .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+                    }))
+                    .sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
                 setCategories(cats);
             }
 
             if (locRes.success && subLocRes.success) {
-                const locs = locRes.data.map((l: any) => ({
-                    ...l,
-                    subLocations: subLocRes.data.filter((sl: any) => (sl.location?._id || sl.location) === l._id)
-                }));
+                const locs = locRes.data
+                    .map((l: any) => ({
+                        ...l,
+                        subLocations: subLocRes.data
+                            .filter((sl: any) => (sl.location?._id || sl.location) === l._id)
+                            .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+                    }))
+                    .sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
                 setLocations(locs);
             }
 
@@ -407,9 +415,9 @@ export default function DashboardClient() {
                             storeName: ad.user.storeName,
                             verifiedBy: ad.user.verifiedBy,
                             mVerified: ad.user.mVerified,
-                            hasPromotedAds: false,
-                            sellerPageUrl: ad.user.sellerPageUrl
+                            hasPromotedAds: false
                         });
+
                     }
                     if (ad.adType === 'Promoted') {
                         const u = userMap.get(ad.user._id);
@@ -452,7 +460,8 @@ export default function DashboardClient() {
         }
     }, []);
 
-    const handleProfileClick = async (userId: string, sellerPageUrl?: string) => {
+    const handleProfileClick = async (userId: string) => {
+
         // Increment view count optimistically
         setPremiumUsers(prev => prev.map(u =>
             u._id === userId ? { ...u, profileViews: (u.profileViews || 0) + 1 } : u
@@ -464,7 +473,8 @@ export default function DashboardClient() {
         } catch (e) { }
 
         // Open modal
-        window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId, sellerPageUrl } }));
+        window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId } }));
+
     };
 
     const handleFollowUser = async (e: React.MouseEvent, userId: string) => {
@@ -1132,7 +1142,7 @@ export default function DashboardClient() {
                                                                         className="font-bold text-black cursor-pointer hover:text-blue-600 hover:underline"
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
-                                                                            window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: chunk.bigAd?.user?._id, sellerPageUrl: chunk.bigAd?.user?.sellerPageUrl } }));
+                                                                            window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: chunk.bigAd?.user?._id } }));
                                                                         }}
                                                                     >
                                                                         {chunk.bigAd.user?.storeName || chunk.bigAd.user?.name || 'User'}
@@ -1170,7 +1180,7 @@ export default function DashboardClient() {
                                                             <div className="flex-1 min-w-0 flex flex-col justify-center">
                                                                 <div className="flex items-center gap-1 text-[10px] text-black mb-0.5">
                                                                     <span>Promoted By</span>
-                                                                    <span className="font-bold text-black hover:text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id, sellerPageUrl: ad.user?.sellerPageUrl } })); }}>{ad.user?.storeName || ad.user?.name || 'User'}</span>
+                                                                    <span className="font-bold text-black hover:text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id } })); }}>{ad.user?.storeName || ad.user?.name || 'User'}</span>
                                                                     {ad.user?.mVerified && <VerifiedBadge />}
                                                                 </div>
                                                                 <h4 className="text-sm text-black truncate mb-0.5">{ad.headline}</h4>
@@ -1204,7 +1214,7 @@ export default function DashboardClient() {
                                                             <div className="flex-1 min-w-0 flex flex-col justify-center">
                                                                 <div className="flex items-center gap-1 text-[10px] text-black mb-0.5">
                                                                     <span>Post By</span>
-                                                                    <span className="font-bold text-black hover:text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id, sellerPageUrl: ad.user?.sellerPageUrl } })); }}>{ad.user?.storeName || ad.user?.name || 'User'}</span>
+                                                                    <span className="font-bold text-black hover:text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id } })); }}>{ad.user?.storeName || ad.user?.name || 'User'}</span>
                                                                     {ad.user?.mVerified && <VerifiedBadge />}
                                                                 </div>
                                                                 <h4 className="text-sm text-black truncate mb-0.5">{ad.headline}</h4>
@@ -1344,7 +1354,7 @@ export default function DashboardClient() {
                         ) : (
                             premiumUsers.map((user, idx) => (
                                 <div key={user._id} className="flex gap-3">
-                                    <div className="shrink-0 cursor-pointer" onClick={() => handleProfileClick(user._id, user.sellerPageUrl)}>
+                                    <div className="shrink-0 cursor-pointer" onClick={() => handleProfileClick(user._id)}>
                                         <div className="w-14 h-14 rounded-full overflow-hidden border border-slate-100 bg-slate-50 relative group">
                                             {user.photo ? (
                                                 <img
@@ -1363,7 +1373,7 @@ export default function DashboardClient() {
                                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                                         <div
                                             className="flex items-center gap-1.5 leading-tight cursor-pointer group/name"
-                                            onClick={() => handleProfileClick(user._id, user.sellerPageUrl)}
+                                            onClick={() => handleProfileClick(user._id)}
                                         >
                                             <h4 className="font-bold text-black text-[15px] truncate group-hover/name:text-[#0088cc] transition-colors">
                                                 {user.name.split(' ')[0]}

@@ -58,8 +58,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     const { t, language, setLanguage } = useLanguage();
     const router = useRouter();
     const searchParams = useSearchParams();
-    const dynamicParams = useParams();
-    const dynamicUsername = dynamicParams?.username as string;
+
     const [isPostAdModalOpen, setIsPostAdModalOpen] = useState(false);
     const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -140,10 +139,10 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
     // Event Listener for opening account modal from children
     useEffect(() => {
-        const handleOpenAccount = (e: CustomEvent) => {
+        const handleOpenAccount = (e: any) => {
             const userId = e.detail?.userId;
-            const sellerPageUrl = e.detail?.sellerPageUrl;
             const activeTab = e.detail?.activeTab;
+
             setViewingUserId(userId);
             if (activeTab) {
                 setAccountModalInitialTab(activeTab);
@@ -154,13 +153,12 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             setIsAccountModalOpen(true);
 
             // Update URL with profile param
-            if (sellerPageUrl) {
-                router.push(`/dashboard/${sellerPageUrl}${window.location.search}`, { scroll: false });
-            } else if (userId) {
+            if (userId) {
                 const params = new URLSearchParams(window.location.search);
                 params.set('profile', userId);
-                router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
+                router.push(`/dashboard?${params.toString()}`, { scroll: false });
             }
+
         };
 
         window.addEventListener('open-account-modal', handleOpenAccount as EventListener);
@@ -299,18 +297,26 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 ]);
 
                 if (catRes.success && subCatRes.success) {
-                    const cats = catRes.data.map((c: any) => ({
-                        ...c,
-                        subcategories: subCatRes.data.filter((sc: any) => (sc.category?._id || sc.category) === c._id)
-                    }));
+                    const cats = catRes.data
+                        .map((c: any) => ({
+                            ...c,
+                            subcategories: subCatRes.data
+                                .filter((sc: any) => (sc.category?._id || sc.category) === c._id)
+                                .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+                        }))
+                        .sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
                     setCategories(cats);
                 }
 
                 if (locRes.success && subLocRes.success) {
-                    const locs = locRes.data.map((l: any) => ({
-                        ...l,
-                        subLocations: subLocRes.data.filter((sl: any) => (sl.location?._id || sl.location) === l._id)
-                    }));
+                    const locs = locRes.data
+                        .map((l: any) => ({
+                            ...l,
+                            subLocations: subLocRes.data
+                                .filter((sl: any) => (sl.location?._id || sl.location) === l._id)
+                                .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+                        }))
+                        .sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
                     setLocations(locs);
                 }
             } catch (error) {
@@ -348,11 +354,11 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             router.replace(`${window.location.pathname}?${params.toString()}`, { scroll: false });
         }
 
-        if (profileId || dynamicUsername) {
-            setViewingUserId(profileId || dynamicUsername);
+        if (profileId) {
+            setViewingUserId(profileId);
             setIsAccountModalOpen(true);
         }
-    }, [searchParams, dynamicUsername]);
+    }, [searchParams]);
 
     // Apply Site Settings (Favicon, etc)
     useEffect(() => {

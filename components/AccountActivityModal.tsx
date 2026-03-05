@@ -57,8 +57,8 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
     const [followLoading, setFollowLoading] = useState(false);
     const [selectedAdForDeletion, setSelectedAdForDeletion] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [isUrlChecking, setIsUrlChecking] = useState(false);
     const [urlStatus, setUrlStatus] = useState<'idle' | 'available' | 'taken'>('idle');
+
 
     // Promote Modal State
     const [promoteAd, setPromoteAd] = useState<any>(null);
@@ -365,9 +365,9 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
         additionalMobiles: [''],
         storeName: '',
         actionType: 'call',
-        sellerPageUrl: '',
         aboutBusiness: '',
         contact: ''
+
     });
 
     // Refs for file inputs
@@ -391,16 +391,15 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                 additionalMobiles: userData.additionalMobiles?.length ? [...userData.additionalMobiles, ''] : [''],
                 storeName: userData.storeName || '',
                 actionType: userData.actionType || 'call',
-                sellerPageUrl: userData.sellerPageUrl || '',
                 aboutBusiness: userData.aboutBusiness || '',
                 contact: userData.contact || ''
+
             });
         }
     }, [userData, isOwnAccount]);
 
     const handleProfileChange = (field: string, value: any) => {
         setProfileForm(prev => ({ ...prev, [field]: value }));
-        if (field === 'sellerPageUrl') setUrlStatus('idle');
     };
 
     const handleMobileArrayChange = (index: number, value: string) => {
@@ -556,17 +555,21 @@ I have sent my CV for your review.`;
 
             // 2. Decide whose data to fetch
             let targetUserId = userId;
+            let own = false;
+
             if (!targetUserId && currentUser) {
                 targetUserId = currentUser._id;
-                setIsOwnAccount(true);
+                own = true;
             } else if (targetUserId && currentUser && targetUserId === currentUser._id) {
-                setIsOwnAccount(true);
-            } else {
-                setIsOwnAccount(false);
+                own = true;
             }
 
+            setIsOwnAccount(own);
+
+            let finalUser = null;
             if (targetUserId) {
-                if (isOwnAccount && currentUser) {
+                if (own && currentUser) {
+                    finalUser = currentUser;
                     setUserData(currentUser);
                 } else {
                     // Fetch fresh public profile for target user
@@ -574,6 +577,7 @@ I have sent my CV for your review.`;
                         const profileRes = await fetch(`${API_BASE_URL}/api/user/profile/${targetUserId}`);
                         if (profileRes.ok) {
                             const profileData = await profileRes.json();
+                            finalUser = profileData;
                             setUserData(profileData);
 
                             // Check if current user is following this target user
@@ -589,30 +593,21 @@ I have sent my CV for your review.`;
                     }
                 }
 
-                // Update URL if missing or different (optimized for sellerPageUrl)
+                // Update URL if missing or different
                 const currentPath = window.location.pathname;
                 const searchStr = window.location.search;
-                const resolvedUser = userData || (isOwnAccount ? currentUser : null);
+                const resolvedUser = finalUser || userData || (own ? currentUser : null);
 
                 if (isOpen && resolvedUser) {
-                    const sellerUrl = resolvedUser.sellerPageUrl;
                     const userIdVal = resolvedUser._id;
-
-                    if (sellerUrl) {
-                        const expectedPath = `/dashboard/${sellerUrl}`;
-                        if (currentPath !== expectedPath) {
-                            router.push(`${expectedPath}${searchStr}`, { scroll: false });
-                        }
-                    } else {
-                        const params = new URLSearchParams(searchStr);
-                        if (params.get('profile') !== userIdVal && currentPath === '/dashboard') {
-                            params.set('profile', userIdVal);
-                            router.push(`/dashboard?${params.toString()}`, { scroll: false });
-                        }
+                    const params = new URLSearchParams(searchStr);
+                    if (params.get('profile') !== userIdVal && currentPath === '/dashboard') {
+                        params.set('profile', userIdVal);
+                        router.push(`/dashboard?${params.toString()}`, { scroll: false });
                     }
                 }
 
-                if (isOwnAccount) {
+                if (own) {
                     const adsRes = await fetch(`${API_BASE_URL}/api/ads/me`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
@@ -625,22 +620,14 @@ I have sent my CV for your review.`;
                         const userPublicAds = adsData.data.filter((ad: any) => {
                             const adUser = ad.user || {};
                             const adUserId = adUser._id || ad.user;
-                            const adUserUrl = adUser.sellerPageUrl;
-
-                            // If we have resolved user data, use the unique _id
-                            if (userData?._id) return adUserId === userData._id;
-
-                            // Otherwise fallback to targetUserId which might be ID or username
-                            if (targetUserId.match(/^[0-9a-fA-F]{24}$/)) {
-                                return adUserId === targetUserId;
-                            } else {
-                                return adUserUrl === targetUserId;
-                            }
+                            // Otherwise fallback to targetUserId which must be ID
+                            return adUserId === targetUserId;
                         });
                         setUserAds(userPublicAds);
                     }
                 }
             }
+
 
         } catch (error) {
             console.error("Error fetching account activity", error);
@@ -731,42 +718,12 @@ I have sent my CV for your review.`;
 
     const handleLogout = () => {
         Cookies.remove('token');
-        Cookies.remove('user'); // Also custom user cookie if any
-        window.dispatchEvent(new Event('auth-change')); // customized event if used
+        Cookies.remove('user');
+        window.dispatchEvent(new Event('auth-change'));
         toast.success("Logged out successfully");
         onClose();
         router.push('/dashboard');
         router.refresh();
-    };
-
-    const handleCheckUrl = async () => {
-        if (!profileForm.sellerPageUrl) return;
-        setIsUrlChecking(true);
-        setUrlStatus('idle');
-        try {
-            const token = Cookies.get('token');
-            const res = await fetch(`${API_BASE_URL}/api/user/check-url`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ url: profileForm.sellerPageUrl })
-            });
-            const data = await res.json();
-            if (data.available) {
-                setUrlStatus('available');
-                toast.success("URL is available!");
-            } else {
-                setUrlStatus('taken');
-                toast.error("URL is already taken.");
-            }
-        } catch (error) {
-            console.error(error);
-            toast.error("Failed to check URL");
-        } finally {
-            setIsUrlChecking(false);
-        }
     };
 
     // Handle Image Upload
@@ -1550,34 +1507,7 @@ I have sent my CV for your review.`;
                                         </div>
                                     </div>
 
-                                    {/* Seller Page Username */}
-                                    <div className="col-span-2">
-                                        <label className="block text-xs text-slate-500 mb-0.5">Seller Page User Name</label>
-                                        <div className="flex rounded border border-slate-200 overflow-hidden bg-slate-50/50 focus-within:border-blue-500">
-                                            <span className="px-2 py-1 text-slate-400 text-sm border-r border-slate-200 bg-slate-100">www.shadamon.com/</span>
-                                            <input
-                                                type="text"
-                                                readOnly={!isOwnAccount}
-                                                value={profileForm.sellerPageUrl}
-                                                onChange={(e) => handleProfileChange('sellerPageUrl', e.target.value)}
-                                                className="flex-1 px-2 py-1 text-sm text-black outline-none bg-transparent font-bold"
-                                            />
-                                            {profileForm.sellerPageUrl && isOwnAccount && (
-                                                <button
-                                                    onClick={handleCheckUrl}
-                                                    disabled={isUrlChecking}
-                                                    className={cn(
-                                                        "px-3 py-1 text-xs transition-colors",
-                                                        urlStatus === 'available' ? "bg-green-100 text-green-700 hover:bg-green-200" :
-                                                            urlStatus === 'taken' ? "bg-red-100 text-red-700 hover:bg-red-200" :
-                                                                "bg-slate-200 text-slate-600 hover:bg-slate-300"
-                                                    )}
-                                                >
-                                                    {isUrlChecking ? "..." : urlStatus === 'available' ? "Available" : urlStatus === 'taken' ? "Taken" : "Check"}
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
+
 
                                     {/* About Business */}
                                     <div className="col-span-2">
