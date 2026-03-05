@@ -6,7 +6,10 @@ import { X, ArrowLeft, MessageCircle, ChevronDown, User, Lock, Eye } from 'lucid
 import { RiMailFill } from 'react-icons/ri';
 import Cookies from 'js-cookie';
 import { API_BASE_URL } from '../utils/apiConfig';
+import { getImageUrl } from '../utils/imageUrl';
+import { useSettings } from '../app/context/SettingsContext';
 import toast from 'react-hot-toast';
+import InfoModal from './InfoModal';
 
 interface RegisterModalProps {
     isOpen: boolean;
@@ -20,6 +23,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, initia
     const router = useRouter();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
+    const { settings } = useSettings();
     const [isEmailSignup, setIsEmailSignup] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
@@ -35,6 +39,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, initia
         merchantType: 'Free'
     });
     const [showPassword, setShowPassword] = useState(false);
+    const [infoModalType, setInfoModalType] = useState<'terms' | 'privacy' | null>(null);
 
     React.useEffect(() => {
         if (isOpen && initialMobile) {
@@ -220,34 +225,20 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, initia
                 {/* Main Content Area */}
                 <div className="flex-1 overflow-y-auto px-6 pb-32">
 
-                    {/* Shield Logo - Shrunken */}
-                    <div className="flex flex-col items-center mb-4">
-                        <div className="relative w-[70px] h-[70px] mb-1 flex items-center justify-center">
-                            <svg viewBox="0 0 100 120" className="absolute inset-0 w-full h-full">
-                                <path
-                                    d="M50 0 L10 15 V50 C10 80 50 110 50 110 C50 110 90 80 90 50 V15 L50 0Z"
-                                    fill="white"
-                                    stroke="#64748b"
-                                    strokeWidth="1.5"
+                    {/* Site Logo */}
+                    <div className="mt-4 flex flex-col items-center mb-4">
+                        <div className="relative w-[80px] h-[40px] mb-2 flex items-center justify-center">
+                            {settings.siteLogo ? (
+                                <img
+                                    src={getImageUrl(settings.siteLogo)}
+                                    alt="Logo"
+                                    className="w-full h-full object-contain"
                                 />
-                                <path
-                                    d="M50 8 L18 20 V50 C18 75 50 102 50 102 C50 102 82 75 82 50 V20 L50 8Z"
-                                    fill="transparent"
-                                    stroke="#F97316"
-                                    strokeWidth="2.5"
-                                />
-                            </svg>
-                            <div className="relative z-10 bg-gradient-to-b from-orange-400 to-orange-600 w-8 h-8 rounded-md flex items-center justify-center shadow-lg translate-y-[-2px]">
-                                <div className="relative w-4 h-4">
-                                    <div className="absolute inset-0 border-[1.5px] border-white rounded-[1px] mt-0.5" />
-                                    <div className="absolute top-[-3px] left-1/2 -translate-x-1/2 w-3 h-2 border-[1.5px] border-white rounded-t-full" />
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <div className="h-2 w-[1.5px] bg-white rounded-full absolute" />
-                                        <div className="w-[1.5px] h-2 bg-white rounded-full absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 rotate-90" />
-                                        <div className="w-2.5 h-2.5 bg-white rounded-full flex items-center justify-center text-orange-600 text-[8px] font-bold">+</div>
-                                    </div>
+                            ) : (
+                                <div className="w-[70px] h-[70px] bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
+                                    Logo
                                 </div>
-                            </div>
+                            )}
                         </div>
                         <h2 className="text-[18px] font-medium text-black leading-none">Register</h2>
                         <p className="text-[11px] text-black mt-1">If you are a New User</p>
@@ -398,8 +389,21 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, initia
                         </>
                     )}
 
-                    <p className="text-[10px] text-black text-center mb-6">
-                        By Register for an account you agree to our <span className="text-black font-medium underline">Term & Condition</span>
+                    <p className="text-[10px] text-black text-center mb-6 select-none">
+                        By Register for an account you agree to our{' '}
+                        <span
+                            className="text-black font-medium underline cursor-pointer"
+                            onClick={() => setInfoModalType('terms')}
+                        >
+                            Terms & Condition
+                        </span>
+                        {' '} & {' '}
+                        <span
+                            className="text-black font-medium underline cursor-pointer"
+                            onClick={() => setInfoModalType('privacy')}
+                        >
+                            Privacy & Policy
+                        </span>
                     </p>
 
                     <div className="flex items-center justify-center gap-2 mb-4 text-[11px] text-black">
@@ -435,6 +439,64 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, initia
                         <button className="text-[11px] text-black font-bold">HelpChat</button>
                     </div>
                 </div>
+                {/* Info Modal for Terms & Privacy */}
+                <InfoModal
+                    isOpen={infoModalType !== null}
+                    onClose={() => setInfoModalType(null)}
+                    title={infoModalType === 'terms' ? "Terms & Conditions" : "Privacy & Policy"}
+                    content={
+                        infoModalType === 'terms' ? (
+                            <div className="space-y-4">
+                                <section>
+                                    <h3 className="font-bold text-black mb-2">1. Agreement to Terms</h3>
+                                    <p>By accessing or using Shadamon, you agree to be bound by these Terms and Conditions and our Privacy Policy. If you do not agree, please do not use our services.</p>
+                                </section>
+                                <section>
+                                    <h3 className="font-bold text-black mb-2">2. Posting Rules</h3>
+                                    <ul className="list-disc pl-5 space-y-1">
+                                        <li>Do not post duplicate ads.</li>
+                                        <li>Ensure all information provided is accurate and not misleading.</li>
+                                        <li>Prohibited items cannot be listed on the platform.</li>
+                                        <li>We reserve the right to remove any ad that violates our policies.</li>
+                                    </ul>
+                                </section>
+                                <section>
+                                    <h3 className="font-bold text-black mb-2">3. User Responsibilities</h3>
+                                    <p>You are responsible for maintaining the confidentiality of your account and for all activities that occur under your account.</p>
+                                </section>
+                                <section>
+                                    <h3 className="font-bold text-black mb-2">4. Privacy</h3>
+                                    <p>Your privacy is important to us. Please review our Privacy Policy to understand how we collect and use your data.</p>
+                                </section>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <section>
+                                    <h3 className="font-bold text-black mb-2">1. Data Collection</h3>
+                                    <p>We collect information you provide directly to us, such as when you create an account, post an ad, or communicate with us.</p>
+                                    <p className="mt-2">This includes: Name, Email, Mobile Number, and Location.</p>
+                                </section>
+                                <section>
+                                    <h3 className="font-bold text-black mb-2">2. Use of Information</h3>
+                                    <ul className="list-disc pl-5 space-y-1">
+                                        <li>To provide and maintain our Service.</li>
+                                        <li>To notify you about changes to our Service.</li>
+                                        <li>To provide customer support.</li>
+                                        <li>To monitor the usage of our Service.</li>
+                                    </ul>
+                                </section>
+                                <section>
+                                    <h3 className="font-bold text-black mb-2">3. Security of Data</h3>
+                                    <p>The security of your data is important to us but remember that no method of transmission over the Internet or method of electronic storage is 100% secure.</p>
+                                </section>
+                                <section>
+                                    <h3 className="font-bold text-black mb-2">4. Third-Party Services</h3>
+                                    <p>We may employ third party companies and individuals to facilitate our Service, such as Google and Facebook for authentication.</p>
+                                </section>
+                            </div>
+                        )
+                    }
+                />
             </div>
         </div>
     );

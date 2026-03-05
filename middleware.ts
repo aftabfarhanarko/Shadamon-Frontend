@@ -16,7 +16,7 @@ export function middleware(request: NextRequest) {
     // If user is NOT logged in and tries to access a protected route
     // Protected routes are any route that is NOT an auth route AND NOT a public route
     if (!token && !authRoutes.includes(pathname) && !publicRoutes.includes(pathname)) {
-        return NextResponse.redirect(new URL('/login', request.url));
+        return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
     return NextResponse.next();

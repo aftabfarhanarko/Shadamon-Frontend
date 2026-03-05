@@ -278,13 +278,16 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         setView('location');
     };
 
-    const handleLocationSelect = () => {
+    const handleLocationSelect = (sub?: string) => {
         if (!tempLocation) {
             toast.error("Please select a location");
             return;
         }
         setSelectedLocation(tempLocation);
-        setSelectedSubLocation(tempSubLocations.join(', '));
+
+        // Single selection logic
+        const subLoc = typeof sub === 'string' ? sub : tempSubLocations[0] || "";
+        setSelectedSubLocation(subLoc);
 
         // Check if current subcategory has features
         const currentCat = categories.find(c => c.name === selectedCategory);
@@ -431,17 +434,9 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             const data = await response.json();
 
             if (response.ok && data.success) {
-                if (data.limitReached) {
-                    setSubmissionStatus({ status: 'limit-reached', limit: data.limit, ad: data.data || data.ad });
-                    setView('status');
-                } else if (data.data?.status === 'pause') {
-                    setSubmissionStatus({ status: 'review', ad: data.data || data.ad });
-                    setView('status');
-                } else {
-                    toast.success(editAd ? "Ad updated!" : "Ad posted successfully!");
-                    if (onSuccess) onSuccess(data.data || data.ad);
-                    onClose();
-                }
+                toast.success(editAd ? "Ad updated!" : "Ad posted successfully!");
+                if (onSuccess) onSuccess(data.data || data.ad);
+                onClose();
             } else {
                 toast.error(data.message || "Failed to process ad");
             }
@@ -623,13 +618,15 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                         }}
                                                         className="w-full flex items-center gap-3 py-1 pl-14 pr-4 hover:bg-slate-100 transition-colors text-left"
                                                     >
-                                                        {(sub.image || sub.icon) ? (
-                                                            <div className="w-5 h-5 rounded overflow-hidden shrink-0">
-                                                                <img src={getImageUrl(sub.image || sub.icon || "") || ''} className="w-full h-full object-cover" loading="lazy" />
-                                                            </div>
-                                                        ) : (
-                                                            <span className="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0"></span> // Bullet
-                                                        )}
+                                                        <div className="w-6 h-6 rounded shrink-0 flex items-center justify-center overflow-hidden">
+                                                            {(sub.image || sub.icon) ? (
+                                                                <img src={getImageUrl(sub.image || sub.icon || "") || ''} className="w-full h-full object-contain" loading="lazy" />
+                                                            ) : (
+                                                                <div className="w-full h-full bg-slate-100 rounded flex items-center justify-center text-slate-400 text-[10px] font-bold">
+                                                                    {sub.name[0]}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                         <span className="text-sm text-slate-600">{sub.name}</span>
                                                     </button>
                                                 ))}
@@ -697,41 +694,28 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                             <h2 className="text-[16px] text-slate-800">{tempLocation}</h2>
                         </div>
                         <div className="flex-1 overflow-y-auto">
-                            <div className="p-4 border-b border-slate-100">
-                                <h3 className="text-sm mb-2">Select Areas (Multi-select)</h3>
-                                <div className="space-y-2">
+                            <div className="p-4">
+                                <h3 className="text-sm mb-4 font-bold text-slate-800">Select Area</h3>
+                                <div className="divide-y divide-slate-100">
                                     {locations.find(l => l.name === tempLocation)?.subLocations.map(sub => (
-                                        <label key={sub._id} className="flex items-center gap-3 py-1 px-2 hover:bg-slate-50 rounded cursor-pointer border border-transparent hover:border-slate-100">
-                                            {sub.image && (
-                                                <div className="w-5 h-5 shrink-0 rounded overflow-hidden">
-                                                    <img src={getImageUrl(sub.image) || ''} alt="" className="w-full h-full object-cover" loading="lazy" />
-                                                </div>
-                                            )}
-                                            <input
-                                                type="checkbox"
-                                                checked={tempSubLocations.includes(sub.name)}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) {
-                                                        setTempSubLocations([...tempSubLocations, sub.name]);
-                                                    } else {
-                                                        setTempSubLocations(tempSubLocations.filter(s => s !== sub.name));
-                                                    }
-                                                }}
-                                                className="rounded border-slate-300 text-black focus:ring-0 w-4 h-4"
-                                            />
-                                            <span className="text-sm text-slate-700">{sub.name}</span>
-                                        </label>
+                                        <button
+                                            key={sub._id}
+                                            onClick={() => handleLocationSelect(sub.name)}
+                                            className="w-full flex items-center justify-between py-3 px-2 hover:bg-slate-50 transition-colors group text-left"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                {sub.image && (
+                                                    <div className="w-6 h-6 shrink-0 rounded overflow-hidden">
+                                                        <img src={getImageUrl(sub.image) || ''} alt="" className="w-full h-full object-cover" loading="lazy" />
+                                                    </div>
+                                                )}
+                                                <span className="text-sm text-slate-700 font-medium group-hover:text-black transition-colors">{sub.name}</span>
+                                            </div>
+                                            <ChevronDown className="w-4 h-4 text-slate-300 -rotate-90 group-hover:text-black transition-colors" />
+                                        </button>
                                     ))}
                                 </div>
                             </div>
-                        </div>
-                        <div className="p-4 border-t border-slate-200 bg-slate-50">
-                            <button
-                                onClick={handleLocationSelect}
-                                className="w-full bg-black text-white py-3 rounded-lg"
-                            >
-                                Continue with {tempSubLocations.length} locations
-                            </button>
                         </div>
                     </div>
                 )}
@@ -900,13 +884,15 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                             </div>
                                         ) : (
                                             <p className="text-[14px] text-slate-500 text-left">
-                                                Enter the OTP sent to <span className="font-bold text-slate-700">{phone}</span>{' '}
-                                                <button
-                                                    onClick={() => setIsEditingPhone(true)}
-                                                    className="text-[#0088cc] hover:underline cursor-pointer font-medium ml-1"
-                                                >
-                                                    Edit
-                                                </button>
+                                                Enter the OTP sent to <span className="font-bold text-slate-700">{phone}</span>
+                                                {!(userData?.mobile || initialMobile || editAd?.phone) && (
+                                                    <button
+                                                        onClick={() => setIsEditingPhone(true)}
+                                                        className="text-[#0088cc] hover:underline cursor-pointer font-medium ml-1"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                )}
                                             </p>
                                         )}
                                         <div className="flex gap-2 justify-between pt-2">
@@ -1102,23 +1088,29 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                             <input
                                                 type="tel"
                                                 value={phone}
-                                                readOnly
+                                                readOnly={!!(userData?.mobile || initialMobile || editAd?.phone)}
+                                                onChange={(e) => setPhone(e.target.value)}
                                                 placeholder="Phone Number"
-                                                className="flex-1 text-[14px] text-black tracking-wide focus:outline-none bg-transparent cursor-not-allowed"
+                                                className={cn(
+                                                    "flex-1 text-[14px] text-black tracking-wide focus:outline-none bg-transparent",
+                                                    (userData?.mobile || initialMobile || editAd?.phone) ? "cursor-not-allowed" : "cursor-text"
+                                                )}
                                             />
-                                            <button
-                                                onClick={() => {
-                                                    if (additionalPhones.length > 0) {
-                                                        setPhone(additionalPhones[0].number);
-                                                        setAdditionalPhones(prev => prev.slice(1));
-                                                    } else {
-                                                        toast.error("add another number for remove");
-                                                    }
-                                                }}
-                                                className="ml-auto flex items-center justify-center w-5 h-5 rounded-full bg-red-100 text-red-500 hover:bg-red-200 transition-colors shrink-0"
-                                            >
-                                                <X className="w-3 h-3 stroke-[3]" />
-                                            </button>
+                                            {!(userData?.mobile || initialMobile || editAd?.phone) && (
+                                                <button
+                                                    onClick={() => {
+                                                        if (additionalPhones.length > 0) {
+                                                            setPhone(additionalPhones[0].number);
+                                                            setAdditionalPhones(prev => prev.slice(1));
+                                                        } else {
+                                                            setPhone("");
+                                                        }
+                                                    }}
+                                                    className="ml-auto flex items-center justify-center w-5 h-5 rounded-full bg-red-100 text-red-500 hover:bg-red-200 transition-colors shrink-0"
+                                                >
+                                                    <X className="w-3 h-3 stroke-[3]" />
+                                                </button>
+                                            )}
                                         </div>
 
                                         {!isUserLoggedIn && (

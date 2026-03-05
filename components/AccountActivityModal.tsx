@@ -1450,7 +1450,7 @@ I have sent my CV for your review.`;
                                         <div className="flex items-center relative">
                                             <input
                                                 type="tel"
-                                                readOnly={!isOwnAccount}
+                                                readOnly={!!userData?.mobile || !isOwnAccount}
                                                 value={profileForm.mobile}
                                                 onChange={(e) => handleProfileChange('mobile', e.target.value)}
                                                 className={cn(
@@ -1853,7 +1853,7 @@ I have sent my CV for your review.`;
                                                                         </div>
                                                                     </>
                                                                 ) : (
-                                                                    <div className="mb-0.5 font-bold">Ad Performance</div>
+                                                                    <div className="mb-0.5 font-bold">Performance</div>
                                                                 )}
                                                                 <div className="mt-0.5">
                                                                     Lifetime View : <span className="text-black">{(ad.views || 0) + (ad.deliveryCount || 0)}</span>
@@ -1913,7 +1913,10 @@ I have sent my CV for your review.`;
                                                             ad.status === 'deleted' ? "bg-slate-400 cursor-not-allowed" : "bg-[#3B82F6] hover:bg-blue-600"
                                                         )}
                                                     >
-                                                        {ad.status === 'deleted' ? 'Post Deleted' : 'Promote / Learning / Promoting'}
+                                                        {ad.status === 'deleted' ? 'Post Deleted' :
+                                                            ad.adType === 'Promoted' ? (
+                                                                userData?.merchantTrustStatus === 'Trusted' ? 'Promotion Live' : 'Preparing'
+                                                            ) : 'Promote'}
                                                     </button>
                                                 </div>
                                             </div>
