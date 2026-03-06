@@ -1080,9 +1080,11 @@ I have sent my CV for your review.`;
                                                             {ad.images && ad.images.length > 0 && (
                                                                 <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-contain" loading="lazy" />
                                                             )}
-                                                            {ad.status === 'pause' && (
+                                                            {(ad.status === 'pause' || ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) && (
                                                                 <div className="absolute top-1 left-1 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
-                                                                    In Review
+                                                                    {ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)
+                                                                        ? 'Preparing'
+                                                                        : ((ad.userUpdated || ad.userNewPhotos) ? 'Update in Review' : 'In Review')}
                                                                 </div>
                                                             )}
                                                             {productTab === 'Popular' && (
@@ -1102,11 +1104,20 @@ I have sent my CV for your review.`;
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
+                                                                    if (ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)) {
+                                                                        toast("This ad is being prepared and is currently under review.");
+                                                                        return;
+                                                                    }
                                                                     handlePromoteClick(ad);
                                                                 }}
-                                                                className="mt-auto w-full bg-[#0088cc] text-white text-[10px] font-bold py-1 rounded hover:bg-[#0077b5] transition-colors"
+                                                                className={cn(
+                                                                    "mt-auto w-full text-white text-[10px] font-bold py-1 rounded transition-colors",
+                                                                    ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)
+                                                                        ? "bg-amber-500 hover:bg-amber-600"
+                                                                        : "bg-[#0088cc] hover:bg-[#0077b5]"
+                                                                )}
                                                             >
-                                                                Promote This Post
+                                                                {ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) ? 'Preparing' : 'Promote This Post'}
                                                             </button>
                                                         </div>
                                                     </div>
@@ -1124,9 +1135,11 @@ I have sent my CV for your review.`;
                                                         {ad.images && ad.images.length > 0 && (
                                                             <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover" loading="lazy" />
                                                         )}
-                                                        {ad.status === 'pause' && (
+                                                        {(ad.status === 'pause' || ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) && (
                                                             <div className="absolute top-2 left-2 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-                                                                In Review
+                                                                {ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)
+                                                                    ? 'Preparing'
+                                                                    : ((ad.userUpdated || ad.userNewPhotos) ? 'Update in Review' : 'In Review')}
                                                             </div>
                                                         )}
                                                         {productTab === 'Popular' && (
@@ -1143,15 +1156,24 @@ I have sent my CV for your review.`;
                                                         <div className="text-[12px] font-bold text-slate-700 mb-2 truncate">
                                                             {ad.headline}
                                                         </div>
-                                                        <div className="flex items-center gap-2 bg-[#0088cc] rounded px-1 py-0.5">
+                                                        <div className={cn(
+                                                            "flex items-center gap-2 rounded px-1 py-0.5",
+                                                            ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)
+                                                                ? "bg-amber-500"
+                                                                : "bg-[#0088cc]"
+                                                        )}>
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
+                                                                    if (ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)) {
+                                                                        toast("This ad is being prepared and is currently under review.");
+                                                                        return;
+                                                                    }
                                                                     handlePromoteClick(ad);
                                                                 }}
                                                                 className="flex-1 text-white text-[11px] font-bold pl-1"
                                                             >
-                                                                Promote This Post
+                                                                {ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) ? 'Preparing' : 'Promote This Post'}
                                                             </button>
                                                         </div>
                                                     </div>
@@ -1171,9 +1193,11 @@ I have sent my CV for your review.`;
                                                                 {ad.images && ad.images.length > 0 && (
                                                                     <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover" loading="lazy" />
                                                                 )}
-                                                                {ad.status === 'pause' && (
+                                                                {(ad.status === 'pause' || ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) && (
                                                                     <div className="absolute top-1 left-1 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
-                                                                        In Review
+                                                                        {ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)
+                                                                            ? 'Preparing'
+                                                                            : ((ad.userUpdated || ad.userNewPhotos) ? 'Update in Review' : 'In Review')}
                                                                     </div>
                                                                 )}
                                                                 {productTab === 'Popular' && (
@@ -1193,11 +1217,20 @@ I have sent my CV for your review.`;
                                                                 <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
+                                                                        if (ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)) {
+                                                                            toast("This ad is being prepared and is currently under review.");
+                                                                            return;
+                                                                        }
                                                                         handlePromoteClick(ad);
                                                                     }}
-                                                                    className="mt-auto w-full bg-[#0088cc] text-white text-[10px] font-bold py-1 rounded hover:bg-[#0077b5] transition-colors"
+                                                                    className={cn(
+                                                                        "mt-auto w-full text-white text-[10px] font-bold py-1 rounded transition-colors",
+                                                                        ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)
+                                                                            ? "bg-amber-500 hover:bg-amber-600"
+                                                                            : "bg-[#0088cc] hover:bg-[#0077b5]"
+                                                                    )}
                                                                 >
-                                                                    Promote This Post
+                                                                    {ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) ? 'Preparing' : 'Promote This Post'}
                                                                 </button>
                                                             </div>
                                                         </div>

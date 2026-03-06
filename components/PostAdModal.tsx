@@ -165,6 +165,15 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 setDescription("");
                 setAdditionalPhones([]);
                 setHidePhone(false);
+                setSelectedCategory("");
+                setSelectedSubCategory("");
+                setSelectedLocation("");
+                setSelectedSubLocation("");
+                setTempCategory("");
+                setTempSubCategory("");
+                setTempLocation("");
+                setTempSubLocations([]);
+                setExpandedCategory(null);
                 setPrice("");
                 setPriceType("Negotiable");
                 setFeatureValues({});
@@ -1019,25 +1028,39 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                     <div className="bg-white rounded-lg border border-slate-500 p-3 shadow-sm font-sans space-y-2">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-4 text-[13px] text-slate-600 font-medium">
-                                                <div className="flex items-center gap-1 cursor-pointer hover:text-black transition-colors" onClick={() => setView('category')}>
+                                                <div
+                                                    className={cn(
+                                                        "flex items-center gap-1 transition-colors",
+                                                        !editAd ? "cursor-pointer hover:text-black" : "cursor-default"
+                                                    )}
+                                                    onClick={() => !editAd && setView('category')}
+                                                >
                                                     <span className={selectedCategory ? "text-black font-bold" : "text-slate-400"}>
                                                         {selectedCategory || 'Category'}
                                                     </span>
-                                                    <ChevronDown className="w-3 h-3 text-slate-400" />
+                                                    {!editAd && <ChevronDown className="w-3 h-3 text-slate-400" />}
                                                 </div>
-                                                <div className="flex items-center gap-1 cursor-pointer hover:text-black transition-colors" onClick={() => setView('category')}>
+                                                <div
+                                                    className={cn(
+                                                        "flex items-center gap-1 transition-colors",
+                                                        !editAd ? "cursor-pointer hover:text-black" : "cursor-default"
+                                                    )}
+                                                    onClick={() => !editAd && setView('category')}
+                                                >
                                                     <span className={selectedLocation ? "text-black font-bold" : "text-slate-400"}>
                                                         {selectedLocation || 'Location'}
                                                     </span>
-                                                    <ChevronDown className="w-3 h-3 text-slate-400" />
+                                                    {!editAd && <ChevronDown className="w-3 h-3 text-slate-400" />}
                                                 </div>
                                             </div>
-                                            <button
-                                                onClick={() => setView('category')}
-                                                className="text-[12px] text-[#0088cc] font-bold hover:underline"
-                                            >
-                                                {(selectedCategory || selectedLocation) ? 'Change' : 'Select'}
-                                            </button>
+                                            {!editAd && (
+                                                <button
+                                                    onClick={() => setView('category')}
+                                                    className="text-[12px] text-[#0088cc] font-bold hover:underline"
+                                                >
+                                                    {(selectedCategory || selectedLocation) ? 'Change' : 'Select'}
+                                                </button>
+                                            )}
                                         </div>
 
                                         {Object.keys(featureValues).length > 0 && (
