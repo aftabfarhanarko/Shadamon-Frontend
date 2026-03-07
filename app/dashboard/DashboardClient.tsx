@@ -109,6 +109,9 @@ export default function DashboardClient() {
     const [ads, setAds] = useState<ActiveAd[]>([]);
     const [totalAds, setTotalAds] = useState<ActiveAd[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
 
     const [expandedCategory, setExpandedCategory] = useState<string | null>('main');
     const [expandedLocation, setExpandedLocation] = useState<string | null>(null);
@@ -315,8 +318,14 @@ export default function DashboardClient() {
     };
     // I will stack them: Categories first, then Locations.
 
-    const fetchData = React.useCallback(async () => {
-        setLoading(true);
+    const fetchData = React.useCallback(async (pageNum = 1, append = false) => {
+        if (!append) {
+            setLoading(true);
+            setAds([]);
+        } else {
+            setIsLoadingMore(true);
+        }
+
         try {
             const params = new URLSearchParams();
             if (filters.category) params.append('category', filters.category);
@@ -326,16 +335,24 @@ export default function DashboardClient() {
             if (filters.promoteTag && filters.promoteTag !== 'All') params.append('promoteTag', filters.promoteTag);
             if (filters.sort) params.append('sort', filters.sort);
             if (filters.search) params.append('search', filters.search);
+            params.append('page', pageNum.toString());
 
-            const [catRes, subCatRes, locRes, subLocRes, adsRes] = await Promise.all([
-                fetch(`${API_BASE_URL}/api/categories`).then(res => res.json()),
-                fetch(`${API_BASE_URL}/api/categories/sub`).then(res => res.json()),
-                fetch(`${API_BASE_URL}/api/locations`).then(res => res.json()),
-                fetch(`${API_BASE_URL}/api/locations/sub`).then(res => res.json()),
-                fetch(`${API_BASE_URL}/api/ads/public/all?${params.toString()}`).then(res => res.json()),
-            ]);
+            const fetchPromises: Promise<any>[] = [
+                fetch(`${API_BASE_URL}/api/ads/public/feed?${params.toString()}`).then(res => res.json())
+            ];
 
-            if (catRes.success && subCatRes.success) {
+            if (!append && categories.length === 0) {
+                fetchPromises.push(
+                    fetch(`${API_BASE_URL}/api/categories`).then(res => res.json()),
+                    fetch(`${API_BASE_URL}/api/categories/sub`).then(res => res.json()),
+                    fetch(`${API_BASE_URL}/api/locations`).then(res => res.json()),
+                    fetch(`${API_BASE_URL}/api/locations/sub`).then(res => res.json())
+                );
+            }
+
+            const [adsRes, catRes, subCatRes, locRes, subLocRes] = await Promise.all(fetchPromises);
+
+            if (catRes?.success && subCatRes?.success) {
                 const cats = catRes.data
                     .map((c: any) => ({
                         ...c,
@@ -347,7 +364,7 @@ export default function DashboardClient() {
                 setCategories(cats);
             }
 
-            if (locRes.success && subLocRes.success) {
+            if (locRes?.success && subLocRes?.success) {
                 const locs = locRes.data
                     .map((l: any) => ({
                         ...l,
@@ -360,7 +377,6 @@ export default function DashboardClient() {
             }
 
             if (adsRes.success) {
-                // Filter ads by session repeat view limit
                 const limit = settings.userRepeatAdViewTime || 0;
                 let filteredAds = adsRes.data;
 
@@ -372,28 +388,36 @@ export default function DashboardClient() {
                         return views < limit;
                     });
 
-                    // Only apply filtering if it doesn't leave the user with an empty screen when they actually have data
                     if (filtered.length > 0) {
                         filteredAds = filtered;
-                        // Count this delivery/view ONLY for the ads that will be shown
                         filteredAds.forEach((ad: ActiveAd) => {
                             sessionViews[ad._id] = (sessionViews[ad._id] || 0) + 1;
                         });
                         sessionStorage.setItem('ad_session_views', JSON.stringify(sessionViews));
                     } else if (adsRes.data.length > 0) {
-                        // If everything was filtered out but we have ads, just show the ads and don't increment (fresh start)
                         filteredAds = adsRes.data;
                     }
                 }
 
-                setAds(filteredAds);
+                setAds(prev => {
+                    if (append) {
+                        const existingIds = new Set(prev.map(a => a._id));
+                        const uniqueNewAds = filteredAds.filter((a: ActiveAd) => !existingIds.has(a._id));
+                        return [...prev, ...uniqueNewAds];
+                    }
+                    return filteredAds;
+                });
+
+                setHasMore(adsRes.hasMore);
+                setPage(pageNum);
             }
         } catch (error) {
             console.error("Failed to load dashboard data", error);
         } finally {
-            setLoading(false);
+            if (!append) setLoading(false);
+            else setIsLoadingMore(false);
         }
-    }, [language, filters]);
+    }, [language, filters, categories.length, settings.userRepeatAdViewTime]);
 
     const fetchInitialData = React.useCallback(async () => {
         try {
@@ -501,12 +525,38 @@ export default function DashboardClient() {
         }
     };
 
+    const observerOptions = {
+        root: null,
+        rootMargin: '20px',
+        threshold: 1.0
+    };
+
+    const handleObserver = React.useCallback(
+        (entries: IntersectionObserverEntry[]) => {
+            const target = entries[0];
+            if (target.isIntersecting && hasMore && !loading && !isLoadingMore && !isViewingSavedSearch) {
+                fetchData(page + 1, true);
+            }
+        },
+        [hasMore, loading, isLoadingMore, page, fetchData, isViewingSavedSearch]
+    );
+
     useEffect(() => {
-        fetchData();
+        const observer = new IntersectionObserver(handleObserver, observerOptions);
+        const target = document.getElementById('load-more-trigger');
+        if (target) observer.observe(target);
+
+        return () => {
+            if (target) observer.unobserve(target);
+        };
+    }, [handleObserver]);
+
+    useEffect(() => {
+        fetchData(1, false);
         fetchInitialData();
 
         const handleRefresh = () => {
-            fetchData();
+            fetchData(1, false);
             fetchInitialData();
         };
 
@@ -523,7 +573,7 @@ export default function DashboardClient() {
             window.removeEventListener('show-search-results', handleSearch as EventListener);
             window.removeEventListener('reset-saved-search', handleResetSavedSearch);
         };
-    }, [fetchData, handleResetSavedSearch]);
+    }, [fetchData, fetchInitialData, handleResetSavedSearch]);
 
     const toggleCategory = (id: string) => {
         setExpandedCategory(expandedCategory === id ? 'main' : id);
@@ -1285,6 +1335,13 @@ export default function DashboardClient() {
                                         </div>
                                     );
                                 })}
+
+                                {isLoadingMore && (
+                                    <div className="flex justify-center py-4">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
+                                    </div>
+                                )}
+                                <div id="load-more-trigger" className="h-4 w-full" />
                             </div>
                         );
                     })()

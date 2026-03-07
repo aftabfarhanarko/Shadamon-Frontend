@@ -77,6 +77,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [hasReadRules, setHasReadRules] = useState(true);
     const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
     const [userData, setUserData] = useState<any>(null);
+    const [mobileCheckResult, setMobileCheckResult] = useState<{ exists: boolean; verifiedBy: string | null } | null>(null);
 
     // Categories & Locations
     const [categories, setCategories] = useState<Category[]>([]);
@@ -163,6 +164,8 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             } else {
                 setHeadline("");
                 setDescription("");
+                setPassword("");
+                setName("");
                 setAdditionalPhones([]);
                 setHidePhone(false);
                 setSelectedCategory("");
@@ -183,6 +186,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 setOtp(["", "", "", "", "", ""]);
                 setOtpTimer(300);
                 setIsEditingPhone(false);
+                setMobileCheckResult(null);
 
                 if (initialMobile) {
                     setPhone(initialMobile);
@@ -205,6 +209,17 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         }
         return () => clearInterval(interval);
     }, [showOtpVerification, otpTimer]);
+
+    useEffect(() => {
+        if (!isOpen || isUserLoggedIn) return;
+
+        if (/^\d{11}$/.test(phone.trim())) {
+            checkMobileStatus(phone);
+            return;
+        }
+
+        setMobileCheckResult(null);
+    }, [isOpen, isUserLoggedIn, phone]);
 
     const fetchData = async () => {
         setLoadingData(true);
@@ -337,6 +352,39 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         setExistingImages(existingImages.filter(img => img !== imgUrl));
     };
 
+    const normalizeVerifiedBy = (value?: string | null) => String(value || "").trim().toLowerCase();
+
+    const checkMobileStatus = async (mobileNumber: string) => {
+        const trimmedMobile = mobileNumber.trim();
+
+        if (!/^\d{11}$/.test(trimmedMobile)) {
+            setMobileCheckResult(null);
+            return null;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/user/check-mobile`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mobile: trimmedMobile })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                const result = {
+                    exists: !!data.exists,
+                    verifiedBy: data.verifiedBy || null
+                };
+                setMobileCheckResult(result);
+                return result;
+            }
+        } catch (error) {
+            console.error("Failed to check mobile status:", error);
+        }
+
+        return null;
+    };
+
     const addAdditionalPhone = () => {
         if (!newAdditionalNumber) {
             toast.error("Enter a number first");
@@ -378,22 +426,36 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         // Auto-Auth if needed
         if (!token && !isUserLoggedIn) {
             try {
-                // Try Login
-                let res = await fetch(`${API_BASE_URL}/api/user/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ identifier: phone, password })
-                });
-                let data = await res.json();
+                const currentMobileCheck = mobileCheckResult || await checkMobileStatus(phone);
+                const trimmedPhone = phone.trim();
+                const loginPayload = /^\d{11}$/.test(trimmedPhone)
+                    ? { mobile: trimmedPhone, password }
+                    : { email: trimmedPhone, password };
 
-                if (!res.ok || !data.token) {
-                    // Try Register
+                let res;
+                let data;
+
+                if (currentMobileCheck?.exists !== false) {
+                    res = await fetch(`${API_BASE_URL}/api/user/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(loginPayload)
+                    });
+                    data = await res.json();
+
+                    if (!res.ok || !data.token) {
+                        toast.error(data.message || "Invalid mobile number or password");
+                        setLoading(false);
+                        return;
+                    }
+                } else {
                     res = await fetch(`${API_BASE_URL}/api/user/register`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name, mobile: phone, password }) // Assuming API accepts 'mobile'
+                        body: JSON.stringify({ name, mobile: trimmedPhone, password })
                     });
                     data = await res.json();
+
                     if (!res.ok || !data.token) {
                         toast.error(data.message || "Authentication failed");
                         setLoading(false);
@@ -553,8 +615,13 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             return;
         }
 
+        const currentMobileCheck = !isUserLoggedIn ? (mobileCheckResult || await checkMobileStatus(phone)) : null;
+
         // If already verified by Mobile, skip OTP
-        if (isUserLoggedIn && userData?.verifiedBy === 'Mobile') {
+        if (
+            (isUserLoggedIn && normalizeVerifiedBy(userData?.verifiedBy) === 'mobile') ||
+            (!isUserLoggedIn && currentMobileCheck?.exists && normalizeVerifiedBy(currentMobileCheck.verifiedBy) === 'mobile')
+        ) {
             submitAd();
             return;
         }
@@ -1154,7 +1221,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                     type="password"
                                                     value={password}
                                                     onChange={(e) => setPassword(e.target.value)}
-                                                    placeholder="Create New Password"
+                                                    placeholder="Password"
                                                     className="w-full text-[13px] text-black focus:outline-none placeholder:text-black px-1 border-b border-slate-500 pb-1"
                                                 />
                                             </div>
