@@ -49,6 +49,22 @@ export default function FilterModal({
     const [tempCategory, setTempCategory] = useState<string>("");
 
     const [allAds, setAllAds] = useState<any[]>([]);
+    const [premierData, setPremierData] = useState<any>(null);
+
+    useEffect(() => {
+        const fetchPremier = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/premier-opportunity`);
+                const data = await res.json();
+                if (data.success) {
+                    setPremierData(data.data);
+                }
+            } catch (err) {
+                console.error("Error fetching premier opportunities:", err);
+            }
+        };
+        fetchPremier();
+    }, []);
 
     useEffect(() => {
         const fetchAllAds = async () => {
@@ -193,29 +209,44 @@ export default function FilterModal({
                             <div className="space-y-4 pt-2">
                                 <h3 className="text-[14px] font-bold text-black">{translate("Promoted Listing", "প্রোমোটেড লিস্টিং")}</h3>
                                 <div className="flex flex-wrap gap-x-4 gap-y-3">
-                                    {['All', 'Urgent', 'Discount', 'Offer'].map((tag) => (
-                                        <label key={tag} className="flex items-center gap-2.5 cursor-pointer group">
-                                            <div className={cn(
-                                                "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
-                                                filters.promoteTag === tag ? "border-[#0088cc] bg-white" : "border-slate-300 group-hover:border-slate-400"
-                                            )}>
-                                                {filters.promoteTag === tag && <div className="w-2.5 h-2.5 rounded-full bg-[#0088cc]" />}
-                                            </div>
-                                            <input
-                                                type="radio"
-                                                className="hidden"
-                                                checked={filters.promoteTag === tag}
-                                                onChange={() => setFilters({ ...filters, promoteTag: tag })}
-                                            />
-                                            <span className="text-sm text-black">{translate(tag, tag === 'All' ? 'সব' : (tag === 'Urgent' ? 'আর্জেন্ট' : (tag === 'Discount' ? 'ডিসকাউন্ট' : 'অফার')))}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                                <div className="pt-1">
-                                    <label className="flex items-center gap-2.5 cursor-pointer group w-fit">
+                                    <label key="All" className="flex items-center gap-2.5 cursor-pointer group">
                                         <div className={cn(
                                             "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
-                                            filters.promoteTag === 'Highlights' ? "border-[#0088cc]" : "border-slate-300"
+                                            filters.promoteTag === 'All' ? "border-[#0088cc] bg-white" : "border-slate-300 group-hover:border-slate-400"
+                                        )}>
+                                            {filters.promoteTag === 'All' && <div className="w-2.5 h-2.5 rounded-full bg-[#0088cc]" />}
+                                        </div>
+                                        <input
+                                            type="radio"
+                                            className="hidden"
+                                            checked={filters.promoteTag === 'All'}
+                                            onChange={() => setFilters({ ...filters, promoteTag: 'All' })}
+                                        />
+                                        <span className="text-sm text-black">{translate('All', 'সব')}</span>
+                                    </label>
+
+                                    {/* Profile Verify Badge */}
+                                    <label key="Verified" className="flex items-center gap-2.5 cursor-pointer group">
+                                        <div className={cn(
+                                            "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                                            filters.promoteTag === 'Verified' ? "border-[#0088cc] bg-white" : "border-slate-300 group-hover:border-slate-400"
+                                        )}>
+                                            {filters.promoteTag === 'Verified' && <div className="w-2.5 h-2.5 rounded-full bg-[#0088cc]" />}
+                                        </div>
+                                        <input
+                                            type="radio"
+                                            className="hidden"
+                                            checked={filters.promoteTag === 'Verified'}
+                                            onChange={() => setFilters({ ...filters, promoteTag: 'Verified' })}
+                                        />
+                                        <span className="text-sm text-black">{translate('Profile Verify Badge', 'প্রোফাইল ভেরিফাই ব্যাজ')}</span>
+                                    </label>
+
+                                    {/* Highlight Post */}
+                                    <label key="Highlights" className="flex items-center gap-2.5 cursor-pointer group">
+                                        <div className={cn(
+                                            "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                                            filters.promoteTag === 'Highlights' ? "border-[#0088cc] bg-white" : "border-slate-300 group-hover:border-slate-400"
                                         )}>
                                             {filters.promoteTag === 'Highlights' && <div className="w-2.5 h-2.5 rounded-full bg-[#0088cc]" />}
                                         </div>
@@ -229,6 +260,25 @@ export default function FilterModal({
                                             {translate("Highlights", "হাইলাইটস")}
                                         </div>
                                     </label>
+
+                                    {/* Dynamic Labels from Premier Opportunity */}
+                                    {premierData?.labels?.map((label: any) => (
+                                        <label key={label._id} className="flex items-center gap-2.5 cursor-pointer group">
+                                            <div className={cn(
+                                                "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                                                filters.promoteTag === label.name ? "border-[#0088cc] bg-white" : "border-slate-300 group-hover:border-slate-400"
+                                            )}>
+                                                {filters.promoteTag === label.name && <div className="w-2.5 h-2.5 rounded-full bg-[#0088cc]" />}
+                                            </div>
+                                            <input
+                                                type="radio"
+                                                className="hidden"
+                                                checked={filters.promoteTag === label.name}
+                                                onChange={() => setFilters({ ...filters, promoteTag: label.name })}
+                                            />
+                                            <span className="text-sm text-black">{label.name}</span>
+                                        </label>
+                                    ))}
                                 </div>
                             </div>
 

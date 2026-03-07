@@ -87,21 +87,28 @@ export default function LatestFreeAdPromo() {
                 </div>
 
                 {/* 2. Main Image Section */}
-                <div className="relative aspect-[16/9] bg-black mx-1 rounded-lg overflow-hidden mt-1">
+                <div className="relative aspect-[16/9] mx-1 rounded-lg overflow-hidden mt-1 group-hover:shadow-md transition-shadow">
                     {mainImage ? (
-                        <img
-                            src={mainImage}
-                            className="w-full h-full object-contain"
-                            alt="Preview"
-                            loading="lazy"
-                        />
+                        <>
+                            <img
+                                src={mainImage}
+                                alt=""
+                                className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-60"
+                            />
+                            <img
+                                src={mainImage}
+                                className="relative z-10 w-full h-full object-contain"
+                                alt="Preview"
+                                loading="lazy"
+                            />
+                        </>
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-300 font-bold uppercase">No Image</div>
+                        <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 font-bold uppercase italic">
+                            No Image
+                        </div>
                     )}
 
-
-
-                    <div className="absolute bottom-4 left-4 flex">
+                    <div className="absolute bottom-4 left-4 flex z-20">
                         <div className="w-1 bg-white mr-2 self-stretch rounded-full" />
                         <div className="text-white drop-shadow-md">
                             <h2 className="text-[18px] leading-tight font-medium">{latestAd.headline}</h2>

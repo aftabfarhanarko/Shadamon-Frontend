@@ -40,6 +40,7 @@ interface SubItem {
     _id: string;
     name: string;
     slug: string;
+    image?: string;
 }
 
 interface Category {
@@ -79,6 +80,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     const [adToPromote, setAdToPromote] = useState<any>(null);
     const [adToEdit, setAdToEdit] = useState<any>(null);
     const [verificationToken, setVerificationToken] = useState<string | undefined>(undefined);
+    const [user, setUser] = useState<any>(null);
 
     const [mobileEntryReason, setMobileEntryReason] = useState<'post_ad' | 'account' | 'message'>('post_ad');
 
@@ -235,6 +237,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 const userData = await res.json();
 
                 if (userData && userData._id) {
+                    setUser(userData);
                     const socketUrl = API_BASE_URL.replace('/api', '');
                     const newSocket = io(socketUrl);
                     setSocket(newSocket);
@@ -557,7 +560,10 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                             <Link
                                 href="/dashboard"
                                 className="flex items-center gap-2 shrink-0"
-                                onClick={() => window.dispatchEvent(new Event('reset-saved-search'))}
+                                onClick={() => {
+                                    window.dispatchEvent(new Event('reset-saved-search'));
+                                    window.dispatchEvent(new Event('refresh-ads'));
+                                }}
                             >
                                 {settings.siteLogo ? (
                                     <div className="h-10 w-auto">
@@ -671,9 +677,20 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                 <Link
                                     href="/dashboard/profile"
                                     onClick={handleAccountClick}
-                                    className="w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all"
+                                    className={cn(
+                                        "w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all overflow-hidden",
+                                        user?.photo && "border-2 border-[#0088cc]"
+                                    )}
                                 >
-                                    <RiUser3Fill className="w-5 h-5" />
+                                    {user && user.photo ? (
+                                        <img
+                                            src={getImageUrl(user.photo)}
+                                            alt={user.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <RiUser3Fill className="w-5 h-5" />
+                                    )}
                                 </Link>
                             </div>
                         </div>
@@ -685,7 +702,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                         <div className="w-[230px] flex-none">
                             <button
                                 onClick={handleAddAdClick}
-                                className="w-full bg-[#EDF2F7] text-black py-1.5 rounded text-sm uppercase tracking-widest"
+                                className="w-full bg-[#EDF2F7] border border-slate-400 shadow-sm text-black py-1.5 rounded text-sm uppercase tracking-widest"
                             >
                                 Post Free
                             </button>
@@ -739,7 +756,17 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     onClick={handleAccountClick}
                     className="flex flex-col items-center gap-1 p-2 text-black hover:text-black transition-all"
                 >
-                    <User className="w-6 h-6" />
+                    <div className="w-6 h-6 rounded-full bg-[#EDF2F7] flex items-center justify-center overflow-hidden border border-[#0088cc]">
+                        {user && user.photo ? (
+                            <img
+                                src={getImageUrl(user.photo)}
+                                alt={user.name}
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <User className="w-6 h-6" />
+                        )}
+                    </div>
                     <span className="text-[10px] font-medium">{t('account')}</span>
                 </Link>
             </nav>
@@ -807,9 +834,16 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                                     {cat.subcategories.map(sub => (
                                                         <button
                                                             key={sub._id}
-                                                            className="block w-full text-left py-1.5 text-xs text-black hover:text-brand-600"
+                                                            className="flex items-center gap-2 w-full text-left py-1.5 text-xs text-black hover:text-brand-600"
                                                             onClick={() => setIsMobileMenuOpen(false)}
                                                         >
+                                                            {sub.image && (
+                                                                <img
+                                                                    src={getImageUrl(sub.image)}
+                                                                    className="w-4 h-4 object-cover rounded shrink-0"
+                                                                    alt=""
+                                                                />
+                                                            )}
                                                             {sub.name}
                                                         </button>
                                                     ))}
@@ -845,9 +879,16 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                                     {loc.subLocations.map(sub => (
                                                         <button
                                                             key={sub._id}
-                                                            className="block w-full text-left py-1.5 text-xs text-black hover:text-brand-600"
+                                                            className="flex items-center gap-2 w-full text-left py-1.5 text-xs text-black hover:text-brand-600"
                                                             onClick={() => setIsMobileMenuOpen(false)}
                                                         >
+                                                            {sub.image && (
+                                                                <img
+                                                                    src={getImageUrl(sub.image)}
+                                                                    className="w-4 h-4 object-cover rounded shrink-0"
+                                                                    alt=""
+                                                                />
+                                                            )}
                                                             {sub.name}
                                                         </button>
                                                     ))}

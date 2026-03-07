@@ -5,9 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
     Home, CheckCircle2, Store, Smartphone, Grid, Package, ChevronDown, ChevronRight,
-    Search, MapPin, Menu, X, Plus, Inbox, User, Globe, Clock, Eye, ArrowRight, ArrowUp, SlidersHorizontal, Bookmark
+    Search, MapPin, Menu, X, Plus, Inbox, User, Globe, Clock, Eye, ArrowRight, ArrowLeft, ArrowUp, SlidersHorizontal, Bookmark
 } from 'lucide-react';
 import { RiCheckboxCircleFill } from 'react-icons/ri';
+import { FaAndroid } from 'react-icons/fa';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -26,10 +27,10 @@ import Cookies from 'js-cookie';
 import { useSettings } from '../context/SettingsContext';
 
 const VerifiedBadge = () => (
-    <div className="relative group/badge flex items-center justify-center -mt-0.5">
-        <RiCheckboxCircleFill className="w-4 h-4 text-[#0088cc] shrink-0 cursor-pointer" />
+    <div className="relative group/badge inline-flex items-center justify-center translate-y-[0.5px]">
+        <RiCheckboxCircleFill className="w-3.5 h-3.5 text-[#0088cc] shrink-0 cursor-pointer" />
         <div className="absolute bottom-full left-1/2 -translate-x-[20%] lg:-translate-x-1/2 mb-2 hidden group-hover/badge:block w-[220px] sm:w-[240px] bg-slate-50 border border-slate-200 shadow-xl rounded-xl p-3 z-[100] animate-in fade-in zoom-in-95 duration-200 pointer-events-none text-left">
-            <p className="text-[13px] text-slate-700 font-medium leading-relaxed whitespace-normal">
+            <p className="text-[13px] text-slate-700 font-medium leading-relaxed whitespace-normal font-normal">
                 <span className="font-bold text-black">Verified</span> by mobile number & additional checks to ensure authenticity.
             </p>
             <div className="absolute top-full left-[20%] lg:left-1/2 -translate-x-1/2 -mt-[1px]">
@@ -43,6 +44,7 @@ interface SubItem {
     _id: string;
     name: string;
     slug: string;
+    image?: string;
 }
 
 interface Category {
@@ -81,6 +83,7 @@ interface ActiveAd {
     deliveryCount: number;
     createdAt: string;
     adType: 'Free' | 'Promoted';
+    promoteTag?: string;
 }
 
 interface PremiumUser {
@@ -133,6 +136,30 @@ export default function DashboardClient() {
 
     const [isViewingSavedSearch, setIsViewingSavedSearch] = useState(false);
     const [savedAdsData, setSavedAdsData] = useState<ActiveAd[]>([]);
+
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(true);
+
+    const checkScroll = React.useCallback(() => {
+        if (scrollContainerRef.current) {
+            const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+            setCanScrollLeft(scrollLeft > 2);
+            setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 2);
+        }
+    }, []);
+
+    useEffect(() => {
+        const el = scrollContainerRef.current;
+        if (el) {
+            el.addEventListener('scroll', checkScroll);
+            // Initial check after items render
+            const timer = setTimeout(checkScroll, 500);
+            return () => {
+                el.removeEventListener('scroll', checkScroll);
+                clearTimeout(timer);
+            };
+        }
+    }, [categories, locations, activeSelectorTab, checkScroll]);
 
     const openInfoModal = (type: 'about' | 'terms' | 'privacy' | 'contact' | 'safety') => {
         window.dispatchEvent(new CustomEvent('open-info-modal', { detail: { type } }));
@@ -310,6 +337,12 @@ export default function DashboardClient() {
     }, [searchParams, ads]);
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    const scrollLeft = () => {
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+        }
+    };
 
     const scrollRight = () => {
         if (scrollContainerRef.current) {
@@ -598,7 +631,7 @@ export default function DashboardClient() {
                                         className="flex items-center justify-between group cursor-pointer"
                                         onClick={() => setExpandedCategory(expandedCategory === 'main' ? null : 'main')}
                                     >
-                                        <h3 className="text-sm text-black">{t('category')}</h3>
+                                        <h3 className="text-[13px] text-black">{t('category')}</h3>
                                         <ChevronDown className={cn("w-5 h-5 text-black group-hover:text-black transition-all", (expandedCategory === 'main' || expandedCategory !== null) && "rotate-180")} />
                                     </div>
 
@@ -607,7 +640,7 @@ export default function DashboardClient() {
                                             <Link
                                                 href={getCategoryUrl("")}
                                                 scroll={false}
-                                                className="block text-sm text-black ml-4 tracking-wider cursor-pointer hover:text-[#0088cc] transition-colors"
+                                                className="block text-[13px] text-black ml-4 tracking-wider cursor-pointer hover:text-[#0088cc] transition-colors"
                                                 onClick={() => {
                                                     setFilters({ ...filters, category: "", subCategory: "" });
                                                     handleResetSavedSearch();
@@ -621,7 +654,7 @@ export default function DashboardClient() {
                                                 const CategoryIcon = idx === 0 ? Smartphone : (idx === 1 ? Grid : Package);
 
                                                 return (
-                                                    <div key={cat._id} className="space-y-1">
+                                                    <div key={cat._id} className="space-y-0.5">
                                                         <Link
                                                             href={getCategoryUrl(cat.name)}
                                                             scroll={false}
@@ -632,7 +665,7 @@ export default function DashboardClient() {
                                                                 setActiveSelectorTab('category');
                                                             }}
                                                         >
-                                                            <div className="flex items-center gap-1 text-sm text-[#0088cc] font-medium hover:underline">
+                                                            <div className="flex items-center gap-1 text-[13px] text-[#0088cc] font-medium hover:underline">
                                                                 {cat.icon && getImageUrl(cat.icon) ? (
                                                                     <img
                                                                         src={getImageUrl(cat.icon) || undefined}
@@ -654,20 +687,29 @@ export default function DashboardClient() {
                                                         {/* Subcategories with correct indentation and bullet points */}
                                                         {
                                                             expandedCategory === cat._id && cat.subcategories.length > 0 && (
-                                                                <div className="pl-6 space-y-1 border-l border-slate-100 ml-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                                <div className="pl-6 space-y-0.5 border-l border-slate-100 ml-2 animate-in fade-in slide-in-from-top-1 duration-200">
                                                                     {cat.subcategories.map(sub => (
                                                                         <Link
                                                                             key={sub._id}
                                                                             href={getCategoryUrl(cat.name, sub.name)}
                                                                             scroll={false}
-                                                                            className="flex items-center gap-1 text-sm text-[#0088cc] hover:underline cursor-pointer group"
+                                                                            className="flex items-center gap-1 text-[13px] text-[#0088cc] hover:underline cursor-pointer group"
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation();
                                                                                 setFilters({ ...filters, category: cat.name, subCategory: sub.name });
                                                                                 setActiveSelectorTab('category');
                                                                             }}
                                                                         >
-                                                                            <div className={cn("w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-[#0088cc] transition-colors", filters.subCategory === sub.name && "bg-[#0088cc]")} />
+                                                                            {sub.image && getImageUrl(sub.image) ? (
+                                                                                <img
+                                                                                    src={getImageUrl(sub.image) || undefined}
+                                                                                    className="w-4 h-4 object-cover shrink-0"
+                                                                                    alt=""
+                                                                                    loading="lazy"
+                                                                                />
+                                                                            ) : (
+                                                                                <div className={cn("w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-[#0088cc] transition-colors", filters.subCategory === sub.name && "bg-[#0088cc]")} />
+                                                                            )}
                                                                             <span className={cn(filters.subCategory === sub.name && "text-black")}>{sub.name}</span>
                                                                             <span className="text-black">({totalAds.filter(ad => ad.subCategory === sub.name).length.toLocaleString()})</span>
                                                                         </Link>
@@ -687,16 +729,16 @@ export default function DashboardClient() {
                                 {/* Location Section */}
                                 <div className="">
                                     <div className="flex items-center justify-between group cursor-pointer" onClick={() => setExpandedLocation(expandedLocation === 'main' ? null : 'main')}>
-                                        <h3 className="text-sm text-black">{t('location')}</h3>
+                                        <h3 className="text-[13px] text-black">{t('location')}</h3>
                                         <ChevronDown className={cn("w-5 h-5 text-black group-hover:text-black transition-all", expandedLocation !== null && "rotate-180")} />
                                     </div>
 
                                     {expandedLocation !== null && (
-                                        <div className="pl-1 space-y-1">
+                                        <div className="pl-1 space-y-0.5">
                                             <Link
                                                 href={getLocationUrl("")}
                                                 scroll={false}
-                                                className="block text-sm text-black ml-4 tracking-wider cursor-pointer hover:text-[#0088cc] transition-colors"
+                                                className="block text-[13px] text-black ml-4 tracking-wider cursor-pointer hover:text-[#0088cc] transition-colors"
                                                 onClick={() => {
                                                     setFilters({ ...filters, location: "", subLocation: "" });
                                                     handleResetSavedSearch();
@@ -706,7 +748,7 @@ export default function DashboardClient() {
                                             </Link>
 
                                             {locations.map(loc => (
-                                                <div key={loc._id} className="space-y-1">
+                                                <div key={loc._id} className="space-y-0.5">
                                                     <Link
                                                         href={getLocationUrl(loc.name)}
                                                         scroll={false}
@@ -717,7 +759,7 @@ export default function DashboardClient() {
                                                             setActiveSelectorTab('location');
                                                         }}
                                                     >
-                                                        <div className="flex items-center gap-1 text-sm text-[#0088cc] font-medium hover:underline">
+                                                        <div className="flex items-center gap-1 text-[13px] text-[#0088cc] font-medium hover:underline">
                                                             <span className={cn((expandedLocation === loc._id || filters.location === loc.name) && "text-black")}>{loc.name}</span>
                                                             <span className="text-black font-normal ml-0.5">({totalAds.filter(ad => ad.location === loc.name).length.toLocaleString()})</span>
                                                         </div>
@@ -728,20 +770,29 @@ export default function DashboardClient() {
 
                                                     {/* Dynamic Sub-locations matching image style */}
                                                     {expandedLocation === loc._id && loc.subLocations.length > 0 && (
-                                                        <div className="pl-6 space-y-1 border-l border-slate-100 ml-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                        <div className="pl-6 space-y-0.5 border-l border-slate-100 ml-2 animate-in fade-in slide-in-from-top-1 duration-200">
                                                             {loc.subLocations.map(sub => (
                                                                 <Link
                                                                     key={sub._id}
                                                                     href={getLocationUrl(loc.name, sub.name)}
                                                                     scroll={false}
-                                                                    className="flex items-center gap-1 text-sm text-[#0088cc] hover:underline cursor-pointer group"
+                                                                    className="flex items-center gap-1 text-[13px] text-[#0088cc] hover:underline cursor-pointer group"
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         setFilters({ ...filters, location: loc.name, subLocation: sub.name });
                                                                         setActiveSelectorTab('location');
                                                                     }}
                                                                 >
-                                                                    <div className={cn("w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-[#0088cc] transition-colors", filters.subLocation === sub.name && "bg-[#0088cc]")} />
+                                                                    {sub.image && getImageUrl(sub.image) ? (
+                                                                        <img
+                                                                            src={getImageUrl(sub.image) || undefined}
+                                                                            className="w-4 h-4 object-cover shrink-0"
+                                                                            alt=""
+                                                                            loading="lazy"
+                                                                        />
+                                                                    ) : (
+                                                                        <div className={cn("w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-[#0088cc] transition-colors", filters.subLocation === sub.name && "bg-[#0088cc]")} />
+                                                                    )}
                                                                     <span className={cn(filters.subLocation === sub.name && "text-black")}>{sub.name}</span>
                                                                     <span className="text-black">({totalAds.filter(ad => ad.subLocation === sub.name).length.toLocaleString()})</span>
                                                                 </Link>
@@ -789,7 +840,7 @@ export default function DashboardClient() {
                     </div>
 
                     {/* 3. Footer Links & Apps Card */}
-                    <div className="bg-white rounded-lg p-3 space-y-4">
+                    <div className="bg-white rounded-lg p-3 space-y-4 mt-auto shadow-sm border border-slate-50">
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-black font-medium">
                             <button onClick={() => openInfoModal('about')} className="hover:text-black transition-colors">{t('about_us')}</button>
                             <span>•</span>
@@ -812,36 +863,24 @@ export default function DashboardClient() {
                         </div>
 
                         <div className="space-y-2.5">
-                            <p className="text-[12px] text-black">{t('get_our_app')}</p>
+                            <p className="text-[12px] text-black font-semibold">{t('get_our_app')}</p>
                             <div className="flex items-center gap-2">
                                 <button className="w-9 h-9 bg-[#A4C639] rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity">
-                                    <Smartphone className="w-5 h-5 fill-white" />
-                                </button>
-                                <button className="w-9 h-9 bg-[#999999] rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity">
-                                    <Globe className="w-5 h-5" />
-                                </button>
-                                <button className="w-9 h-9 bg-[#999999] rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity">
-                                    <div className="text-lg font-bold">+</div>
+                                    <FaAndroid className="w-5 h-5 fill-white" />
                                 </button>
                             </div>
                         </div>
 
-                        {/* <div className="space-y-2.5 pt-2">
-                        <p className="text-[12px] text-black">{t('get_more')}</p>
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2 cursor-pointer group">
-                                <div className="w-2.5 h-2.5 rounded-full bg-slate-300" />
-                                <span className="text-[12px] text-black group-hover:text-black">{t('newsportal')}</span>
-                            </div>
-                            <div className="flex items-center gap-2 cursor-pointer group">
-                                <div className="w-2.5 h-2.5 rounded-full bg-slate-300" />
-                                <span className="text-[12px] text-black group-hover:text-black">{t('social_platform')}</span>
-                            </div>
+                        <div className="pt-2 flex flex-col gap-0.5 border-t border-slate-100">
+                            <p className="text-[11px] text-slate-500 font-medium tracking-tight">
+                                &copy; {new Date().getFullYear()} shadamon.com
+                            </p>
+                            <p className="text-[11px] text-slate-500 leading-tight">
+                                A Product added by Shadamon
+                            </p>
                         </div>
-                    </div> */}
                     </div>
                 </div>
-
             </div>
 
             {/* Gap 1: 50px */}
@@ -865,17 +904,17 @@ export default function DashboardClient() {
                         className="flex-1 px-4 py-2.5 flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors group"
                     >
                         <Grid className="w-5 h-5 text-black" />
-                        <div className="flex items-center gap-1">
-                            <span className="text-sm text-black">{filters.category ? (filters.subCategory || filters.category) : (language === 'bn' ? 'ক্যাটাগরি' : 'Category')}</span>
+                        <div className="flex items-center gap-1 min-w-0">
+                            <span className="text-sm text-black truncate">{filters.category ? (filters.subCategory || filters.category) : (language === 'bn' ? 'ক্যাটাগরি' : 'Category')}</span>
                             {filters.category && (
                                 <div
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setFilters(prev => ({ ...prev, category: "", subCategory: "" }));
                                     }}
-                                    className="p-0.5 rounded-full hover:bg-slate-200 transition-colors"
+                                    className="p-1 rounded-full hover:bg-slate-200 transition-colors shrink-0"
                                 >
-                                    <X className="w-3.5 h-3.5 text-slate-500" />
+                                    <X className="w-5 h-5 text-slate-500" />
                                 </div>
                             )}
                         </div>
@@ -890,17 +929,17 @@ export default function DashboardClient() {
                         className="flex-1 px-4 py-2.5 flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors group"
                     >
                         <MapPin className="w-5 h-5 text-black" />
-                        <div className="flex items-center gap-1">
-                            <span className="text-sm text-black">{filters.location ? (filters.subLocation || filters.location) : (language === 'bn' ? 'লোকেশন' : 'Location')}</span>
+                        <div className="flex items-center gap-1 min-w-0">
+                            <span className="text-sm text-black truncate">{filters.location ? (filters.subLocation || filters.location) : (language === 'bn' ? 'লোকেশন' : 'Location')}</span>
                             {filters.location && (
                                 <div
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setFilters(prev => ({ ...prev, location: "", subLocation: "" }));
                                     }}
-                                    className="p-0.5 rounded-full hover:bg-slate-200 transition-colors"
+                                    className="p-1 rounded-full hover:bg-slate-200 transition-colors shrink-0"
                                 >
-                                    <X className="w-3.5 h-3.5 text-slate-500" />
+                                    <X className="w-5 h-5 text-slate-500" />
                                 </div>
                             )}
                         </div>
@@ -927,7 +966,7 @@ export default function DashboardClient() {
                                     "text-[15px] transition-colors",
                                     activeSelectorTab === 'category' ? "text-black" : "text-black hover:text-black"
                                 )}>
-                                    Select Categorie
+                                    Select Category
                                 </span>
                                 {activeSelectorTab === 'category' && (
                                     <div className="absolute -top-4 left-0 right-0 h-[3px] bg-blue-500 rounded-b-full" />
@@ -951,126 +990,202 @@ export default function DashboardClient() {
                     </div>
 
                     {/* Category/Location Bubbles */}
-                    <div className="p-5 pt-0 flex items-center justify-between">
-                        <div className="flex items-center gap-4 overflow-hidden">
+                    <div className="px-5 pb-5 pt-2 flex items-center gap-2 relative group/bubbles">
+                        {/* Left Scroll Arrow */}
+                        <button
+                            onClick={scrollLeft}
+                            className={
+                                cn(
+                                    "w-9 h-9 rounded-full bg-white shadow-md border border-slate-100 items-center justify-center text-black hover:bg-slate-50 hover:scale-110 active:scale-95 transition-all flex-none z-20",
+                                    canScrollLeft ? "flex" : "hidden"
+                                )
+                            }
+                        >
+                            <ArrowLeft className="w-5 h-5" strokeWidth={2.5} />
+                        </button >
+
+                        <div
+                            ref={scrollContainerRef}
+                            className="flex items-center gap-4 overflow-x-auto no-scrollbar scroll-smooth flex-1 py-1"
+                        >
                             {activeSelectorTab === 'category' ? (
-                                [...categories]
-                                    .sort((a, b) => (a.name === filters.category ? -1 : b.name === filters.category ? 1 : 0))
-                                    .slice(0, 5)
-                                    .map((cat) => (
-                                        <Link
-                                            key={cat._id}
-                                            href={cat.name === filters.category ? getCategoryUrl("") : getCategoryUrl(cat.name)}
-                                            scroll={false}
-                                            className={cn(
-                                                "flex flex-col items-center gap-2 flex-none group cursor-pointer",
-                                                cat.name === filters.category && "relative"
-                                            )}
-                                            onClick={() => {
-                                                const isSelected = cat.name === filters.category;
-                                                setFilters({ ...filters, category: isSelected ? "" : cat.name, subCategory: "" });
-                                                if (!isSelected) {
-                                                    setExpandedCategory(cat._id);
-                                                } else {
-                                                    setExpandedCategory('main');
-                                                }
-                                            }}
-                                        >
-                                            <div className={cn(
-                                                "w-[72px] h-[72px] rounded-full border-2 p-1 transition-all",
-                                                cat.name === filters.category ? "border-[#0088cc] bg-blue-50" : "border-[#0088cc]/30"
-                                            )}>
-                                                <div className="w-full h-full rounded-full bg-blue-50 overflow-hidden flex items-center justify-center">
-                                                    {cat.icon ? (
-                                                        <img
-                                                            src={getImageUrl(cat.icon) || undefined}
-                                                            alt={cat.name}
-                                                            className="w-full h-full object-cover"
-                                                            loading="lazy"
-                                                        />
-                                                    ) : (
-                                                        <img
-                                                            src={`https://placehold.co/100x100?text=${cat.name.charAt(0)}`}
-                                                            alt={cat.name}
-                                                            className="w-full h-full object-cover opacity-50"
-                                                            loading="lazy"
-                                                        />
-                                                    )}
-                                                </div>
+                                <>
+                                    {/* All Category Bubble */}
+                                    <Link
+                                        key="all-cat"
+                                        href={getCategoryUrl("")}
+                                        scroll={false}
+                                        className={cn(
+                                            "flex flex-col items-center gap-2 flex-none group cursor-pointer",
+                                            !filters.category && "relative"
+                                        )}
+                                        onClick={() => {
+                                            setFilters({ ...filters, category: "", subCategory: "" });
+                                            setExpandedCategory('main');
+                                        }}
+                                    >
+                                        <div className={cn(
+                                            "w-[70px] h-[70px] rounded-full border-2 p-1 transition-all",
+                                            !filters.category ? "border-[#0088cc] bg-blue-50" : "border-slate-200"
+                                        )}>
+                                            <div className="w-full h-full rounded-full bg-slate-50 overflow-hidden flex items-center justify-center">
+                                                <Grid className="w-8 h-8 text-[#0088cc] opacity-60" strokeWidth={2} />
                                             </div>
-                                            <span className={cn(
-                                                "text-[11px] font-bold text-center max-w-[72px] truncate transition-colors",
-                                                cat.name === filters.category ? "text-[#0088cc]" : "text-black"
-                                            )}>{cat.name}</span>
-                                        </Link>
-                                    ))
+                                        </div>
+                                        <span className={cn(
+                                            "text-[11px] font-bold text-center max-w-[70px] truncate transition-colors",
+                                            !filters.category ? "text-[#0088cc]" : "text-black"
+                                        )}>{language === 'bn' ? 'সব বিজ্ঞাপন' : 'All Categories'}</span>
+                                    </Link>
+
+                                    {categories
+                                        .map((cat) => (
+                                            <Link
+                                                key={cat._id}
+                                                href={cat.name === filters.category ? getCategoryUrl("") : getCategoryUrl(cat.name)}
+                                                scroll={false}
+                                                className={cn(
+                                                    "flex flex-col items-center gap-2 flex-none group cursor-pointer",
+                                                    cat.name === filters.category && "relative"
+                                                )}
+                                                onClick={() => {
+                                                    const isSelected = cat.name === filters.category;
+                                                    setFilters({ ...filters, category: isSelected ? "" : cat.name, subCategory: "" });
+                                                    if (!isSelected) {
+                                                        setExpandedCategory(cat._id);
+                                                    } else {
+                                                        setExpandedCategory('main');
+                                                    }
+                                                }}
+                                            >
+                                                <div className={cn(
+                                                    "w-[70px] h-[70px] rounded-full border-2 p-1 transition-all",
+                                                    cat.name === filters.category ? "border-[#0088cc] bg-blue-50" : "border-slate-200"
+                                                )}>
+                                                    <div className="w-full h-full rounded-full bg-blue-50 overflow-hidden flex items-center justify-center">
+                                                        {cat.icon ? (
+                                                            <img
+                                                                src={getImageUrl(cat.icon) || undefined}
+                                                                alt={cat.name}
+                                                                className="w-full h-full object-cover"
+                                                                loading="lazy"
+                                                            />
+                                                        ) : (
+                                                            <img
+                                                                src={`https://placehold.co/100x100?text=${cat.name.charAt(0)}`}
+                                                                alt={cat.name}
+                                                                className="w-full h-full object-cover opacity-50"
+                                                                loading="lazy"
+                                                            />
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <span className={cn(
+                                                    "text-[11px] font-bold text-center max-w-[70px] truncate transition-colors",
+                                                    cat.name === filters.category ? "text-[#0088cc]" : "text-black"
+                                                )}>{cat.name}</span>
+                                            </Link>
+                                        ))
+                                    }
+                                </>
                             ) : (
-                                [...locations]
-                                    .sort((a, b) => (a.name === filters.location ? -1 : b.name === filters.location ? 1 : 0))
-                                    .slice(0, 5)
-                                    .map((loc) => (
-                                        <Link
-                                            key={loc._id}
-                                            href={loc.name === filters.location ? getLocationUrl("") : getLocationUrl(loc.name)}
-                                            scroll={false}
-                                            className={cn(
-                                                "flex flex-col items-center gap-2 flex-none group cursor-pointer",
-                                                loc.name === filters.location && "relative"
-                                            )}
-                                            onClick={() => {
-                                                const isSelected = loc.name === filters.location;
-                                                setFilters({ ...filters, location: isSelected ? "" : loc.name, subLocation: "" });
-                                                if (!isSelected) {
-                                                    setExpandedLocation(loc._id);
-                                                } else {
-                                                    setExpandedLocation(null);
-                                                }
-                                            }}
-                                        >
-                                            <div className={cn(
-                                                "w-[72px] h-[72px] rounded-full border-2 p-1 transition-all",
-                                                loc.name === filters.location ? "border-[#0088cc] bg-blue-50" : "border-[#0088cc]/30"
-                                            )}>
-                                                <div className="w-full h-full rounded-full bg-blue-50 overflow-hidden flex items-center justify-center">
-                                                    {loc.image ? (
-                                                        <img
-                                                            src={getImageUrl(loc.image) || undefined}
-                                                            alt={loc.name}
-                                                            className="w-full h-full object-cover"
-                                                            loading="lazy"
-                                                        />
-                                                    ) : (
-                                                        <img
-                                                            src={`https://placehold.co/100x100?text=${loc.name.charAt(0)}`}
-                                                            alt={loc.name}
-                                                            className="w-full h-full object-cover opacity-50"
-                                                            loading="lazy"
-                                                        />
-                                                    )}
-                                                </div>
+                                <>
+                                    {/* All Location Bubble */}
+                                    <Link
+                                        key="all-loc"
+                                        href={getLocationUrl("")}
+                                        scroll={false}
+                                        className={cn(
+                                            "flex flex-col items-center gap-2 flex-none group cursor-pointer",
+                                            !filters.location && "relative"
+                                        )}
+                                        onClick={() => {
+                                            setFilters({ ...filters, location: "", subLocation: "" });
+                                            setExpandedLocation(null);
+                                        }}
+                                    >
+                                        <div className={cn(
+                                            "w-[70px] h-[70px] rounded-full border-2 p-1 transition-all",
+                                            !filters.location ? "border-[#0088cc] bg-blue-50" : "border-slate-200"
+                                        )}>
+                                            <div className="w-full h-full rounded-full bg-slate-50 overflow-hidden flex items-center justify-center">
+                                                <MapPin className="w-8 h-8 text-[#0088cc] opacity-60" strokeWidth={2} />
                                             </div>
-                                            <span className={cn(
-                                                "text-[11px] font-bold text-center max-w-[72px] truncate transition-colors",
-                                                loc.name === filters.location ? "text-[#0088cc]" : "text-black"
-                                            )}>{loc.name}</span>
-                                        </Link>
-                                    ))
+                                        </div>
+                                        <span className={cn(
+                                            "text-[11px] font-bold text-center max-w-[70px] truncate transition-colors",
+                                            !filters.location ? "text-[#0088cc]" : "text-black"
+                                        )}>{language === 'bn' ? 'সব এলাকা' : 'All Location'}</span>
+                                    </Link>
+
+                                    {locations
+                                        .map((loc) => (
+                                            <Link
+                                                key={loc._id}
+                                                href={loc.name === filters.location ? getLocationUrl("") : getLocationUrl(loc.name)}
+                                                scroll={false}
+                                                className={cn(
+                                                    "flex flex-col items-center gap-2 flex-none group cursor-pointer",
+                                                    loc.name === filters.location && "relative"
+                                                )}
+                                                onClick={() => {
+                                                    const isSelected = loc.name === filters.location;
+                                                    setFilters({ ...filters, location: isSelected ? "" : loc.name, subLocation: "" });
+                                                    if (!isSelected) {
+                                                        setExpandedLocation(loc._id);
+                                                    } else {
+                                                        setExpandedLocation(null);
+                                                    }
+                                                }}
+                                            >
+                                                <div className={cn(
+                                                    "w-[70px] h-[70px] rounded-full border-2 p-1 transition-all",
+                                                    loc.name === filters.location ? "border-[#0088cc] bg-blue-50" : "border-slate-200"
+                                                )}>
+                                                    <div className="w-full h-full rounded-full bg-blue-50 overflow-hidden flex items-center justify-center">
+                                                        {loc.image ? (
+                                                            <img
+                                                                src={getImageUrl(loc.image) || undefined}
+                                                                alt={loc.name}
+                                                                className="w-full h-full object-cover"
+                                                                loading="lazy"
+                                                            />
+                                                        ) : (
+                                                            <img
+                                                                src={`https://placehold.co/100x100?text=${loc.name.charAt(0)}`}
+                                                                alt={loc.name}
+                                                                className="w-full h-full object-cover opacity-50"
+                                                                loading="lazy"
+                                                            />
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <span className={cn(
+                                                    "text-[11px] font-bold text-center max-w-[70px] truncate transition-colors",
+                                                    loc.name === filters.location ? "text-[#0088cc]" : "text-black"
+                                                )}>{loc.name}</span>
+                                            </Link>
+                                        ))
+                                    }
+                                </>
                             )}
                         </div>
 
-                        {/* Arrow Button - Inline as the 6th item */}
-                        {(activeSelectorTab === 'category' ? categories.length > 5 : locations.length > 5) && (
-                            <button
-                                onClick={scrollRight}
-                                className="w-16 h-16 rounded-full bg-[#F4F4F4] flex items-center justify-center text-black hover:bg-slate-200 hover:scale-105 active:scale-95 transition-all flex-none"
-                            >
-                                <ArrowRight className="w-6 h-6 stroke-[3]" />
-                            </button>
-                        )}
+                        {/* Right Scroll Arrow */}
+                        <button
+                            onClick={scrollRight}
+                            className={cn(
+                                "w-9 h-9 rounded-full bg-white shadow-md border border-slate-100 items-center justify-center text-black hover:bg-slate-50 hover:scale-110 active:scale-95 transition-all flex-none z-20",
+                                canScrollRight ? "flex" : "hidden"
+                            )}
+                        >
+                            <ArrowRight className="w-5 h-5" strokeWidth={2.5} />
+                        </button>
                     </div>
                 </div>
 
-                {!filters.category && !filters.location && !filters.search && filters.promoteTag === 'All' && <LatestFreeAdPromo />}
+                {!filters.category && !filters.location && !filters.search && filters.promoteTag === 'All' && <LatestFreeAdPromo />
+                }
 
                 {loading ? (
                     <div className="text-center py-20 pb-40">
@@ -1079,7 +1194,6 @@ export default function DashboardClient() {
                     </div>
                 ) : ads.length === 0 ? (
                     <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm min-h-[400px] flex flex-col items-center justify-center text-black">
-                        {/* Empty state content */}
                         <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4">
                             <Home className="w-8 h-8 text-black" />
                         </div>
@@ -1088,16 +1202,46 @@ export default function DashboardClient() {
                 ) : (
                     (() => {
                         const displayAdsList = isViewingSavedSearch ? savedAdsData : ads;
-                        // 2. Interleaved Chunking Logic (1 Big + 5 Promoted + 5 Free pattern)
-                        const promotedPool = [...displayAdsList.filter(ad => ad.adType === 'Promoted')];
-                        const freePool = [...displayAdsList.filter(ad => ad.adType !== 'Promoted')];
-                        const chunks = [];
 
-                        while (promotedPool.length > 0 || freePool.length > 0) {
-                            const bigAd = promotedPool.shift() || freePool.shift();
-                            const promotedSmall = promotedPool.splice(0, 5);
-                            const freeSmall = freePool.splice(0, 5);
-                            chunks.push({ bigAd, promotedSmall, freeSmall });
+                        const filteredTotalAdsCount = (() => {
+                            if (isViewingSavedSearch) return savedAdsData.length;
+                            return totalAds.filter(ad => {
+                                if (filters.category && ad.category !== filters.category) return false;
+                                if (filters.subCategory && ad.subCategory !== filters.subCategory) return false;
+                                if (filters.location && ad.location !== filters.location) return false;
+                                if (filters.subLocation && ad.subLocation !== filters.subLocation) return false;
+                                if (filters.promoteTag && filters.promoteTag !== 'All') {
+                                    if (filters.promoteTag === 'Verified') {
+                                        if (!ad.user?.mVerified) return false;
+                                    } else {
+                                        if (ad.promoteTag !== filters.promoteTag) return false;
+                                    }
+                                }
+                                if (filters.search) {
+                                    const q = filters.search.toLowerCase();
+                                    const matched = (ad.headline?.toLowerCase().includes(q) ||
+                                        ad.description?.toLowerCase().includes(q) ||
+                                        ad._id === filters.search ||
+                                        ad.user?._id === filters.search);
+                                    if (!matched) return false;
+                                }
+                                return true;
+                            }).length;
+                        })();
+
+                        const pool = [...displayAdsList];
+                        const chunks = [];
+                        while (pool.length > 0) {
+                            const b1 = pool.shift();
+                            const s1 = pool.splice(0, 10);
+                            const b2 = pool.shift();
+                            const s2 = pool.splice(0, 10);
+                            chunks.push({
+                                blocks: [
+                                    { bigAd: b1, smallAds: s1 },
+                                    { bigAd: b2, smallAds: s2 }
+                                ].filter(b => b.bigAd || b.smallAds.length > 0)
+                            });
                         }
 
                         const categoriesWithAds = categories.filter(cat =>
@@ -1106,22 +1250,12 @@ export default function DashboardClient() {
 
                         return (
                             <div className="space-y-1">
-                                {/* Feed Header */}
                                 <div className="flex items-center justify-between">
-                                    {/* <div className="text-sm text-black flex items-center gap-1">
-                                        <span className="border-slate-200">
-                                            {filters.category ? (filters.subCategory || filters.category) : (language === 'bn' ? 'সব ক্যাটাগরি' : 'All Category')}
-                                        </span>
-                                        <span className="text-slate-500">{language === 'bn' ? 'বিজ্ঞাপন থেকে' : 'Ads From'}</span>
-                                        <span className="border-slate-200">
-                                            {filters.location ? (filters.subLocation || filters.location) : (language === 'bn' ? 'পুরো বাংলাদেশ' : 'All Bangladesh')}
-                                        </span>
-                                    </div> */}
                                     <div className="text-sm text-black flex items-center gap-1">
-                                        <span>
+                                        <span className="font-medium">
                                             {language === 'bn'
-                                                ? `${displayAdsList.length.toLocaleString('bn-BD')} টি বিজ্ঞাপন দেখছেন`
-                                                : `Viewing ${displayAdsList.length.toLocaleString('en-US')} ads`}
+                                                ? `${filteredTotalAdsCount.toLocaleString('bn-BD')} টি বিজ্ঞাপন দেখছেন`
+                                                : `Viewing ${filteredTotalAdsCount.toLocaleString('en-US')} ads`}
                                         </span>
                                     </div>
                                     <button
@@ -1153,134 +1287,104 @@ export default function DashboardClient() {
                                     const categoryToShow = categoriesWithAds[chunkIndex % categoriesWithAds.length];
                                     return (
                                         <div key={chunkIndex} className="flex flex-col gap-4">
-                                            {/* Big Card */}
-                                            {chunk.bigAd && (
-                                                <Link
-                                                    href={getAdUrl(chunk.bigAd)}
-                                                    scroll={false}
-                                                    className="bg-white rounded-xl cursor-pointer group block border border-slate-100 shadow-sm"
-                                                >
-                                                    <div className="relative h-[315px] w-full bg-black rounded-t-xl overflow-hidden">
-                                                        {getImageUrl(chunk.bigAd.images?.[0]) && (
-                                                            <img
-                                                                src={getImageUrl(chunk.bigAd.images?.[0]) || undefined}
-                                                                alt={chunk.bigAd.headline}
-                                                                className="w-full h-full object-contain"
-                                                                loading="lazy"
-                                                            />
-                                                        )}
-                                                        <div className="absolute bottom-0 right-0 p-2">
-                                                            <div className="bg-[#0088cc] p-1.5 rounded-tl-lg rounded-br-lg">
-                                                                {settings.watermarkLogo ? (
-                                                                    <img
-                                                                        src={getImageUrl(settings.watermarkLogo)}
-                                                                        alt="Watermark"
-                                                                        className="w-4 h-4 object-contain"
-                                                                    />
-                                                                ) : (
-                                                                    <User className="w-4 h-4 text-white" />
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="p-3">
-                                                        <div className="flex items-start justify-between">
-                                                            <div>
-                                                                <div className="flex items-center gap-1 text-[11px] text-black mb-0.5">
-                                                                    <span>{chunk.bigAd.adType === 'Promoted' ? 'Promoted By' : 'Post By'}</span>
-                                                                    <span
-                                                                        className="font-bold text-black cursor-pointer hover:text-blue-600 hover:underline"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: chunk.bigAd?.user?._id } }));
-                                                                        }}
-                                                                    >
-                                                                        {chunk.bigAd.user?.storeName || chunk.bigAd.user?.name || 'User'}
-                                                                    </span>
-                                                                    {chunk.bigAd.user?.mVerified && <VerifiedBadge />}
-                                                                </div>
-                                                                <h3 className="font-bold text-lg text-black leading-tight mb-0.5">{chunk.bigAd.headline}</h3>
-                                                                <div className="font-bold text-base text-black mb-1">৳ {chunk.bigAd.price?.toLocaleString() || 'N/A'}</div>
-                                                                <div className="flex items-center gap-3 text-[10px] text-black">
-                                                                    <div className="flex items-center gap-1"><MapPin className="w-3 h-3 text-black" />{chunk.bigAd.location}</div>
-                                                                    <div className="flex items-center gap-1"><Grid className="w-3 h-3 text-black" />{chunk.bigAd.category}</div>
-                                                                </div>
-                                                            </div>
-                                                            <button className="border border-slate-300 text-black bg-gray-200 px-3 py-1 rounded text-xs font-bold hover:bg-slate-50">Detail</button>
-                                                        </div>
-                                                    </div>
-                                                </Link>
-                                            )}
-
-                                            {/* Promoted Small Cards */}
-                                            {chunk.promotedSmall.length > 0 && (
-                                                <div className="flex flex-col gap-2 bg-white rounded-lg pb-2">
-                                                    {chunk.promotedSmall.map((ad) => (
+                                            {chunk.blocks.map((block, blockIndex) => (
+                                                <React.Fragment key={blockIndex}>
+                                                    {block.bigAd && (
                                                         <Link
-                                                            key={ad._id}
-                                                            href={getAdUrl(ad)}
+                                                            href={getAdUrl(block.bigAd)}
                                                             scroll={false}
-                                                            className="bg-white rounded-lg p-3 pb-0 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50"
+                                                            className="bg-white rounded-xl cursor-pointer group block border border-slate-100 shadow-sm"
                                                         >
-                                                            <div className="w-[200px] h-[130px] bg-black rounded-lg overflow-hidden shrink-0 relative group-hover:bg-black transition-colors">
-                                                                {getImageUrl(ad.images?.[0]) && (
-                                                                    <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="w-full h-full object-contain" loading="lazy" />
+                                                            <div className="relative h-[315px] w-full rounded-t-xl overflow-hidden group">
+                                                                {getImageUrl(block.bigAd.images?.[0]) && (
+                                                                    <>
+                                                                        <img
+                                                                            src={getImageUrl(block.bigAd.images?.[0]) || undefined}
+                                                                            alt=""
+                                                                            className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-70"
+                                                                        />
+                                                                        <img
+                                                                            src={getImageUrl(block.bigAd.images?.[0]) || undefined}
+                                                                            alt={block.bigAd.headline}
+                                                                            className="relative z-10 w-full h-full object-contain"
+                                                                            loading="lazy"
+                                                                        />
+                                                                    </>
                                                                 )}
                                                             </div>
-                                                            <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                                                <div className="flex items-center gap-1 text-[10px] text-black mb-0.5">
-                                                                    <span>Promoted By</span>
-                                                                    <span className="font-bold text-black hover:text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id } })); }}>{ad.user?.storeName || ad.user?.name || 'User'}</span>
-                                                                    {ad.user?.mVerified && <VerifiedBadge />}
-                                                                </div>
-                                                                <h4 className="text-sm text-black truncate mb-0.5">{ad.headline}</h4>
-                                                                <div className="text-sm text-black mb-1">৳ {ad.price?.toLocaleString() || 'N/A'}</div>
-                                                                <div className="flex items-center gap-2 text-[10px] text-black">
-                                                                    <div className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" /><span className="truncate max-w-[80px]">{ad.location}</span></div>
-                                                                    <div className="flex items-center gap-0.5"><Grid className="w-2.5 h-2.5" /><span className="truncate max-w-[80px]">{ad.category}</span></div>
-                                                                    <div className="ml-auto text-black"></div>
+                                                            <div className="p-3">
+                                                                <div className="flex items-start justify-between">
+                                                                    <div>
+                                                                        <div className="flex items-center gap-1 text-[11px] text-black mb-0.5">
+                                                                            <span>{block.bigAd.adType === 'Promoted' ? 'Promoted By' : 'Post By'}</span>
+                                                                            <span
+                                                                                className="font-bold text-black cursor-pointer hover:text-blue-600 hover:underline"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: block.bigAd?.user?._id } }));
+                                                                                }}
+                                                                            >
+                                                                                {block.bigAd.user?.storeName || block.bigAd.user?.name || 'User'}
+                                                                            </span>
+                                                                            {block.bigAd.user?.mVerified && <VerifiedBadge />}
+                                                                        </div>
+                                                                        <h3 className="font-bold text-lg text-black leading-tight mb-0.5">{block.bigAd.headline}</h3>
+                                                                        <div className="font-bold text-base text-black mb-1">৳ {block.bigAd.price?.toLocaleString() || 'N/A'}</div>
+                                                                        <div className="flex items-center gap-3 text-[10px] text-black">
+                                                                            <div className="flex items-center gap-1"><MapPin className="w-3 h-3 text-black" />{block.bigAd.location}</div>
+                                                                            <div className="flex items-center gap-1"><Grid className="w-3 h-3 text-black" />{block.bigAd.category}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <button className="border border-slate-300 text-black bg-gray-200 px-3 py-1 rounded text-xs font-bold hover:bg-slate-50">Detail</button>
                                                                 </div>
                                                             </div>
                                                         </Link>
-                                                    ))}
-                                                </div>
-                                            )}
+                                                    )}
 
-                                            {/* Free Small Cards */}
-                                            {chunk.freeSmall.length > 0 && (
-                                                <div className="flex flex-col gap-2 bg-white rounded-lg pb-2">
-                                                    {chunk.freeSmall.map((ad) => (
-                                                        <Link
-                                                            key={ad._id}
-                                                            href={getAdUrl(ad)}
-                                                            scroll={false}
-                                                            className="bg-white rounded-lg p-3 pb-0 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50"
-                                                        >
-                                                            <div className="w-[200px] h-[130px] bg-black rounded-lg overflow-hidden shrink-0 relative group-hover:bg-black transition-colors">
-                                                                {getImageUrl(ad.images?.[0]) && (
-                                                                    <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="w-full h-full object-contain" loading="lazy" />
-                                                                )}
-                                                            </div>
-                                                            <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                                                <div className="flex items-center gap-1 text-[10px] text-black mb-0.5">
-                                                                    <span>Post By</span>
-                                                                    <span className="font-bold text-black hover:text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id } })); }}>{ad.user?.storeName || ad.user?.name || 'User'}</span>
-                                                                    {ad.user?.mVerified && <VerifiedBadge />}
-                                                                </div>
-                                                                <h4 className="text-sm text-black truncate mb-0.5">{ad.headline}</h4>
-                                                                <div className="text-sm text-black mb-1">৳ {ad.price?.toLocaleString() || 'N/A'}</div>
-                                                                <div className="flex items-center gap-2 text-[10px] text-black">
-                                                                    <div className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" /><span className="truncate max-w-[80px]">{ad.location}</span></div>
-                                                                    <div className="flex items-center gap-0.5"><Grid className="w-2.5 h-2.5" /><span className="truncate max-w-[80px]">{ad.category}</span></div>
-                                                                    <div className="ml-auto text-black">{timeAgo(ad.createdAt, language as 'en' | 'bn')}</div>
-                                                                </div>
-                                                            </div>
-                                                        </Link>
-                                                    ))}
-                                                </div>
-                                            )}
+                                                    {block.smallAds.length > 0 && (
+                                                        <div className="flex flex-col gap-2 bg-white rounded-lg pb-2">
+                                                            {block.smallAds.map((ad) => (
+                                                                <Link
+                                                                    key={ad._id}
+                                                                    href={getAdUrl(ad)}
+                                                                    scroll={false}
+                                                                    className="bg-white rounded-lg p-3 pb-0 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50"
+                                                                >
+                                                                    <div className="w-[200px] h-[130px] rounded-lg overflow-hidden shrink-0 relative group-hover:scale-[1.02] transition-transform">
+                                                                        {getImageUrl(ad.images?.[0]) && (
+                                                                            <>
+                                                                                <img
+                                                                                    src={getImageUrl(ad.images?.[0]) || undefined}
+                                                                                    alt=""
+                                                                                    className="absolute inset-0 w-full h-full object-cover blur-lg scale-110 opacity-60"
+                                                                                />
+                                                                                <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-contain" loading="lazy" />
+                                                                            </>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                                                        <div className="flex items-center gap-1 text-[10px] text-black mb-0.5">
+                                                                            <span>{ad.adType === 'Promoted' ? 'Promoted By' : 'Post By'}</span>
+                                                                            <span className="font-bold text-black hover:text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id } })); }}>{ad.user?.storeName || ad.user?.name || 'User'}</span>
+                                                                            {ad.user?.mVerified && <VerifiedBadge />}
+                                                                        </div>
+                                                                        <h4 className="text-sm text-black truncate mb-0.5">{ad.headline}</h4>
+                                                                        <div className="text-sm text-black mb-1">৳ {ad.price?.toLocaleString() || 'N/A'}</div>
+                                                                        <div className="flex items-center gap-2 text-[10px] text-black">
+                                                                            <div className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" /><span className="truncate max-w-[80px]">{ad.location}</span></div>
+                                                                            <div className="flex items-center gap-0.5"><Grid className="w-2.5 h-2.5" /><span className="truncate max-w-[80px]">{ad.category}</span></div>
+                                                                            <div className="ml-auto text-black">
+                                                                                {ad.adType !== 'Promoted' && timeAgo(ad.createdAt, language as 'en' | 'bn')}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </Link>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </React.Fragment>
+                                            ))}
 
-                                            {/* Category Slider for this chunk */}
                                             {categoryToShow && (
                                                 <div className="bg-white relative group/cat rounded-lg p-2 pb-0 mt-2">
                                                     <div className="bg-white flex items-center justify-between px-2 mb-2">
@@ -1308,9 +1412,16 @@ export default function DashboardClient() {
                                                                     className="min-w-[240px] w-[240px] bg-white border border-slate-200 rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
                                                                     onClick={() => router.push(getAdUrl(ad), { scroll: false })}
                                                                 >
-                                                                    <div className="h-40 bg-black relative">
+                                                                    <div className="h-40 relative rounded-t-lg overflow-hidden bg-slate-100">
                                                                         {getImageUrl(ad.images?.[0]) && (
-                                                                            <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="w-full h-full object-contain" loading="lazy" />
+                                                                            <>
+                                                                                <img
+                                                                                    src={getImageUrl(ad.images?.[0]) || undefined}
+                                                                                    alt=""
+                                                                                    className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-70"
+                                                                                />
+                                                                                <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-contain" loading="lazy" />
+                                                                            </>
                                                                         )}
                                                                     </div>
                                                                     <div className="p-2.5">
@@ -1346,8 +1457,6 @@ export default function DashboardClient() {
                         );
                     })()
                 )}
-
-
 
                 <AdDetailsModal
                     isOpen={!!selectedAd}
@@ -1409,47 +1518,49 @@ export default function DashboardClient() {
                                 <p>{t('no_premium_merchants')}</p>
                             </div>
                         ) : (
-                            premiumUsers.map((user, idx) => (
+                            premiumUsers.map((user) => (
                                 <div key={user._id} className="flex gap-3">
                                     <div className="shrink-0 cursor-pointer" onClick={() => handleProfileClick(user._id)}>
-                                        <div className="w-14 h-14 rounded-full overflow-hidden border border-slate-100 bg-slate-50 relative group">
+                                        <div className="w-14 h-14 rounded-full overflow-hidden border border-slate-100 bg-slate-200 relative group">
                                             {user.photo ? (
                                                 <img
                                                     src={getImageUrl(user.photo) || undefined}
-                                                    alt={user.name}
+                                                    alt={user.storeName || user.name}
                                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform"
                                                     loading="lazy"
                                                 />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-black font-bold text-xl uppercase">
-                                                    {user.name.charAt(0)}
+                                                    {(user.storeName || user.name).charAt(0)}
                                                 </div>
                                             )}
                                         </div>
                                     </div>
-                                    <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                        <div
-                                            className="flex items-center gap-1.5 leading-tight cursor-pointer group/name"
-                                            onClick={() => handleProfileClick(user._id)}
-                                        >
-                                            <h4 className="font-bold text-black text-[15px] truncate group-hover/name:text-[#0088cc] transition-colors">
-                                                {user.name.split(' ')[0]}
-                                            </h4>
-                                            {user.mVerified && <VerifiedBadge />}
+                                    <div className="flex-1 min-w-0 h-14 flex flex-col justify-between py-0.5">
+                                        <div className="flex flex-col">
+                                            <div
+                                                className="flex items-center gap-1.5 leading-tight cursor-pointer group/name"
+                                                onClick={() => handleProfileClick(user._id)}
+                                            >
+                                                <h4 className="font-bold text-black text-[14px] truncate group-hover/name:text-[#0088cc] transition-colors">
+                                                    {user.storeName || user.name}
+                                                </h4>
+                                                {user.mVerified && <VerifiedBadge />}
+                                            </div>
+                                            <p className="text-[10px] text-slate-500 -mt-0.5">
+                                                {user.profileViews || 0} {t('visited')}
+                                            </p>
                                         </div>
-                                        <p className="text-[11px] text-black -mt-0.5">
-                                            {user.profileViews || 0} {t('visited')}
-                                        </p>
                                         <button
                                             onClick={(e) => handleFollowUser(e, user._id)}
                                             className={cn(
-                                                "mt-1 flex items-center justify-center gap-1 px-3 py-1 border rounded-full text-[11px] font-bold transition-all w-fit",
+                                                "flex items-center justify-center gap-1 px-2.5 h-5 border rounded-full text-[10px] font-bold transition-all w-fit",
                                                 user.isFollowing
-                                                    ? "bg-slate-100 text-black border-black"
-                                                    : "border-black text-black hover:bg-slate-50 hover:border-slate-300"
+                                                    ? "bg-slate-100 text-slate-500 border-slate-300"
+                                                    : "border-slate-300 text-slate-500 hover:bg-slate-50 hover:border-slate-400"
                                             )}
                                         >
-                                            {!user.isFollowing && <span className="text-base leading-none -mt-0.5">+</span>}
+                                            {!user.isFollowing && <span className="text-sm leading-none -mt-0.5">+</span>}
                                             {user.isFollowing ? t('Unfollow') : t('Follow')}
                                         </button>
                                     </div>
@@ -1460,8 +1571,8 @@ export default function DashboardClient() {
                 </div>
             </div>
 
-            {/* Balancing Spacer: 70px (Legacy Left=350, Right=280, Diff=70) */}
+            {/* Balancing Spacer: 70px */}
             <div className="hidden lg:block w-[70px] flex-none" />
-        </div >
+        </div>
     );
 }

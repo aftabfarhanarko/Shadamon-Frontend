@@ -15,6 +15,7 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { RiCheckboxCircleFill } from 'react-icons/ri';
 import InfoModal from './InfoModal';
+import { useSettings } from '../app/context/SettingsContext';
 
 const VerifiedBadge = () => (
     <div className="relative group/badge flex items-center justify-center -mt-0.5 ml-1">
@@ -60,6 +61,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
 
     const [actionButtons, setActionButtons] = useState<string[]>(['Call', 'Chat']);
     const { t } = useLanguage();
+    const { settings } = useSettings();
     const popupRef = useRef<HTMLDivElement>(null);
     const optionsButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -238,17 +240,29 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                 <div className="flex-1 overflow-y-auto bg-white pb-32">
 
                     {/* 2. Image Gallery */}
-                    <div className="relative w-full aspect-[16/9] bg-black group">
+                    <div className="relative w-full aspect-[16/9] overflow-hidden group">
                         {hasImages ? (
-                            <img
-                                src={getImageUrl(images[currentImageIndex]) || undefined}
-                                alt={ad.headline}
-                                className="w-full h-full object-contain cursor-pointer"
-                                onClick={() => setIsExpanded(true)}
-                                loading="lazy"
-                            />
+                            <>
+                                <img
+                                    src={getImageUrl(images[currentImageIndex]) || undefined}
+                                    alt=""
+                                    className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60"
+                                />
+                                <img
+                                    src={getImageUrl(images[currentImageIndex]) || undefined}
+                                    alt={ad.headline}
+                                    className="relative z-10 w-full h-full object-contain cursor-pointer"
+                                    onClick={() => setIsExpanded(true)}
+                                    loading="lazy"
+                                />
+                                {ad.adType === 'Promoted' && settings.watermarkLogo && (
+                                    <div className="absolute bottom-4 right-4 z-20 pointer-events-none opacity-100">
+                                        <img src={getImageUrl(settings.watermarkLogo)} alt="" className="w-30 h-20 object-contain" />
+                                    </div>
+                                )}
+                            </>
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-500 bg-slate-100">
+                            <div className="w-full h-full flex items-center justify-center text-slate-500 bg-slate-100 italic">
                                 No Image Available
                             </div>
                         )}
@@ -1006,26 +1020,41 @@ I have sent my CV for your review.`;
                     </div>
 
                     {/* Main Image Area */}
-                    <div className="flex-1 flex items-center justify-center relative overflow-hidden p-4">
-                        {images.length > 1 && (
-                            <button onClick={prevImage} className="absolute left-4 p-3 bg-white/10 text-white rounded-full hover:bg-white/20 transition-colors z-20">
-                                <ArrowLeft className="w-6 h-6" />
-                            </button>
-                        )}
-
+                    <div className="flex-1 flex items-center justify-center relative overflow-hidden">
                         {hasImages && (
-                            <img
-                                src={getImageUrl(images[currentImageIndex]) || undefined}
-                                alt="Expanded View"
-                                className="max-w-full max-h-full object-contain"
-                                loading="lazy"
-                            />
-                        )}
+                            <>
+                                <img
+                                    src={getImageUrl(images[currentImageIndex]) || undefined}
+                                    alt=""
+                                    className="absolute inset-0 w-full h-full object-cover blur-3xl scale-110 opacity-50"
+                                />
+                                <div className="relative z-10 w-full h-full flex items-center justify-center p-4">
+                                    {images.length > 1 && (
+                                        <button onClick={prevImage} className="absolute left-4 p-3 bg-white/10 text-white rounded-full hover:bg-white/20 transition-colors z-20">
+                                            <ArrowLeft className="w-6 h-6" />
+                                        </button>
+                                    )}
 
-                        {images.length > 1 && (
-                            <button onClick={nextImage} className="absolute right-4 p-3 bg-white/10 text-white rounded-full hover:bg-white/20 transition-colors z-20">
-                                <ArrowLeft className="w-6 h-6 rotate-180" />
-                            </button>
+                                    <img
+                                        src={getImageUrl(images[currentImageIndex]) || undefined}
+                                        alt="Expanded View"
+                                        className="max-w-full max-h-full object-contain shadow-2xl"
+                                        loading="lazy"
+                                    />
+
+                                    {ad.adType === 'Promoted' && settings.watermarkLogo && (
+                                        <div className="absolute bottom-10 right-10 z-30 pointer-events-none opacity-50">
+                                            <img src={getImageUrl(settings.watermarkLogo)} alt="" className="w-24 h-24 object-contain" />
+                                        </div>
+                                    )}
+
+                                    {images.length > 1 && (
+                                        <button onClick={nextImage} className="absolute right-4 p-3 bg-white/10 text-white rounded-full hover:bg-white/20 transition-colors z-20">
+                                            <ArrowLeft className="w-6 h-6 rotate-180" />
+                                        </button>
+                                    )}
+                                </div>
+                            </>
                         )}
                     </div>
 
