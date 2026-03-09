@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     const authRoutes = ['/login', '/register'];
-    const publicRoutes = ['/', '/dashboard'];
+    const publicRoutes = ['/', '/dashboard', '/dashboard/post-ad'];
 
     // If user is logged in and tries to access auth routes (login/register), redirect to dashboard
     if (token && authRoutes.includes(pathname)) {

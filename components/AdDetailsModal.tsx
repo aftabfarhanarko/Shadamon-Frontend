@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from 'react';
-import { ArrowLeft, X, Maximize2, MapPin, Grid, Eye, Share2, Phone, MessageCircle, FileText, ChevronUp, ChevronDown, Rocket, CheckCircle2, Truck, Undo2, Timer, ExternalLink, ChevronRight, Star, Bell, Search, Heart, AlertCircle, Contact, UserSquare2, SquareArrowOutUpRight } from 'lucide-react';
+import { ArrowLeft, X, Maximize2, MapPin, Grid, Eye, Share2, Phone, MessageCircle, FileText, ChevronUp, ChevronDown, Rocket, CheckCircle2, Truck, Undo2, Timer, ExternalLink, ChevronRight, Star, Bell, Search, Heart, AlertCircle, Contact, UserSquare2, SquareArrowOutUpRight, Send } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { FaWhatsapp, FaTelegramPlane } from 'react-icons/fa';
 import { BsChatDotsFill } from 'react-icons/bs';
 import { API_BASE_URL } from '../utils/apiConfig';
@@ -11,6 +12,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { useRef, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import { useLanguage } from '../app/context/LanguageContext';
+import { useRouter } from 'next/navigation';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { RiCheckboxCircleFill } from 'react-icons/ri';
@@ -52,15 +54,18 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
     const [isDetailsOpen, setIsDetailsOpen] = useState(true);
     const [showOptionsPopup, setShowOptionsPopup] = useState(false);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+    const [isHeadlineExpanded, setIsHeadlineExpanded] = useState(false);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [isFavorited, setIsFavorited] = useState(false);
     const [isNotifying, setIsNotifying] = useState(false);
     const [showShippingModal, setShowShippingModal] = useState(false);
     const [subcategories, setSubcategories] = useState<any[]>([]);
+    const [categories, setCategories] = useState<any[]>([]);
 
     const [actionButtons, setActionButtons] = useState<string[]>(['Call', 'Chat']);
     const { t } = useLanguage();
+    const router = useRouter();
     const { settings } = useSettings();
     const popupRef = useRef<HTMLDivElement>(null);
     const optionsButtonRef = useRef<HTMLButtonElement>(null);
@@ -89,6 +94,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
     // Reset states when ad changes
     useEffect(() => {
         setIsDescriptionExpanded(false);
+        setIsHeadlineExpanded(false);
         setCurrentImageIndex(0);
         setShowPhone(false);
         // Reset favorited/notifying local states until re-fetched
@@ -155,6 +161,16 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                 })
                 .catch(err => console.error("Error fetching subcategories:", err));
 
+            // Fetch Categories to determine parent category names
+            fetch(`${API_BASE_URL}/api/categories`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        setCategories(data.data);
+                    }
+                })
+                .catch(err => console.error("Error fetching categories:", err));
+
             // Fetch current user if token exists to check ownership and favorites
             const token = Cookies.get('token');
             if (token) {
@@ -190,6 +206,13 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
 
 
     const handlePromotePost = () => {
+        const token = Cookies.get('token');
+        if (!token) {
+            window.dispatchEvent(new CustomEvent('open-mobile-entry-modal'));
+            onClose();
+            return;
+        }
+
         const adOwnerId = typeof ad.user === 'object' ? ad.user?._id : ad.user;
         const isOwnAd = currentUserId === adOwnerId;
 
@@ -214,6 +237,8 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
             setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
         }
     };
+
+    const adLink = typeof window !== 'undefined' ? `${window.location.origin}/dashboard?ad=${ad._id}` : '';
 
     return (
         <div className="fixed inset-0 z-[1000] flex items-start justify-center pt-20">
@@ -297,13 +322,25 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                         {/* 3. Meta Info Bar */}
                         <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5 font-medium">
                             <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-1">
+                                <div
+                                    className="flex items-center gap-1 cursor-pointer hover:text-[#0088cc] transition-colors"
+                                    onClick={() => {
+                                        const locVal = typeof ad.location === 'object' ? ad.location?.name : ad.location;
+                                        router.push(`/dashboard?location=${encodeURIComponent(locVal)}`);
+                                    }}
+                                >
                                     <MapPin className="w-3 h-3" />
-                                    <span>{ad.location}</span>
+                                    <span>{typeof ad.location === 'object' ? ad.location?.name : ad.location}</span>
                                 </div>
-                                <div className="flex items-center gap-1">
+                                <div
+                                    className="flex items-center gap-1 cursor-pointer hover:text-[#0088cc] transition-colors"
+                                    onClick={() => {
+                                        const catVal = typeof ad.category === 'object' ? ad.category?.name : ad.category;
+                                        router.push(`/dashboard?category=${encodeURIComponent(catVal)}`);
+                                    }}
+                                >
                                     <Grid className="w-3 h-3" />
-                                    <span>{ad.category}</span>
+                                    <span>{typeof ad.category === 'object' ? ad.category?.name : ad.category}</span>
                                 </div>
                             </div>
                             <div className="flex items-center gap-1 text-[#0088cc]">
@@ -314,26 +351,42 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                         </div>
 
                         {/* 4. Title & Price */}
-                        <h1 className="text-base text-slate-800 leading-none mb-0.5">
+                        <h1
+                            className={cn(
+                                "text-base text-slate-800 leading-none mb-0.5 cursor-pointer select-none",
+                                !isHeadlineExpanded && "truncate"
+                            )}
+                            onClick={() => setIsHeadlineExpanded(!isHeadlineExpanded)}
+                        >
                             {ad.headline}
                         </h1>
-                        <p className="text-xs text-slate-900">
-                            {ad.price ? `৳ ${ad.price.toLocaleString()}` : '0.00'}
-                        </p>
+                        <div className="flex items-center gap-2 mb-1">
+                            <p className="text-xs text-slate-900 font-bold">
+                                {ad.price ? `৳ ${ad.price.toLocaleString()}` : t('price_on_ask')}
+                            </p>
+                            {ad.price && (
+                                <span className="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                                    {ad.priceType === 'Negotiable' ? t('price_negotiable') : t('price_fixed')}
+                                </span>
+                            )}
+                        </div>
 
                         {/* 5. Contact Section */}
                         <div className="bg-slate-200 rounded-lg mt-2 mb-2 p-3 border border-slate-100">
-                            {/* Phone & Socials */}
-                            <div className="flex items-center gap-2 mb-4">
-                                {!(ad.hidePhone === true || ad.hidePhone === 'true') && (
-                                    <>
+                            {!(ad.hidePhone === true || ad.hidePhone === 'true') && (
+                                <>
+                                    {/* Phone & Socials */}
+                                    <div className="flex items-center gap-2 mb-4">
                                         {/* Phone Section */}
                                         <div className="flex items-center gap-2 shrink-0">
                                             <div className="w-8 h-8 rounded-full bg-[#1A202C] flex items-center justify-center text-white shrink-0">
                                                 <Phone className="w-4 h-4 fill-white" />
                                             </div>
                                             <div className="flex flex-col leading-none justify-center">
-                                                <div className="flex items-center gap-1">
+                                                <div
+                                                    className="flex items-center gap-1 cursor-pointer"
+                                                    onClick={() => setShowPhone(!showPhone)}
+                                                >
                                                     <span className="text-slate-800 text-sm leading-none">
                                                         {showPhone ? (ad.phone || 'N/A') : '017 XXXXXXXX'}
                                                     </span>
@@ -342,105 +395,152 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                                                     onClick={() => setShowPhone(!showPhone)}
                                                     className="text-[10px] text-slate-500 hover:text-blue-600 hover:underline text-left mt-0.5"
                                                 >
-                                                    Click to show number
+                                                    {showPhone ? "Hide number" : "Click to show number"}
                                                 </button>
                                             </div>
                                         </div>
 
                                         {/* Divider */}
                                         <div className="h-6 w-[3px] bg-slate-400 mx-1 shrink-0" />
-                                    </>
-                                )}
 
-                                {/* Socials */}
-                                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-                                    {ad.additionalPhones && ad.additionalPhones.length > 0 ? (
-                                        ad.additionalPhones.flatMap((ap: any) => {
-                                            const apObj = typeof ap === 'string' ? JSON.parse(ap) : ap;
-                                            return (apObj?.types || []).map((type: string) => ({ type, number: apObj?.number || '' }));
-                                        }).filter((s: any) => s.number).map((social: any, sIdx: number, allSocials: any[]) => {
-                                            let icon = null;
-                                            let bgColor = "";
-                                            let link = "";
-                                            let title = "";
+                                        {/* Socials */}
+                                        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                                            {ad.additionalPhones && ad.additionalPhones.length > 0 ? (
+                                                ad.additionalPhones.flatMap((ap: any) => {
+                                                    const apObj = typeof ap === 'string' ? JSON.parse(ap) : ap;
+                                                    return (apObj?.types || []).map((type: string) => ({ type, number: apObj?.number || '' }));
+                                                }).filter((s: any) => s.number).map((social: any, sIdx: number, allSocials: any[]) => {
+                                                    let icon = null;
+                                                    let bgColor = "";
+                                                    let link = "";
+                                                    let title = "";
 
-                                            const rawNum = social.number;
-                                            if (!rawNum || String(rawNum) === "undefined") return null;
-                                            const numStr = String(rawNum).trim();
-                                            const formattedNumber = numStr.startsWith('+') ? numStr : `+88${numStr}`;
+                                                    const rawNum = social.number;
+                                                    if (!rawNum || String(rawNum) === "undefined") return null;
+                                                    const numStr = String(rawNum).trim();
+                                                    const formattedNumber = numStr.startsWith('+') ? numStr : `+88${numStr}`;
 
-                                            if (social.type === 'whatsapp') {
-                                                icon = <FaWhatsapp className="w-5 h-5" />;
-                                                bgColor = "bg-[#25D366]";
-                                                link = `https://wa.me/${formattedNumber}`;
-                                                title = `WhatsApp: ${social.number}`;
-                                            } else if (social.type === 'telegram') {
-                                                icon = <FaTelegramPlane className="w-4 h-4 pr-0.5" />;
-                                                bgColor = "bg-[#0088cc]";
-                                                link = `https://t.me/${formattedNumber}`;
-                                                title = `Telegram: ${social.number}`;
-                                            } else if (social.type === 'imo') {
-                                                icon = <BsChatDotsFill className="w-4 h-4 pb-0.5" />;
-                                                bgColor = "bg-[#004c99]";
-                                                link = `tel:${social.number}`; // Fallback for Imo
-                                                title = `Imo: ${social.number}`;
-                                            } else if (social.type === 'mobile') {
-                                                icon = <Phone className="w-4 h-4" />;
-                                                bgColor = "bg-slate-700";
-                                                link = `tel:${social.number}`;
-                                                title = `Call: ${social.number}`;
-                                            }
+                                                    if (social.type === 'whatsapp') {
+                                                        icon = <FaWhatsapp className="w-5 h-5" />;
+                                                        bgColor = "bg-[#25D366]";
+                                                        link = `https://wa.me/${formattedNumber}`;
+                                                        title = `WhatsApp: ${social.number}`;
+                                                    } else if (social.type === 'telegram') {
+                                                        icon = <FaTelegramPlane className="w-4 h-4 pr-0.5" />;
+                                                        bgColor = "bg-[#0088cc]";
+                                                        link = `https://t.me/${formattedNumber}`;
+                                                        title = `Telegram: ${social.number}`;
+                                                    } else if (social.type === 'imo') {
+                                                        icon = <BsChatDotsFill className="w-4 h-4 pb-0.5" />;
+                                                        bgColor = "bg-[#004c99]";
+                                                        link = `tel:${social.number}`; // Fallback for Imo
+                                                        title = `Imo: ${social.number}`;
+                                                    } else if (social.type === 'mobile') {
+                                                        icon = <Phone className="w-4 h-4" />;
+                                                        bgColor = "bg-slate-700";
+                                                        link = `tel:${social.number}`;
+                                                        title = `Call: ${social.number}`;
+                                                    }
 
-                                            if (!icon) return null;
+                                                    if (!icon) return null;
 
-                                            return (
-                                                <React.Fragment key={sIdx}>
-                                                    <button
-                                                        onClick={() => window.open(link, '_blank')}
-                                                        className={`w-8 h-8 rounded-full text-white flex items-center justify-center shadow-sm shrink-0 ${bgColor}`}
-                                                        title={title}
-                                                    >
-                                                        {icon}
-                                                    </button>
-                                                    {sIdx < allSocials.length - 1 && (
-                                                        <div className="h-6 w-[2px] bg-slate-300 mx-0.5 shrink-0" />
-                                                    )}
-                                                </React.Fragment>
-                                            );
-                                        })
-                                    ) : (
-                                        <>
-                                            {ad.phone && String(ad.phone) !== "undefined" && !(ad.hidePhone === true || ad.hidePhone === 'true') && (
+                                                    return (
+                                                        <React.Fragment key={sIdx}>
+                                                            <button
+                                                                onClick={() => window.open(link, '_blank')}
+                                                                className={`w-8 h-8 rounded-full text-white flex items-center justify-center shadow-sm shrink-0 ${bgColor}`}
+                                                                title={title}
+                                                            >
+                                                                {icon}
+                                                            </button>
+                                                            {sIdx < allSocials.length - 1 && (
+                                                                <div className="h-6 w-[2px] bg-slate-300 mx-0.5 shrink-0" />
+                                                            )}
+                                                        </React.Fragment>
+                                                    );
+                                                })
+                                            ) : (
                                                 <>
-                                                    <button
-                                                        onClick={() => {
-                                                            const num = String(ad.phone).trim();
-                                                            const formatted = num.startsWith('+') ? num : `+88${num}`;
-                                                            window.open(`https://wa.me/${formatted}`, '_blank');
-                                                        }}
-                                                        className="w-8 h-8 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-sm shrink-0"
-                                                    >
-                                                        <FaWhatsapp className="w-5 h-5" />
-                                                    </button>
+                                                    {ad.phone && String(ad.phone) !== "undefined" && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => {
+                                                                    const num = String(ad.phone).trim();
+                                                                    const formatted = num.startsWith('+') ? num : `+88${num}`;
+                                                                    window.open(`https://wa.me/${formatted}`, '_blank');
+                                                                }}
+                                                                className="w-8 h-8 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-sm shrink-0"
+                                                            >
+                                                                <FaWhatsapp className="w-5 h-5" />
+                                                            </button>
 
-                                                    <div className="h-6 w-[2px] bg-slate-300 mx-0.5 shrink-0" />
+                                                            <div className="h-6 w-[2px] bg-slate-300 mx-0.5 shrink-0" />
 
-                                                    <button
-                                                        onClick={() => {
-                                                            const num = String(ad.phone).trim();
-                                                            const formatted = num.startsWith('+') ? num : `+88${num}`;
-                                                            window.open(`https://t.me/${formatted}`, '_blank');
-                                                        }}
-                                                        className="w-8 h-8 rounded-full bg-[#0088cc] text-white flex items-center justify-center shadow-sm shrink-0"
-                                                    >
-                                                        <FaTelegramPlane className="w-4 h-4 pr-0.5" />
-                                                    </button>
+                                                            <button
+                                                                onClick={() => {
+                                                                    const num = String(ad.phone).trim();
+                                                                    const formatted = num.startsWith('+') ? num : `+88${num}`;
+                                                                    window.open(`https://t.me/${formatted}`, '_blank');
+                                                                }}
+                                                                className="w-8 h-8 rounded-full bg-[#0088cc] text-white flex items-center justify-center shadow-sm shrink-0"
+                                                            >
+                                                                <FaTelegramPlane className="w-4 h-4 pr-0.5" />
+                                                            </button>
+                                                        </>
+                                                    )}
                                                 </>
                                             )}
-                                        </>
+                                        </div>
+                                    </div>
+
+                                    {/* Plain text display of all numbers */}
+                                    {showPhone && ad.additionalPhones && ad.additionalPhones.length > 0 && (
+                                        <div className="mt-3 px-1 space-y-2 border-t border-slate-300 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Other Numbers:</p>
+                                            <div className="flex flex-col gap-2">
+                                                {(() => {
+                                                    const uniqueNumbers = Array.from(new Set(ad.additionalPhones.map((ap: any) => {
+                                                        const apObj = typeof ap === 'string' ? JSON.parse(ap) : ap;
+                                                        return apObj?.number || '';
+                                                    }).filter(Boolean)));
+
+                                                    return uniqueNumbers.map((num: any, idx) => (
+                                                        <div key={idx} className="flex items-center gap-2 group cursor-pointer" onClick={() => {
+                                                            navigator.clipboard.writeText(num as string);
+                                                            toast.success('Number copied!');
+                                                        }}>
+                                                            <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                                                                <Phone className="w-3.5 h-3.5" />
+                                                            </div>
+                                                            <span className="text-[12px] text-slate-700 font-medium hover:text-blue-600 transition-colors">
+                                                                {num}
+                                                            </span>
+                                                        </div>
+                                                    ));
+                                                })()}
+                                            </div>
+                                        </div>
                                     )}
+                                </>
+                            )}
+
+                            {/* Quick Chat Row - Shown only if phone is hidden */}
+                            {(ad.hidePhone === true || ad.hidePhone === 'true') && (
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div
+                                        className="w-[160px] bg-[#EDF2F7] border border-slate-800 rounded-full py-1.5 px-4 cursor-pointer h-9 flex items-center shadow-sm"
+                                        onClick={() => window.dispatchEvent(new CustomEvent('open-chat-modal', { detail: { ad } }))}
+                                    >
+                                        <span className="text-sm text-slate-800">Hi ..</span>
+                                    </div>
+                                    <button
+                                        className="w-9 h-9 rounded-full bg-[#0088cc] flex items-center justify-center text-white shrink-0 shadow-md hover:bg-[#0077b5] transition-all active:scale-95"
+                                        onClick={() => window.dispatchEvent(new CustomEvent('open-chat-modal', { detail: { ad } }))}
+                                    >
+                                        <Send className="w-5 h-5 ml-0.5" />
+                                    </button>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Action Buttons Row */}
                             <div className="grid grid-cols-4 gap-2 relative">
@@ -461,7 +561,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
 
                                             {/* Chat Button - ALWAYS SHOW */}
                                             <button
-                                                className="col-span-1 bg-white border border-slate-500 text-slate-700 text-xs py-2 rounded-md hover:bg-slate-50 transition-colors"
+                                                className="col-span-1 bg-[#1A202C] text-white text-xs py-2 rounded-md hover:bg-black transition-colors"
                                                 onClick={() => {
                                                     window.dispatchEvent(new CustomEvent('open-chat-modal', { detail: { ad } }));
                                                 }}
@@ -603,36 +703,65 @@ I have sent my CV for your review.`;
                                             });
 
                                             return (
-                                                <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2 mb-2 p-0 pt-1 rounded-lg">
-                                                    {sortedFeatures.map(([key, value]) => (
-                                                        <div key={key} className="flex items-center gap-1.5">
-                                                            <span className="text-xs text-black whitespace-nowrap shrink-0">{key}:</span>
-                                                            <span className="text-xs text-black">{String(value)}</span>
-                                                        </div>
-                                                    ))}
+                                                <div className="grid grid-cols-1 gap-y-1 mt-2 mb-2 p-0 pt-1 rounded-lg">
+                                                    {sortedFeatures.map(([key, value]) => {
+                                                        const featureData = matchedSub?.features?.find((f: any) => f.name === key);
+                                                        const linkedSubId = featureData?.subcategory?._id || featureData?.subcategory;
+                                                        const linkedSub = subcategories.find((s: any) => s._id === linkedSubId);
+                                                        const linkedSubName = linkedSub?.name;
+
+                                                        const parentCatId = linkedSub?.category?._id || linkedSub?.category;
+                                                        const parentCat = categories.find((c: any) => c._id === parentCatId);
+                                                        const parentCatName = parentCat?.name;
+
+                                                        return (
+                                                            <div key={key} className="flex items-center gap-1.5">
+                                                                <span className="text-xs text-black whitespace-nowrap shrink-0">{key}:</span>
+                                                                <span
+                                                                    className={cn(
+                                                                        "text-xs text-black font-bold outline-none",
+                                                                        linkedSubName && "cursor-pointer hover:text-[#0088cc] hover:underline transition-colors"
+                                                                    )}
+                                                                    onClick={() => {
+                                                                        if (linkedSubName) {
+                                                                            const params = new URLSearchParams();
+                                                                            if (parentCatName) params.set('category', parentCatName);
+                                                                            params.set('subCategory', linkedSubName);
+                                                                            router.push(`/dashboard?${params.toString()}`);
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    {String(value)}
+                                                                </span>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             );
                                         })()}
-                                        <div className="text-xs text-slate-500 leading-relaxed relative">
-                                            <p className={`whitespace-pre-wrap ${!isDescriptionExpanded ? 'line-clamp-2' : ''}`}>
-                                                {ad.description}
-                                                {isDescriptionExpanded && (
+                                        <div className="mt-3">
+                                            <h3 className="text-xs font-bold text-black mb-1.5">{t('description')}</h3>
+                                            <div className="text-xs text-slate-500 leading-relaxed relative">
+                                                <p className={`whitespace-pre-wrap ${!isDescriptionExpanded ? 'line-clamp-2' : ''}`}>
+                                                    {ad.description}
+                                                    {isDescriptionExpanded && (
+                                                        <button
+                                                            onClick={() => setIsDescriptionExpanded(false)}
+                                                            className="ml-2 text-xs font-bold text-black hover:underline"
+                                                        >
+                                                            {t('show_less')}
+                                                        </button>
+                                                    )}
+                                                </p>
+                                                {!isDescriptionExpanded && (
                                                     <button
-                                                        onClick={() => setIsDescriptionExpanded(false)}
-                                                        className="ml-2 text-xs font-bold text-black hover:underline"
+                                                        onClick={() => setIsDescriptionExpanded(true)}
+                                                        className="absolute bottom-0 right-0 bg-white pl-2 text-xs font-bold text-black shadow-[-20px_0_20px_white] hover:text-[#0088cc]"
                                                     >
-                                                        {t('show_less')}
+                                                        ...{t('read_more')}
                                                     </button>
                                                 )}
-                                            </p>
-                                            {!isDescriptionExpanded && (
-                                                <button
-                                                    onClick={() => setIsDescriptionExpanded(true)}
-                                                    className="absolute bottom-0 right-0 bg-white pl-1 text-xs font-bold text-black"
-                                                >
-                                                    ...{t('read_more')}
-                                                </button>
-                                            )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -671,7 +800,7 @@ I have sent my CV for your review.`;
                                                     loading="lazy"
                                                 />
                                                 {/* Top Left Badge */}
-                                                <div className="absolute top-2 left-2 bg-teal-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm shadow-sm">
+                                                <div className="absolute top-2 left-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm shadow-sm">
                                                     FEATURED
                                                 </div>
                                                 {/* Top Right Star */}
@@ -691,8 +820,13 @@ I have sent my CV for your review.`;
                                                         <span className="truncate max-w-[100px]">{pad.category}</span>
                                                     </div>
                                                 </div>
-                                                <div className="text-sm text-black">
-                                                    {pad.price ? `৳${pad.price.toLocaleString()}` : 'Price on ask'}
+                                                <div className="text-sm text-black flex items-center gap-1.5 flex-wrap">
+                                                    <span>{pad.price ? `৳ ${pad.price.toLocaleString()}` : t('price_on_ask')}</span>
+                                                    {pad.price && (
+                                                        <span className="text-[10px] text-slate-500 font-normal">
+                                                            ({pad.priceType === 'Negotiable' ? t('price_negotiable') : t('price_fixed')})
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -815,8 +949,13 @@ I have sent my CV for your review.`;
                                                         <span className="truncate max-w-[80px]">{sad.category}</span>
                                                     </div>
                                                 </div>
-                                                <div className="text-sm text-slate-900">
-                                                    {sad.price ? `৳ ${sad.price.toLocaleString()}` : 'Price on ask'}
+                                                <div className="text-sm text-slate-900 flex items-center gap-1.5 flex-wrap">
+                                                    <span>{sad.price ? `৳ ${sad.price.toLocaleString()}` : t('price_on_ask')}</span>
+                                                    {sad.price && (
+                                                        <span className="text-[10px] text-slate-500 font-normal">
+                                                            ({sad.priceType === 'Negotiable' ? t('price_negotiable') : t('price_fixed')})
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -918,10 +1057,16 @@ I have sent my CV for your review.`;
                                 </div>
                                 <div
                                     onClick={() => {
-                                        // Scroll to similar ads
-                                        setShowOptionsPopup(false);
-                                        const el = document.getElementById('similar-section');
-                                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                                        const cat = typeof ad.category === 'object' ? ad.category?.name : ad.category;
+                                        const sub = typeof ad.subCategory === 'object' ? ad.subCategory?.name : ad.subCategory;
+                                        const loc = typeof ad.location === 'object' ? ad.location?.name : ad.location;
+
+                                        const params = new URLSearchParams();
+                                        if (cat) params.set('category', cat);
+                                        if (sub) params.set('subCategory', sub);
+                                        if (loc) params.set('location', loc);
+
+                                        window.location.href = `/dashboard?${params.toString()}`;
                                     }}
                                     className="flex flex-col items-center gap-1 cursor-pointer group"
                                 >
@@ -931,12 +1076,36 @@ I have sent my CV for your review.`;
                                     <span className="text-[10px] text-slate-600 font-medium">Similar</span>
                                 </div>
                                 <div
-                                    onClick={() => {
+                                    onClick={async () => {
                                         if (navigator.share) {
-                                            navigator.share({
-                                                title: ad.headline,
-                                                url: window.location.href
-                                            });
+                                            try {
+                                                const shareData: any = {
+                                                    title: ad.headline,
+                                                    text: ad.headline,
+                                                    url: adLink
+                                                };
+
+                                                // Try to include the first image if available
+                                                if (ad.images && ad.images.length > 0) {
+                                                    try {
+                                                        const imgUrl = getImageUrl(ad.images[0]);
+                                                        const response = await fetch(imgUrl);
+                                                        const blob = await response.blob();
+                                                        const file = new File([blob], 'ad-image.jpg', { type: blob.type });
+
+                                                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                                                            shareData.files = [file];
+                                                        }
+                                                    } catch (imageErr) {
+                                                        console.error("Error preparing image for share:", imageErr);
+                                                        // Fallback to basic share below
+                                                    }
+                                                }
+
+                                                await navigator.share(shareData);
+                                            } catch (err) {
+                                                console.error("Error sharing:", err);
+                                            }
                                         }
                                     }}
                                     className="flex flex-col items-center gap-1 cursor-pointer group"
@@ -981,12 +1150,12 @@ I have sent my CV for your review.`;
                                     <div className={cn(
                                         "w-10 h-10 rounded-full shadow-sm border flex items-center justify-center transition-colors",
                                         isFavorited
-                                            ? "bg-rose-500 border-rose-600 text-white"
+                                            ? "bg-blue-500 border-blue-600 text-white"
                                             : "bg-slate-200 border-slate-100 group-hover:bg-slate-300 text-slate-700"
                                     )}>
                                         <Heart className={cn("w-5 h-5", isFavorited && "fill-current")} />
                                     </div>
-                                    <span className={cn("text-[10px] font-medium", isFavorited ? "text-rose-600" : "text-slate-600")}>
+                                    <span className={cn("text-[10px] font-medium", isFavorited ? "text-blue-600" : "text-slate-600")}>
                                         {isFavorited ? 'Saved' : 'Save'}
                                     </span>
                                 </div>
@@ -996,11 +1165,18 @@ I have sent my CV for your review.`;
                                     </div>
                                     <span className="text-[10px] text-slate-600 font-medium">Report</span>
                                 </div>
-                                <div className="flex flex-col items-center gap-1 cursor-pointer group">
+                                <div
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(adLink);
+                                        toast.success('Link copied!');
+                                        setShowOptionsPopup(false);
+                                    }}
+                                    className="flex flex-col items-center gap-1 cursor-pointer group"
+                                >
                                     <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-100 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
                                         <UserSquare2 className="w-5 h-5 text-slate-700" />
                                     </div>
-                                    <span className="text-[10px] text-slate-600 font-medium">Post ID</span>
+                                    <span className="text-[10px] text-slate-600 font-medium">Copy Link</span>
                                 </div>
                             </div>
                         </div>

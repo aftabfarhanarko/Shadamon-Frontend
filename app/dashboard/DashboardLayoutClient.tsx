@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams, useParams } from 'next/navigation';
+import { useRouter, useSearchParams, useParams, usePathname } from 'next/navigation';
 import {
     User, Search, Bell, MessageSquare, Globe,
     Home, Plus, Inbox, LogOut, Settings, Menu, X,
@@ -59,6 +59,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     const { t, language, setLanguage } = useLanguage();
     const router = useRouter();
     const searchParams = useSearchParams();
+    const pathname = usePathname();
 
     const [isPostAdModalOpen, setIsPostAdModalOpen] = useState(false);
     const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
@@ -361,7 +362,19 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             setViewingUserId(profileId);
             setIsAccountModalOpen(true);
         }
-    }, [searchParams]);
+
+        // Handle direct /dashboard/post-ad route
+        if (pathname === '/dashboard/post-ad') {
+            const token = Cookies.get('token');
+            if (!token) {
+                setMobileEntryReason('post_ad');
+                setIsMobileEntryModalOpen(true);
+            } else {
+                setTempMobile("");
+                setIsPostAdModalOpen(true);
+            }
+        }
+    }, [searchParams, pathname]);
 
     // Apply Site Settings (Favicon, etc)
     useEffect(() => {
@@ -700,12 +713,12 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
                         {/* Section 3: 230px (Post Free) */}
                         <div className="w-[230px] flex-none">
-                            <button
-                                onClick={handleAddAdClick}
-                                className="w-full bg-[#EDF2F7] border border-slate-400 shadow-sm text-black py-1.5 rounded text-sm uppercase tracking-widest"
+                            <Link
+                                href="/dashboard/post-ad"
+                                className="w-full bg-[#EDF2F7] border border-slate-400 shadow-sm text-black py-1.5 rounded text-sm uppercase tracking-widest flex items-center justify-center"
                             >
                                 Post Free
-                            </button>
+                            </Link>
                         </div>
                         {/* Balancing Spacer */}
                         <div className="w-[70px] flex-none hidden lg:block"></div>
@@ -726,12 +739,12 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 </button>
 
                 <div className="relative -top-6">
-                    <button
-                        onClick={handleAddAdClick}
+                    <Link
+                        href="/dashboard/post-ad"
                         className="w-14 h-14 bg-brand-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-brand-600/30 hover:scale-105 active:scale-95 transition-all"
                     >
                         <Plus className="w-7 h-7" />
-                    </button>
+                    </Link>
                 </div>
 
                 <Link
@@ -919,16 +932,24 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 onClose={() => {
                     setIsPostAdModalOpen(false);
                     setAdToEdit(null);
+                    if (pathname === '/dashboard/post-ad') {
+                        router.push('/dashboard');
+                    }
                 }}
                 editAd={adToEdit}
                 initialMobile={tempMobile} // Pass temp mobile
                 onSuccess={(newAd) => {
+                    setIsPostAdModalOpen(false);
                     // Dispatch custom event to tell Dashboard to refetch
                     window.dispatchEvent(new Event('refresh-ads'));
 
                     // Open Account Activity Modal and go to Post tab
                     setAccountModalInitialTab('Post');
                     setIsAccountModalOpen(true);
+
+                    if (pathname === '/dashboard/post-ad') {
+                        router.replace('/dashboard');
+                    }
                 }}
             />
 
@@ -991,7 +1012,12 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
             <MobileEntryModal
                 isOpen={isMobileEntryModalOpen}
-                onClose={() => setIsMobileEntryModalOpen(false)}
+                onClose={() => {
+                    setIsMobileEntryModalOpen(false);
+                    if (pathname === '/dashboard/post-ad') {
+                        router.push('/dashboard');
+                    }
+                }}
                 onUserExists={(mobile) => {
                     setTempMobile(mobile);
                     setIsMobileEntryModalOpen(false);

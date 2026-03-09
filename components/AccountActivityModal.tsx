@@ -1523,7 +1523,7 @@ I have sent my CV for your review.`;
                                         />
                                     </div>
                                     {/* Action Button */}
-                                    <div className="col-span-1">
+                                    {/* <div className="col-span-1">
                                         <label className="block text-xs text-slate-500 mb-0.5">Page Communicate buttion</label>
                                         <div className="relative">
                                             <select
@@ -1538,7 +1538,7 @@ I have sent my CV for your review.`;
                                             </select>
                                             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                         </div>
-                                    </div>
+                                    </div> */}
 
 
 

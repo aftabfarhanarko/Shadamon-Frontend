@@ -1251,12 +1251,13 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                         placeholder=" "
                                                         value={newAdditionalNumber}
                                                         onChange={(e) => setNewAdditionalNumber(e.target.value)}
+                                                        disabled={additionalPhones.length >= 5}
                                                     />
                                                     <label
                                                         htmlFor="additional_phone"
                                                         className="absolute text-[12px] text-slate-400 duration-300 transform -translate-y-3 scale-90 top-1 z-10 origin-[0] bg-white px-2 peer-focus:px-2 peer-focus:text-black peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-1 peer-focus:scale-90 peer-focus:-translate-y-3 left-2"
                                                     >
-                                                        Add Another Number
+                                                        {additionalPhones.length >= 5 ? "Limit reached (Max 5)" : "Add Another Number"}
                                                     </label>
                                                 </div>
 
@@ -1265,6 +1266,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                         value={newAdditionalType}
                                                         onChange={(e) => setNewAdditionalType(e.target.value)}
                                                         className="w-full h-full bg-transparent text-[11px] text-black font-medium pl-2 focus:outline-none appearance-none cursor-pointer"
+                                                        disabled={additionalPhones.length >= 5}
                                                     >
                                                         <option value="whatsapp">WhatsApp</option>
                                                         <option value="telegram">Telegram</option>
@@ -1277,7 +1279,11 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                 <button
                                                     type="button"
                                                     onClick={addAdditionalPhone}
-                                                    className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center active:scale-90 transition-transform shrink-0 shadow-sm"
+                                                    disabled={additionalPhones.length >= 5}
+                                                    className={cn(
+                                                        "w-8 h-8 rounded-full text-white flex items-center justify-center active:scale-90 transition-transform shrink-0 shadow-sm",
+                                                        additionalPhones.length >= 5 ? "bg-slate-300 cursor-not-allowed" : "bg-black"
+                                                    )}
                                                 >
                                                     <Plus className="w-4 h-4" />
                                                 </button>

@@ -422,7 +422,10 @@ const translations: Record<string, Record<Language, string>> = {
     'get_our_app': { bn: 'অ্যাপ ডাউনলোড করুন', en: 'Get Our App' },
     'get_more': { bn: 'আরও দেখুন', en: 'Get More' },
     'newsportal': { bn: 'নিউজ পোর্টাল', en: 'Newsportal' },
-    'social_platform': { bn: 'সোশ্যাল প্ল্যাটফর্ম', en: 'Social Platform' }
+    'social_platform': { bn: 'সোশ্যাল প্ল্যাটফর্ম', en: 'Social Platform' },
+    'price_negotiable': { bn: 'আলোচনা সাপেক্ষে', en: 'Negotiable' },
+    'price_fixed': { bn: 'ফিক্সড', en: 'Fixed' },
+    'price_on_ask': { bn: 'জিজ্ঞাসা করুন', en: 'Price on ask' }
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
