@@ -405,7 +405,11 @@ const translations: Record<string, Record<Language, string>> = {
     'promote_now': { bn: 'এখনই প্রচার করুন', en: 'Promote Now' },
     'popular_seller': { bn: 'জনপ্রিয় বিক্রেতা', en: 'Popular Seller' },
     'visited': { bn: 'ভিজিট', en: 'visited' },
+    'followers': { bn: 'ফলোয়ার', en: 'Followers' },
+    'follower': { bn: 'ফলোয়ার', en: 'Follower' },
     'follow': { bn: 'ফলো', en: 'Follow' },
+    'Follow': { bn: 'ফলো', en: 'Follow' },
+    'Unfollow': { bn: 'আনফলো', en: 'Unfollow' },
     'all_categories': { bn: 'সকল ক্যাটাগরি', en: 'All Categories' },
     'sell': { bn: 'বিক্রয়', en: 'Sell' },
     'rent': { bn: 'ভাড়া', en: 'Rent' },
@@ -425,7 +429,8 @@ const translations: Record<string, Record<Language, string>> = {
     'social_platform': { bn: 'সোশ্যাল প্ল্যাটফর্ম', en: 'Social Platform' },
     'price_negotiable': { bn: 'আলোচনা সাপেক্ষে', en: 'Negotiable' },
     'price_fixed': { bn: 'ফিক্সড', en: 'Fixed' },
-    'price_on_ask': { bn: 'জিজ্ঞাসা করুন', en: 'Price on ask' }
+    'price_on_ask': { bn: 'জিজ্ঞাসা করুন', en: 'Price on ask' },
+    'follow_us': { bn: 'ফলো করুন', en: 'Follow Us' }
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);

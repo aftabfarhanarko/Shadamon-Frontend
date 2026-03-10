@@ -637,7 +637,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[1100] flex items-start justify-center pt-20">
+        <div className="fixed inset-0 z-[1500] flex items-start justify-center pt-20">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
             <div className="relative bg-[#F4F6F8] w-full max-w-[565px] rounded-t-lg rounded-b-none overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300 shadow-2xl h-[calc(100vh-80px)]">

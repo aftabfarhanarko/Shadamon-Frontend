@@ -26,6 +26,7 @@ import AdDetailsModal from '../../components/AdDetailsModal';
 import MessageModal from '../../components/MessageModal';
 import ChatMessageModal from '../../components/ChatMessageModal';
 import InfoModal from '../../components/InfoModal';
+import { toast } from 'react-hot-toast';
 
 
 import { API_BASE_URL } from '../../utils/apiConfig';
@@ -224,17 +225,28 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
     const { settings, fetchDashboardSettings } = useSettings();
 
-    // Socket.io for notifications
+    // Socket.io for notifications and Auth Sync
     useEffect(() => {
-        const token = Cookies.get('token');
-        if (!token) return;
-
-        // Fetch current user to get ID for socket room
         const fetchUserAndSetupSocket = async () => {
+            const token = Cookies.get('token');
+            if (!token) {
+                setUser(null);
+                setUnreadCount(0);
+                if (socket) {
+                    socket.disconnect();
+                    setSocket(null);
+                }
+                return;
+            }
+
             try {
                 const res = await fetch(`${API_BASE_URL}/api/user/me`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                if (!res.ok) {
+                    setUser(null);
+                    return;
+                }
                 const userData = await res.json();
 
                 if (userData && userData._id) {
@@ -247,7 +259,6 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
                     newSocket.on('notification received', () => {
                         fetchUnreadCount();
-                        // Also trigger refresh for Open MessageModal if it's listening
                         window.dispatchEvent(new Event('refresh-unread-count'));
                     });
 
@@ -261,6 +272,17 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         };
 
         fetchUserAndSetupSocket();
+
+        // Listen for auth changes
+        const handleAuthChange = () => {
+            fetchUserAndSetupSocket();
+            fetchUnreadCount();
+        };
+
+        window.addEventListener('auth-change', handleAuthChange);
+        return () => {
+            window.removeEventListener('auth-change', handleAuthChange);
+        };
     }, []);
 
     // Mobile Sidebar State
@@ -442,7 +464,16 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
     const handleLogout = () => {
         Cookies.remove('token');
-        router.push('/login');
+        Cookies.remove('user');
+        setUser(null);
+        setUnreadCount(0);
+        if (socket) {
+            socket.disconnect();
+            setSocket(null);
+        }
+        window.dispatchEvent(new Event('auth-change'));
+        toast.success("Logged out successfully");
+        window.location.href = '/dashboard';
     };
 
     const toggleLanguage = () => {

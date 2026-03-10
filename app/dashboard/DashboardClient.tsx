@@ -8,7 +8,7 @@ import {
     Search, MapPin, Menu, X, Plus, Inbox, User, Globe, Clock, Eye, ArrowRight, ArrowLeft, ArrowUp, SlidersHorizontal, Bookmark
 } from 'lucide-react';
 import { RiCheckboxCircleFill } from 'react-icons/ri';
-import { FaAndroid } from 'react-icons/fa';
+import { FaAndroid, FaFacebookF, FaTiktok, FaInstagram, FaYoutube } from 'react-icons/fa';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -78,6 +78,7 @@ interface ActiveAd {
         photo?: string;
         verifiedBy?: string;
         mVerified?: boolean;
+        followers?: any[];
     };
 
     deliveryCount: number;
@@ -96,6 +97,7 @@ interface PremiumUser {
     mVerified?: boolean;
     hasPromotedAds?: boolean;
     profileViews?: number;
+    followers?: any[];
     isFollowing?: boolean;
 }
 
@@ -421,15 +423,11 @@ export default function DashboardClient() {
                         return views < limit;
                     });
 
-                    if (filtered.length > 0) {
-                        filteredAds = filtered;
-                        filteredAds.forEach((ad: ActiveAd) => {
-                            sessionViews[ad._id] = (sessionViews[ad._id] || 0) + 1;
-                        });
-                        sessionStorage.setItem('ad_session_views', JSON.stringify(sessionViews));
-                    } else if (adsRes.data.length > 0) {
-                        filteredAds = adsRes.data;
-                    }
+                    filteredAds = filtered;
+                    filteredAds.forEach((ad: ActiveAd) => {
+                        sessionViews[ad._id] = (sessionViews[ad._id] || 0) + 1;
+                    });
+                    sessionStorage.setItem('ad_session_views', JSON.stringify(sessionViews));
                 }
 
                 setAds(prev => {
@@ -472,6 +470,7 @@ export default function DashboardClient() {
                             storeName: ad.user.storeName,
                             verifiedBy: ad.user.verifiedBy,
                             mVerified: ad.user.mVerified,
+                            followers: ad.user.followers || [],
                             hasPromotedAds: false
                         });
 
@@ -550,8 +549,17 @@ export default function DashboardClient() {
             const data = await res.json();
             if (res.ok) {
                 setPremiumUsers(prev => prev.map(u =>
-                    u._id === userId ? { ...u, isFollowing: data.isFollowing } : u
+                    u._id === userId ? { ...u, isFollowing: data.isFollowing, followers: data.followers } : u
                 ));
+
+                // Sync with other components
+                window.dispatchEvent(new CustomEvent('user-followed', {
+                    detail: {
+                        userId: userId,
+                        isFollowing: data.isFollowing,
+                        followers: data.followers
+                    }
+                }));
             }
         } catch (error) {
             console.error("Follow error", error);
@@ -598,11 +606,27 @@ export default function DashboardClient() {
             setFilters(prev => ({ ...prev, search: query }));
         };
 
+        const handleGlobalFollow = (e: any) => {
+            const { userId, isFollowing, followers } = e.detail;
+            setPremiumUsers(prev => prev.map(u =>
+                u._id === userId ? { ...u, isFollowing, followers } : u
+            ));
+            setAds(prev => prev.map(ad => {
+                const adUserId = ad.user?._id || ad.user;
+                if (adUserId === userId) {
+                    return { ...ad, user: { ...ad.user, followers } };
+                }
+                return ad;
+            }));
+        };
+
         window.addEventListener('refresh-ads', handleRefresh);
+        window.addEventListener('user-followed', handleGlobalFollow as EventListener);
         window.addEventListener('show-search-results', handleSearch as EventListener);
         window.addEventListener('reset-saved-search', handleResetSavedSearch);
         return () => {
             window.removeEventListener('refresh-ads', handleRefresh);
+            window.removeEventListener('user-followed', handleGlobalFollow as EventListener);
             window.removeEventListener('show-search-results', handleSearch as EventListener);
             window.removeEventListener('reset-saved-search', handleResetSavedSearch);
         };
@@ -860,6 +884,24 @@ export default function DashboardClient() {
                             >
                                 {t('promote')}
                             </button>
+                        </div>
+
+                        <div className="space-y-2.5">
+                            <p className="text-[12px] text-black font-semibold">{t('follow_us')}</p>
+                            <div className="flex items-center gap-3">
+                                <button className="w-9 h-9 bg-[#1877F2] rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity">
+                                    <FaFacebookF className="w-5 h-5" />
+                                </button>
+                                <button className="w-9 h-9 bg-black rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity">
+                                    <FaTiktok className="w-4 h-4" />
+                                </button>
+                                <button className="w-9 h-9 bg-gradient-to-tr from-[#FFB344] via-[#F43C78] to-[#9932CC] rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity">
+                                    <FaInstagram className="w-5 h-5" />
+                                </button>
+                                <button className="w-9 h-9 bg-[#FF0000] rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity">
+                                    <FaYoutube className="w-5 h-5" />
+                                </button>
+                            </div>
                         </div>
 
                         <div className="space-y-2.5">
@@ -1548,7 +1590,7 @@ export default function DashboardClient() {
                                                 {user.mVerified && <VerifiedBadge />}
                                             </div>
                                             <p className="text-[10px] text-slate-500 -mt-0.5">
-                                                {user.profileViews || 0} {t('visited')}
+                                                {user.followers?.length || 0} {t('follower')}
                                             </p>
                                         </div>
                                         <button

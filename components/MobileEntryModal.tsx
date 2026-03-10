@@ -194,7 +194,7 @@ export default function MobileEntryModal({ isOpen, onClose, onUserExists, onUser
     };
 
     return (
-        <div className="fixed inset-0 z-[1100] flex items-start justify-center pt-20">
+        <div className="fixed inset-0 z-[1500] flex items-start justify-center pt-20">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 

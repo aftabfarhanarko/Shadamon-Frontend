@@ -87,6 +87,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
                 Cookies.set('token', data.token, { expires: 7 });
                 toast.success("Login Successful!");
                 onClose();
+                window.dispatchEvent(new Event('auth-change'));
                 if (onSuccess) {
                     onSuccess();
                 } else {
@@ -148,6 +149,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
                 Cookies.set('token', data.token, { expires: 7 });
                 toast.success("Password updated and logged in!");
                 onClose();
+                window.dispatchEvent(new Event('auth-change'));
                 window.location.reload();
             } else {
                 toast.error(data.message || "Verification failed");
@@ -182,6 +184,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
                             if (data.token) {
                                 Cookies.set('token', data.token, { expires: 7 });
                                 toast.success("Login Successful!");
+                                window.dispatchEvent(new Event('auth-change'));
                                 window.location.reload();
                             } else {
                                 toast.error(data.message || "Facebook login failed");
@@ -231,7 +234,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
     };
 
     return (
-        <div className="fixed inset-0 z-[1100] flex items-start justify-center pt-20">
+        <div className="fixed inset-0 z-[1500] flex items-start justify-center pt-20">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 

@@ -69,6 +69,23 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
     const { settings } = useSettings();
     const popupRef = useRef<HTMLDivElement>(null);
     const optionsButtonRef = useRef<HTMLButtonElement>(null);
+    const [localFollowers, setLocalFollowers] = useState<any[]>(ad.user?.followers || []);
+
+    useEffect(() => {
+        setLocalFollowers(ad.user?.followers || []);
+    }, [ad.user?.followers]);
+
+    useEffect(() => {
+        const handleGlobalFollow = (e: any) => {
+            const { userId, followers } = e.detail;
+            const adUserId = ad.user?._id || ad.user;
+            if (adUserId === userId) {
+                setLocalFollowers(followers);
+            }
+        };
+        window.addEventListener('user-followed', handleGlobalFollow as EventListener);
+        return () => window.removeEventListener('user-followed', handleGlobalFollow as EventListener);
+    }, [ad.user?._id, ad.user]);
 
     // Close popup when clicking outside
     useEffect(() => {
@@ -890,7 +907,7 @@ I have sent my CV for your review.`;
                                     </div>
 
                                     <div className="text-[11px] text-slate-500 leading-none mb-1">
-                                        {(ad as any).user?.followers || 0} Follower
+                                        {localFollowers?.length || 0} {t('follower')}
                                     </div>
 
                                     <div className="flex items-center gap-0.5">

@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, ArrowLeft, Star, Heart, MapPin, Share2, MoreVertical, Edit2, Plus, ArrowRight, Grid, User, Clock, Settings, FileText, Activity, Trash2, CheckCircle2, ChevronDown, Check, LogOut, ExternalLink, Search, Bell } from 'lucide-react';
+import { X, ArrowLeft, Star, Heart, MapPin, Share2, MoreVertical, Edit2, Plus, ArrowRight, Grid, User, Clock, Settings, FileText, Activity, Trash2, CheckCircle2, ChevronDown, Check, LogOut, ExternalLink, Search, Bell, Copy } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import Cookies from 'js-cookie';
 import { API_BASE_URL } from '../utils/apiConfig';
 import { getImageUrl } from '../utils/imageUrl';
+import { useLanguage } from '../app/context/LanguageContext';
 import Image from 'next/image';
 import { toast } from 'react-hot-toast';
 import PromoteModal from './PromoteModal';
@@ -45,6 +46,7 @@ interface AccountActivityModalProps {
 export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPostAd, onEditAd, initialTab = 'Page' }: AccountActivityModalProps) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'Page' | 'Profile' | 'Settings' | 'Post' | 'Activity'>(initialTab);
+    const { t } = useLanguage();
     const [productTab, setProductTab] = useState<'All' | 'Popular'>('All');
     const [expandedSetting, setExpandedSetting] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -57,7 +59,14 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
     const [followLoading, setFollowLoading] = useState(false);
     const [selectedAdForDeletion, setSelectedAdForDeletion] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isUrlChecking, setIsUrlChecking] = useState(false);
     const [urlStatus, setUrlStatus] = useState<'idle' | 'available' | 'taken'>('idle');
+
+    // Password Change State
+    const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '' });
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
+    const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+    const [showAboutInfo, setShowAboutInfo] = useState(false);
 
 
     // Promote Modal State
@@ -230,6 +239,7 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
     };
 
     useEffect(() => {
+        setShowAboutInfo(false);
         if (activeTab === 'Activity') {
             fetchActivityData();
             fetchCategories();
@@ -365,9 +375,9 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
         additionalMobiles: [''],
         storeName: '',
         actionType: 'call',
+        sellerPageUrl: '',
         aboutBusiness: '',
         contact: ''
-
     });
 
     // Refs for file inputs
@@ -391,15 +401,36 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
                 additionalMobiles: userData.additionalMobiles?.length ? [...userData.additionalMobiles, ''] : [''],
                 storeName: userData.storeName || '',
                 actionType: userData.actionType || 'call',
+                sellerPageUrl: userData.sellerPageUrl || '',
                 aboutBusiness: userData.aboutBusiness || '',
                 contact: userData.contact || ''
-
+            });
+        } else if (!userData) {
+            // Reset to empty values when no user is selected or logged in
+            setProfileForm({
+                name: '',
+                dob: '',
+                gender: '',
+                location: '',
+                education: '',
+                aboutYourself: '',
+                profession: '',
+                professionalExperience: '',
+                email: '',
+                mobile: '',
+                additionalMobiles: [''],
+                storeName: '',
+                actionType: 'call',
+                sellerPageUrl: '',
+                aboutBusiness: '',
+                contact: ''
             });
         }
     }, [userData, isOwnAccount]);
 
     const handleProfileChange = (field: string, value: any) => {
         setProfileForm(prev => ({ ...prev, [field]: value }));
+        if (field === 'sellerPageUrl') setUrlStatus('idle');
     };
 
     const handleMobileArrayChange = (index: number, value: string) => {
@@ -520,18 +551,37 @@ I have sent my CV for your review.`;
 
     useEffect(() => {
         if (isOpen) {
+            setShowAboutInfo(false);
             if (initialTab) {
                 setActiveTab(initialTab);
             }
             fetchUserData();
+        } else {
+            // Aggressively reset all states when closed to prevent stale data
+            setProductTab('All');
+            setShowAboutInfo(false);
+            setUserData(null);
+            setUserAds([]);
+            setIsOwnAccount(false);
+            setIsFollowing(false);
+            setActiveTab(initialTab);
         }
 
         const handleRefresh = () => {
             if (isOpen) fetchUserData();
         };
+
+        const handleAuthSync = () => {
+            if (isOpen) fetchUserData();
+        };
+
         window.addEventListener('refresh-ads', handleRefresh);
-        return () => window.removeEventListener('refresh-ads', handleRefresh);
-    }, [isOpen, userId, initialTab]);
+        window.addEventListener('auth-change', handleAuthSync);
+        return () => {
+            window.removeEventListener('refresh-ads', handleRefresh);
+            window.removeEventListener('auth-change', handleAuthSync);
+        };
+    }, [isOpen, userId, initialTab, t]);
 
     const fetchUserData = async () => {
         setLoading(true);
@@ -620,8 +670,17 @@ I have sent my CV for your review.`;
                         const userPublicAds = adsData.data.filter((ad: any) => {
                             const adUser = ad.user || {};
                             const adUserId = adUser._id || ad.user;
-                            // Otherwise fallback to targetUserId which must be ID
-                            return adUserId === targetUserId;
+                            const adUserUrl = adUser.sellerPageUrl;
+
+                            // If we have resolved user data, use the unique _id
+                            if (userData?._id) return adUserId === userData._id;
+
+                            // Otherwise fallback to targetUserId which might be ID or username
+                            if (targetUserId.match(/^[0-9a-fA-F]{24}$/)) {
+                                return adUserId === targetUserId;
+                            } else {
+                                return adUserUrl === targetUserId;
+                            }
                         });
                         setUserAds(userPublicAds);
                     }
@@ -661,34 +720,20 @@ I have sent my CV for your review.`;
                 const newStatus = data.isFollowing;
                 setIsFollowing(newStatus);
 
-                // Optimistic update of followers count
-                setUserData((prev: any) => {
-                    const currentCount = prev.followers?.length || 0; // Use length if array, or number if count
-                    // Since backend schema has array of ObjectIds, but public profile might populate or just return array
-                    // Let's assume array of IDs for now based on Schema.
-                    // If backend response updated count, use it. But simple toggle:
+                // Update followers from backend response
+                setUserData((prev: any) => ({
+                    ...prev,
+                    followers: data.followers
+                }));
 
-                    let newFollowers = prev.followers ? [...prev.followers] : [];
-                    // We don't have current user ID easily here without fetching 'me' again, 
-                    // so exact array manipulation is hard. But we can just use a number if we trust the toggle.
-                    // Actually, if we just want to update the COUNT displayed:
-                    // We can check if prev.followers is number or array.
-                    // Schema says array.
-
-                    // Simple hack: if we don't have the ID to push/pull, just rely on re-fetch or simple count increment on UI separated from array.
-                    // But 'userData' holds the source of truth for 'followers' count display (displayUser.followers).
-
-                    // Let's reload profile to be safe and accurate or just mock it:
-                    if (newStatus) {
-                        // Add a placeholder to increase length
-                        return { ...prev, followers: [...(prev.followers || []), 'placeholder_id'] };
-                    } else {
-                        // Remove one
-                        const newArr = prev.followers ? [...prev.followers] : [];
-                        newArr.pop();
-                        return { ...prev, followers: newArr };
+                // Dispatch event for other components to sync
+                window.dispatchEvent(new CustomEvent('user-followed', {
+                    detail: {
+                        userId: userData._id,
+                        isFollowing: newStatus,
+                        followers: data.followers
                     }
-                });
+                }));
 
                 toast.success(newStatus ? "Followed successfully" : "Unfollowed successfully");
             } else {
@@ -722,8 +767,96 @@ I have sent my CV for your review.`;
         window.dispatchEvent(new Event('auth-change'));
         toast.success("Logged out successfully");
         onClose();
-        router.push('/dashboard');
-        router.refresh();
+        window.location.href = '/dashboard';
+    };
+
+    const handleCheckUrl = async () => {
+        if (!profileForm.sellerPageUrl) return;
+        setIsUrlChecking(true);
+        setUrlStatus('idle');
+        try {
+            const token = Cookies.get('token');
+            const res = await fetch(`${API_BASE_URL}/api/user/check-url`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ url: profileForm.sellerPageUrl })
+            });
+            const data = await res.json();
+            if (data.available) {
+                setUrlStatus('available');
+                toast.success("URL is available!");
+            } else {
+                setUrlStatus('taken');
+                toast.error("URL is already taken.");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to check URL");
+        } finally {
+            setIsUrlChecking(false);
+        }
+    };
+
+    const handleChangePassword = async () => {
+        if (!passwordData.currentPassword || !passwordData.newPassword) {
+            toast.error("Both current and new passwords are required");
+            return;
+        }
+        setIsChangingPassword(true);
+        try {
+            const token = Cookies.get('token');
+            const res = await fetch(`${API_BASE_URL}/api/user/change-password`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(passwordData)
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                toast.success("Password changed successfully");
+                setPasswordData({ currentPassword: '', newPassword: '' });
+                setExpandedSetting(null);
+            } else {
+                toast.error(data.message || "Failed to change password");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("An error occurred");
+        } finally {
+            setIsChangingPassword(false);
+        }
+    };
+
+    const handleRequestDelete = async () => {
+        setIsDeletingAccount(true);
+        try {
+            const token = Cookies.get('token');
+            const res = await fetch(`${API_BASE_URL}/api/user/delete-request`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                toast.success("Account delete requested successfully");
+                setExpandedSetting(null);
+                // Optionally update local user status or log out
+                setUserData((prev: any) => ({ ...prev, accountStatus: 'r_delete' }));
+            } else {
+                toast.error(data.message || "Failed to request delete");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("An error occurred");
+        } finally {
+            setIsDeletingAccount(false);
+        }
     };
 
     // Handle Image Upload
@@ -966,7 +1099,7 @@ I have sent my CV for your review.`;
                                                                 : "bg-slate-100 text-black border-slate-300 hover:bg-slate-200"
                                                         )}
                                                     >
-                                                        {followLoading ? '...' : (isFollowing ? 'Unfollow' : 'Follow')}
+                                                        {followLoading ? '...' : (isFollowing ? t('Unfollow') : t('Follow'))}
                                                     </button>
                                                 )}
                                             </div>
@@ -997,7 +1130,7 @@ I have sent my CV for your review.`;
 
                                             {/* Row 3: Followers */}
                                             <div className="text-black text-sm">
-                                                <span className="text-black">{displayUser.followersCount}</span> Follower
+                                                <span className="text-black">{displayUser.followersCount}</span> {t('follower')}
                                             </div>
                                         </div>
                                     </div>
@@ -1007,26 +1140,31 @@ I have sent my CV for your review.`;
 
                                     {/* Action Buttons */}
                                     {/* {!isOwnAccount && ( */}
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => isOwnAccount && setActiveTab('Profile')}
-                                            className="px-4 py-1.5 bg-slate-300 text-black text-sm rounded-full hover:bg-slate-300 transition-colors"
-                                        >
-                                            About
-                                        </button>
-                                        <button
-                                            onClick={() => isOwnAccount && setActiveTab('Profile')}
-                                            className="px-4 py-1.5 bg-slate-300 text-black text-sm rounded-full hover:bg-slate-300 transition-colors"
-                                        >
-                                            Contact
-                                        </button>
-                                        {!isOwnAccount && (
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex items-center gap-2">
                                             <button
-                                                onClick={handleSendMessage}
-                                                className="px-4 py-1.5 bg-slate-300 text-black text-sm rounded-full hover:bg-slate-300 transition-colors"
+                                                onClick={() => setShowAboutInfo(!showAboutInfo)}
+                                                className="px-4 py-1.5 bg-slate-100 text-black text-xs font-bold rounded-full hover:bg-slate-200 transition-colors border border-slate-300"
                                             >
-                                                Send Message
+                                                About
                                             </button>
+                                            {!isOwnAccount && (
+                                                <button
+                                                    onClick={handleSendMessage}
+                                                    className="px-4 py-1.5 bg-slate-100 text-black text-xs font-bold rounded-full hover:bg-slate-200 transition-colors border border-slate-300"
+                                                >
+                                                    Send Message
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {showAboutInfo && displayUser.aboutBusiness && (
+                                            <div className="mt-2 bg-slate-50 border border-slate-200 rounded-lg p-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                <h4 className="text-[13px] font-bold text-slate-800 mb-1">Business Information</h4>
+                                                <p className="text-[12px] text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                                    {displayUser.aboutBusiness}
+                                                </p>
+                                            </div>
                                         )}
                                     </div>
                                     {/* )} */}
@@ -1034,7 +1172,14 @@ I have sent my CV for your review.`;
                             </div>
 
                             <button
-                                onClick={onOpenPostAd}
+                                onClick={() => {
+                                    const token = Cookies.get('token');
+                                    if (!token) {
+                                        window.dispatchEvent(new CustomEvent('open-mobile-entry-modal'));
+                                        return;
+                                    }
+                                    if (onOpenPostAd) onOpenPostAd();
+                                }}
                                 className="w-full bg-white px-3 py-2 mb-2 flex items-center justify-between shadow-sm border-y border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors text-left"
                             >
                                 <span className="text-[12px] text-slate-500 italic">Promote your Business, <span className="font-bold text-slate-800 not-italic border-b border-transparent hover:border-slate-800">Create a post</span></span>
@@ -1075,10 +1220,15 @@ I have sent my CV for your review.`;
                                                         onClick={() => handleSeeLiveClick(ad)}
                                                         className="bg-white rounded shadow-sm overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition-shadow"
                                                     >
-                                                        <div className="h-24 bg-slate-900 relative">
+                                                        <div className="h-24 bg-slate-900 relative flex items-center justify-center overflow-hidden">
                                                             {/* Image */}
                                                             {ad.images && ad.images.length > 0 && (
-                                                                <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-contain" loading="lazy" />
+                                                                <>
+                                                                    <div className="absolute inset-0">
+                                                                        <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover blur-md opacity-50 scale-105" loading="lazy" />
+                                                                    </div>
+                                                                    <img src={getImageUrl(ad.images[0]) || undefined} className="relative max-w-full max-h-full object-contain z-10" loading="lazy" />
+                                                                </>
                                                             )}
                                                             {(ad.status === 'pause' || ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) && (
                                                                 <div className="absolute top-1 left-1 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
@@ -1111,7 +1261,7 @@ I have sent my CV for your review.`;
                                                                     handlePromoteClick(ad);
                                                                 }}
                                                                 className={cn(
-                                                                    "mt-auto w-full text-white text-[10px] font-bold py-1 rounded transition-colors",
+                                                                    "mt-auto w-full text-white text-[10px] font-bold py-2.5 rounded transition-colors",
                                                                     ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)
                                                                         ? "bg-amber-500 hover:bg-amber-600"
                                                                         : "bg-[#0088cc] hover:bg-[#0077b5]"
@@ -1131,9 +1281,14 @@ I have sent my CV for your review.`;
                                                     onClick={() => handleSeeLiveClick(ad)}
                                                     className="bg-white rounded shadow-sm overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition-shadow"
                                                 >
-                                                    <div className="h-40 bg-slate-900 relative">
+                                                    <div className="h-40 bg-slate-900 relative flex items-center justify-center overflow-hidden">
                                                         {ad.images && ad.images.length > 0 && (
-                                                            <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover" loading="lazy" />
+                                                            <>
+                                                                <div className="absolute inset-0">
+                                                                    <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover blur-md opacity-50 scale-105" loading="lazy" />
+                                                                </div>
+                                                                <img src={getImageUrl(ad.images[0]) || undefined} className="relative max-w-full max-h-full object-contain z-10" loading="lazy" />
+                                                            </>
                                                         )}
                                                         {(ad.status === 'pause' || ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) && (
                                                             <div className="absolute top-2 left-2 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
@@ -1157,7 +1312,7 @@ I have sent my CV for your review.`;
                                                             {ad.headline}
                                                         </div>
                                                         <div className={cn(
-                                                            "flex items-center gap-2 rounded px-1 py-0.5",
+                                                            "flex items-center gap-2 rounded px-1 py-1.5",
                                                             ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)
                                                                 ? "bg-amber-500"
                                                                 : "bg-[#0088cc]"
@@ -1171,7 +1326,7 @@ I have sent my CV for your review.`;
                                                                     }
                                                                     handlePromoteClick(ad);
                                                                 }}
-                                                                className="flex-1 text-white text-[11px] font-bold pl-1"
+                                                                className="flex-1 text-white text-[11px] font-bold pl-1 py-1.5"
                                                             >
                                                                 {ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) ? 'Preparing' : 'Promote This Post'}
                                                             </button>
@@ -1189,9 +1344,14 @@ I have sent my CV for your review.`;
                                                             onClick={() => handleSeeLiveClick(ad)}
                                                             className="bg-white rounded shadow-sm overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition-shadow"
                                                         >
-                                                            <div className="h-24 bg-slate-100 relative">
+                                                            <div className="h-24 bg-slate-100 relative flex items-center justify-center overflow-hidden">
                                                                 {ad.images && ad.images.length > 0 && (
-                                                                    <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover" loading="lazy" />
+                                                                    <>
+                                                                        <div className="absolute inset-0">
+                                                                            <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover blur-md opacity-30 scale-105" loading="lazy" />
+                                                                        </div>
+                                                                        <img src={getImageUrl(ad.images[0]) || undefined} className="relative max-w-full max-h-full object-contain z-10" loading="lazy" />
+                                                                    </>
                                                                 )}
                                                                 {(ad.status === 'pause' || ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) && (
                                                                     <div className="absolute top-1 left-1 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
@@ -1224,7 +1384,7 @@ I have sent my CV for your review.`;
                                                                         handlePromoteClick(ad);
                                                                     }}
                                                                     className={cn(
-                                                                        "mt-auto w-full text-white text-[10px] font-bold py-1 rounded transition-colors",
+                                                                        "mt-auto w-full text-white text-[10px] font-bold py-2.5 rounded transition-colors",
                                                                         ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)
                                                                             ? "bg-amber-500 hover:bg-amber-600"
                                                                             : "bg-[#0088cc] hover:bg-[#0077b5]"
@@ -1259,9 +1419,14 @@ I have sent my CV for your review.`;
                             {/* Top Profile Section */}
                             <div className="flex items-start gap-4 mb-3">
                                 <div className="relative">
-                                    <div className="w-16 h-16 rounded-full overflow-hidden border border-slate-200 bg-slate-100">
+                                    <div className="w-16 h-16 rounded-full overflow-hidden border border-slate-200 bg-slate-100 relative flex items-center justify-center">
                                         {displayUser.photo ? (
-                                            <img src={displayUser.photo} className="w-full h-full object-cover" loading="lazy" />
+                                            <>
+                                                <div className="absolute inset-0">
+                                                    <img src={displayUser.photo} className="w-full h-full object-cover blur-sm opacity-30 scale-105" loading="lazy" />
+                                                </div>
+                                                <img src={displayUser.photo} className="relative max-w-full max-h-full object-contain z-10" loading="lazy" />
+                                            </>
                                         ) : (
                                             <div className="w-full h-full bg-[#1e8e7f]" />
                                             /* Matching the green color in image roughly */
@@ -1290,9 +1455,24 @@ I have sent my CV for your review.`;
                                         <span>{profileForm.mobile}</span>
                                         <User className="w-3 h-3 ml-1" />
                                     </div> */}
-                                    <p className="text-[10px] text-slate-400 leading-tight mt-0.5">
+                                    <p className="text-[14px] text-slate-400 leading-tight mt-0.5">
                                         Add a Verification Badge to your profile to become a trusted Customer or Seller.
                                     </p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <p className="text-[14px] font-bold text-slate-400 leading-tight shrink-0">
+                                            {displayUser._id}
+                                        </p>
+                                        <button
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(displayUser._id);
+                                                toast.success("User ID copied to clipboard");
+                                            }}
+                                            className="p-1 text-slate-400 hover:text-[#0088cc] hover:bg-blue-50 rounded transition-all group"
+                                            title="Copy ID"
+                                        >
+                                            <Copy className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1542,29 +1722,64 @@ I have sent my CV for your review.`;
 
 
 
+                                    {/* Seller Page Username */}
+                                    <div className="col-span-2">
+                                        <label className="block text-xs text-slate-500 mb-0.5">Seller Page User Name</label>
+                                        <div className="flex rounded border border-slate-200 overflow-hidden bg-slate-50/50 focus-within:border-blue-500">
+                                            <span className="px-2 py-1 text-slate-400 text-sm border-r border-slate-200 bg-slate-100">www.shadamon.com/</span>
+                                            <input
+                                                type="text"
+                                                readOnly={!isOwnAccount}
+                                                value={profileForm.sellerPageUrl}
+                                                onChange={(e) => handleProfileChange('sellerPageUrl', e.target.value)}
+                                                className="flex-1 px-2 py-1 text-sm text-black outline-none bg-transparent font-bold"
+                                            />
+                                            {profileForm.sellerPageUrl && isOwnAccount && (
+                                                <button
+                                                    onClick={handleCheckUrl}
+                                                    disabled={isUrlChecking}
+                                                    className={cn(
+                                                        "px-3 py-1 text-xs transition-colors",
+                                                        urlStatus === 'available' ? "bg-green-100 text-green-700 hover:bg-green-200" :
+                                                            urlStatus === 'taken' ? "bg-red-100 text-red-700 hover:bg-red-200" :
+                                                                "bg-slate-200 text-slate-600 hover:bg-slate-300"
+                                                    )}
+                                                >
+                                                    {isUrlChecking ? "..." : urlStatus === 'available' ? "Available" : urlStatus === 'taken' ? "Taken" : "Check"}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+
                                     {/* About Business */}
                                     <div className="col-span-2">
-                                        <label className="block text-xs text-slate-500 mb-0.5">About Business</label>
+                                        <div className="flex justify-between items-center mb-0.5">
+                                            <label className="block text-xs text-slate-500">About Business</label>
+                                            <span className={cn(
+                                                "text-[10px]",
+                                                (profileForm.aboutBusiness?.trim().split(/\s+/).filter(Boolean).length || 0) > 200 ? "text-red-500 font-bold" : "text-slate-400"
+                                            )}>
+                                                {profileForm.aboutBusiness?.trim().split(/\s+/).filter(Boolean).length || 0}/200 words
+                                            </span>
+                                        </div>
                                         <textarea
                                             readOnly={!isOwnAccount}
                                             value={profileForm.aboutBusiness}
-                                            onChange={(e) => handleProfileChange('aboutBusiness', e.target.value)}
+                                            onChange={(e) => {
+                                                const words = e.target.value.trim().split(/\s+/).filter(Boolean);
+                                                if (words.length <= 200 || e.target.value.length < profileForm.aboutBusiness.length) {
+                                                    handleProfileChange('aboutBusiness', e.target.value);
+                                                } else {
+                                                    // Truncate to 200 words
+                                                    const truncated = e.target.value.trim().split(/\s+/).filter(Boolean).slice(0, 200).join(' ');
+                                                    handleProfileChange('aboutBusiness', truncated);
+                                                }
+                                            }}
                                             rows={2}
                                             className="w-full border border-slate-200 rounded px-2 py-1 text-sm text-black outline-none focus:border-blue-500 bg-slate-50/50 resize-none"
                                         />
                                     </div>
 
-                                    {/* Contact */}
-                                    <div className="col-span-2">
-                                        <label className="block text-xs text-slate-500 mb-0.5">Contact</label>
-                                        <input
-                                            type="text"
-                                            readOnly={!isOwnAccount}
-                                            value={profileForm.contact}
-                                            onChange={(e) => handleProfileChange('contact', e.target.value)}
-                                            className="w-full border border-slate-200 rounded px-2 py-1 text-sm text-black outline-none focus:border-blue-500 bg-slate-50/50"
-                                        />
-                                    </div>
                                 </div>
                                 {isOwnAccount && (
                                     <button onClick={saveProfile} className="w-full bg-blue-500 text-white py-2.5 rounded-lg text-sm hover:bg-blue-600 transition-colors shadow-sm mb-4">
@@ -1577,108 +1792,61 @@ I have sent my CV for your review.`;
 
                     {activeTab === 'Settings' && (
                         <div className="p-4 space-y-3 pb-20">
-                            {/* App Theme Mode */}
+                            {/* Change Password */}
                             <div className="bg-white rounded border border-slate-200 overflow-hidden">
                                 <div
                                     className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50"
-                                    onClick={() => toggleSetting('theme')}
+                                    onClick={() => toggleSetting('password')}
                                 >
-                                    <span className="text-sm font-medium text-slate-700">App Theme Mode</span>
-                                    <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", expandedSetting === 'theme' && "rotate-180")} />
+                                    <span className="text-sm font-medium text-slate-700">Change Password</span>
+                                    <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", expandedSetting === 'password' && "rotate-180")} />
                                 </div>
-                                {expandedSetting === 'theme' && (
-                                    <div className="p-3 pt-0 border-t border-slate-100 bg-slate-50/50">
-                                        <div className="flex items-center justify-between pt-2">
-                                            <span className="text-xs text-slate-600">Default Mode</span>
-                                            <div className="w-8 h-4 bg-slate-200 rounded-full relative cursor-pointer">
-                                                <div className="w-4 h-4 bg-white rounded-full shadow-sm absolute left-0 top-0 border border-slate-200"></div>
-                                            </div>
+                                {expandedSetting === 'password' && (
+                                    <div className="p-3 border-t border-slate-100 bg-slate-50/50 space-y-2">
+                                        <div>
+                                            <input
+                                                type="password"
+                                                placeholder="Current Password"
+                                                value={passwordData.currentPassword}
+                                                onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                                                className="w-full border border-slate-200 rounded px-3 py-2 text-sm text-black outline-none focus:border-blue-500"
+                                            />
                                         </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Delete Account */}
-                            <div className="bg-white rounded border border-slate-200 overflow-hidden">
-                                <div
-                                    className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50"
-                                    onClick={() => toggleSetting('delete')}
-                                >
-                                    <span className="text-sm font-bold text-slate-800">Delete account</span>
-                                    <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", expandedSetting === 'delete' && "rotate-180")} />
-                                </div>
-                                {expandedSetting === 'delete' && (
-                                    <div className="p-3 border-t border-slate-100 bg-slate-50">
-                                        <div className="bg-slate-100 p-3 rounded border border-slate-200">
-                                            <div className="flex justify-between items-start mb-1">
-                                                <h4 className="font-bold text-sm text-slate-800">Account Delete</h4>
-                                            </div>
-                                            <p className="text-[10px] text-slate-500 mb-2 leading-tight">
-                                                You Can Delete Your Account After 7 Days from Registration Time.
-                                            </p>
-                                            <div className="relative">
-                                                <select className="w-full text-[11px] border border-slate-200 rounded p-1.5 outline-none bg-white appearance-none pr-6">
-                                                    <option>I Reason</option>
-                                                    <option>No longer need account</option>
-                                                    <option>Privacy concerns</option>
-                                                    <option>Other</option>
-                                                </select>
-                                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
-                                            </div>
+                                        <div>
+                                            <input
+                                                type="password"
+                                                placeholder="New Password"
+                                                value={passwordData.newPassword}
+                                                onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                                                className="w-full border border-slate-200 rounded px-3 py-2 text-sm text-black outline-none focus:border-blue-500"
+                                            />
                                         </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Clear Cache */}
-                            <div className="bg-white rounded border border-slate-200 overflow-hidden">
-                                <div
-                                    className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50"
-                                    onClick={() => toggleSetting('cache')}
-                                >
-                                    <span className="text-sm font-medium text-slate-700">Clear Cache</span>
-                                    <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", expandedSetting === 'cache' && "rotate-180")} />
-                                </div>
-                                {expandedSetting === 'cache' && (
-                                    <div className="p-3 border-t border-slate-100 bg-slate-50/50 flex justify-center">
-                                        <button className="text-xs bg-slate-200 text-slate-600 px-4 py-1.5 rounded font-bold hover:bg-slate-300 transition-colors">
-                                            Clear Data
+                                        <button
+                                            onClick={handleChangePassword}
+                                            disabled={isChangingPassword}
+                                            className="w-full bg-blue-500 text-white py-2 rounded text-sm hover:bg-blue-600 transition-colors shadow-sm disabled:opacity-50"
+                                        >
+                                            {isChangingPassword ? "Saving..." : "Change Password"}
                                         </button>
                                     </div>
                                 )}
                             </div>
 
-                            {/* About Us */}
-                            <div className="bg-white rounded border border-slate-200 overflow-hidden">
-                                <div
-                                    className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50"
-                                    onClick={() => toggleSetting('about')}
-                                >
-                                    <span className="text-sm font-medium text-slate-700">About Us</span>
-                                    <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", expandedSetting === 'about' && "rotate-180")} />
-                                </div>
-                                {expandedSetting === 'about' && (
-                                    <div className="p-3 border-t border-slate-100 bg-slate-50/50 text-xs text-slate-500 leading-relaxed">
-                                        <p>Shadamon is an online marketplace connecting people for buying, selling, and exchanging goods and services. Our mission is to provide equal opportunities for everyone.</p>
+                            {/* Delete Account */}
+                            <div className="bg-white rounded border border-red-200 overflow-hidden">
+                                <div className="p-3 bg-red-50 flex items-center justify-between">
+                                    <div className="pr-4">
+                                        <span className="text-sm font-bold text-red-600 block">Delete account</span>
+                                        <span className="text-[10px] text-red-500 leading-tight block mt-0.5">You can delete your account after 7 days from registration.</span>
                                     </div>
-                                )}
-                            </div>
-
-                            {/* Privacy Policy */}
-                            <div className="bg-white rounded border border-slate-200 overflow-hidden">
-                                <div
-                                    className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50"
-                                    onClick={() => toggleSetting('privacy')}
-                                >
-                                    <span className="text-sm font-medium text-slate-700">Privacy-Policy, Term & condition</span>
-                                    <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", expandedSetting === 'privacy' && "rotate-180")} />
+                                    <button
+                                        onClick={handleRequestDelete}
+                                        disabled={isDeletingAccount}
+                                        className="shrink-0 bg-red-500 text-white px-3 py-1.5 rounded text-xs hover:bg-red-600 font-bold disabled:opacity-50 whitespace-nowrap"
+                                    >
+                                        {isDeletingAccount ? "Requesting..." : "Delete Request"}
+                                    </button>
                                 </div>
-                                {expandedSetting === 'privacy' && (
-                                    <div className="p-3 border-t border-slate-100 bg-slate-50/50 text-xs text-slate-500 space-y-2">
-                                        <p><strong>Privacy Policy:</strong> We protect your data securely.</p>
-                                        <p><strong>Terms:</strong> By using our service, you agree to our terms.</p>
-                                    </div>
-                                )}
                             </div>
 
                             {/* Logout */}
@@ -1742,14 +1910,19 @@ I have sent my CV for your review.`;
                                                 <div className="p-3 flex gap-3">
                                                     {/* Left: Image (Spans height of details + performance) */}
                                                     <div className="w-[150px] shrink-0">
-                                                        <div className="h-[120px] bg-slate-100 relative rounded overflow-hidden group mb-2">
+                                                        <div className="h-[120px] bg-slate-100 relative rounded overflow-hidden group mb-2 flex items-center justify-center">
                                                             {ad.images && ad.images.length > 0 ? (
-                                                                <img
-                                                                    src={getImageUrl(ad.images[0]) || undefined}
-                                                                    className="w-full h-full object-cover"
-                                                                    alt={ad.headline}
-                                                                    loading="lazy"
-                                                                />
+                                                                <>
+                                                                    <div className="absolute inset-0">
+                                                                        <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover blur-md opacity-30 scale-105" loading="lazy" />
+                                                                    </div>
+                                                                    <img
+                                                                        src={getImageUrl(ad.images[0]) || undefined}
+                                                                        className="relative max-w-full max-h-full object-contain z-10"
+                                                                        alt={ad.headline}
+                                                                        loading="lazy"
+                                                                    />
+                                                                </>
                                                             ) : (
                                                                 <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">No Image</div>
                                                             )}

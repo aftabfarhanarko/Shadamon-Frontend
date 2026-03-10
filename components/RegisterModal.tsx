@@ -72,6 +72,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, initia
                             if (data.token) {
                                 Cookies.set('token', data.token, { expires: 7 });
                                 toast.success("Login Successful!");
+                                window.dispatchEvent(new Event('auth-change'));
                                 window.location.reload();
                             } else {
                                 toast.error(data.message || "Facebook login failed");
@@ -105,6 +106,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, initia
                                 if (data.token) {
                                     Cookies.set('token', data.token, { expires: 7 });
                                     toast.success("Login Successful!");
+                                    window.dispatchEvent(new Event('auth-change'));
                                     window.location.reload();
                                 } else {
                                     toast.error(data.message || "Google login failed");
@@ -199,7 +201,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, initia
     };
 
     return (
-        <div className="fixed inset-0 z-[1100] flex items-start justify-center pt-20">
+        <div className="fixed inset-0 z-[1500] flex items-start justify-center pt-20">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
