@@ -209,7 +209,7 @@ export default function DashboardClient() {
 
     const getAdUrl = (ad: any) => {
         const params = new URLSearchParams(searchParams.toString());
-        params.set('ad', `${createSlug(ad.headline)}--${ad._id}`);
+        params.set('ad', ad._id);
         return `?${params.toString()}`;
     };
 
