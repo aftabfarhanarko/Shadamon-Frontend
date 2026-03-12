@@ -9,6 +9,7 @@ import Cookies from 'js-cookie';
 import { API_BASE_URL } from '../utils/apiConfig';
 import { getImageUrl } from '../utils/imageUrl';
 import { useSettings } from '../app/context/SettingsContext';
+import { useLanguage } from '../app/context/LanguageContext';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs));
@@ -64,6 +65,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [loading, setLoading] = useState(false);
     const [loadingData, setLoadingData] = useState(false);
     const { settings, fetchPostAdSettings } = useSettings();
+    const { t } = useLanguage();
 
     // Form State
     const [headline, setHeadline] = useState("");
@@ -280,7 +282,12 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
 
                     if (!editAd) {
                         // Pre-fill preferences if available
-                        if (userData.category && userData.location) {
+                        if (userData.lastPostCategory && userData.lastPostLocation) {
+                            setSelectedCategory(userData.lastPostCategory);
+                            setSelectedSubCategory(userData.lastPostSubCategory || "");
+                            setSelectedLocation(userData.lastPostLocation);
+                            setSelectedSubLocation(userData.lastPostSubLocation || "");
+                        } else if (userData.category && userData.location) {
                             setSelectedCategory(userData.category);
                             setSelectedLocation(userData.location);
                         }
@@ -652,14 +659,14 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                     <div className="flex flex-col h-full bg-white">
                         <div className="p-2.5 border-b border-slate-100 flex items-center gap-3">
                             <button onClick={() => setView('form')}><ArrowLeft className="w-5 h-5 text-slate-600" /></button>
-                            <h2 className="text-[16px] text-slate-800">Pick a Category</h2>
+                            <h2 className="text-[16px] text-slate-800">{t('pick_a_category')}</h2>
                         </div>
                         <div className="p-2.5 bg-slate-50">
                             <div className="bg-white rounded-lg border border-slate-200 flex items-center px-3 py-2 gap-2">
                                 <Search className="w-4 h-4 text-slate-400" />
                                 <input
                                     type="text"
-                                    placeholder="Search for a category"
+                                    placeholder={t('search_category')}
                                     className="flex-1 text-sm outline-none placeholder:text-slate-400"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -731,14 +738,14 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                     <div className="flex flex-col h-full bg-white">
                         <div className="p-2.5 border-b border-slate-100 flex items-center gap-3">
                             <button onClick={() => setView('category')}><ArrowLeft className="w-5 h-5 text-slate-600" /></button>
-                            <h2 className="text-[16px] text-slate-800">Pick a Location</h2>
+                            <h2 className="text-[16px] text-slate-800">{t('pick_a_location')}</h2>
                         </div>
                         <div className="p-2.5 bg-slate-50">
                             <div className="bg-white rounded-lg border border-slate-200 flex items-center px-3 py-2 gap-2">
                                 <Search className="w-4 h-4 text-slate-400" />
                                 <input
                                     type="text"
-                                    placeholder="Search for a location"
+                                    placeholder={t('search_location')}
                                     className="flex-1 text-sm outline-none placeholder:text-slate-400"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -783,7 +790,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                         </div>
                         <div className="flex-1 overflow-y-auto">
                             <div className="p-4">
-                                <h3 className="text-sm mb-4 font-bold text-slate-800">Select Area</h3>
+                                <h3 className="text-sm mb-4 font-bold text-slate-800">{t('select_area')}</h3>
                                 <div className="divide-y divide-slate-100">
                                     {locations.find(l => l.name === tempLocation)?.subLocations.map(sub => (
                                         <button
@@ -814,7 +821,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                     <div className="flex flex-col h-full bg-white">
                         <div className="p-2.5 border-b border-slate-100 flex items-center gap-3">
                             <button onClick={() => setView('location')}><ArrowLeft className="w-5 h-5 text-slate-600" /></button>
-                            <h2 className="text-[16px] text-slate-800">Add Details</h2>
+                            <h2 className="text-[16px] text-slate-800">{t('add_details')}</h2>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-6">
                             {categories.find(c => c.name === selectedCategory)?.subcategories.find(s => s.name === selectedSubCategory)?.features?.map((feature) => (
@@ -923,7 +930,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                 onClick={() => setView('form')}
                                 className="w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-slate-800 transition-colors"
                             >
-                                Continue
+                                {t('continue_btn')}
                             </button>
                         </div>
                     </div>
@@ -936,7 +943,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                 <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-black hover:bg-slate-50 rounded-full transition-colors">
                                     <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
                                 </button>
-                                <h2 className="text-[16px] text-black font-medium">{editAd ? "Edit your AD" : "Post your AD"}</h2>
+                                <h2 className="text-[16px] text-black font-medium">{editAd ? t('edit_your_ad') : t('post_your_ad')}</h2>
                             </div>
                             <button onClick={onClose} className="p-1 hover:bg-slate-50 rounded-full">
                                 <X className="w-5 h-5 text-black" />
@@ -953,7 +960,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                             ) : showOtpVerification ? (
                                 <div className="bg-white rounded-lg p-5 border border-slate-100 min-h-[300px] flex flex-col items-center justify-center font-sans animate-in fade-in slide-in-from-right duration-300">
                                     <div className="w-full max-w-xs space-y-4">
-                                        <h3 className="text-[17px] font-bold text-slate-800 text-left">Enter the OTP</h3>
+                                        <h3 className="text-[17px] font-bold text-slate-800 text-left">{t('enter_the_otp')}</h3>
                                         {isEditingPhone ? (
                                             <div className="flex items-center gap-2">
                                                 <input
@@ -967,18 +974,18 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                     onClick={handlePhoneEditSubmit}
                                                     className="bg-black text-white text-[11px] px-3 py-1.5 rounded font-bold hover:bg-slate-800 transition-colors whitespace-nowrap"
                                                 >
-                                                    Resend OTP
+                                                    {t('resend_otp')}
                                                 </button>
                                             </div>
                                         ) : (
                                             <p className="text-[14px] text-slate-500 text-left">
-                                                Enter the OTP sent to <span className="font-bold text-slate-700">{phone}</span>
+                                                {t('enter_otp_sent_to')} <span className="font-bold text-slate-700">{phone}</span>
                                                 {!(userData?.mobile || initialMobile || editAd?.phone) && (
                                                     <button
                                                         onClick={() => setIsEditingPhone(true)}
                                                         className="text-[#0088cc] hover:underline cursor-pointer font-medium ml-1"
                                                     >
-                                                        Edit
+                                                        {t('edit_btn')}
                                                     </button>
                                                 )}
                                             </p>
@@ -1000,7 +1007,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                         </div>
                                         <div className="flex items-center justify-between pt-2">
                                             <div className="text-[13px] text-slate-400 font-medium">
-                                                Resend OTP <span className="text-slate-800 font-bold ml-1">
+                                                {t('resend_otp')} <span className="text-slate-800 font-bold ml-1">
                                                     {Math.floor(otpTimer / 60)}:{(otpTimer % 60).toString().padStart(2, '0')}
                                                 </span>
                                             </div>
@@ -1011,7 +1018,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                 disabled={loading}
                                                 className="w-full bg-[#1A1A1A] text-white py-3 rounded-lg text-sm font-bold tracking-wider hover:bg-black transition-colors disabled:opacity-50"
                                             >
-                                                {loading ? "VERIFYING..." : "VERIFY & POST"}
+                                                {loading ? t('verifying') : t('verify_and_post_btn')}
                                             </button>
                                         </div>
                                     </div>
@@ -1044,8 +1051,8 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                     <div className="bg-slate-200 p-1.5 rounded-lg shadow-sm">
                                                         <Camera className="w-4 h-4 text-slate-600" />
                                                     </div>
-                                                    <span className="text-[10px] font-bold leading-none">Add Photos</span>
-                                                    <span className="text-[8px] font-medium opacity-70 text-center">or drag and drop</span>
+                                                    <span className="text-[10px] font-bold leading-none">{t('add_photos_btn')}</span>
+                                                    <span className="text-[8px] font-medium opacity-70 text-center">{t('drag_and_drop')}</span>
                                                 </button>
                                             )}
                                         </div>
@@ -1057,7 +1064,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                             <input
                                                 ref={headlineInputRef}
                                                 type="text"
-                                                placeholder="Headline"
+                                                placeholder={t('headline_placeholder')}
                                                 value={headline}
                                                 onChange={(e) => setHeadline(e.target.value)}
                                                 onBlur={(e) => {
@@ -1074,7 +1081,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
 
                                         <div className="bg-white rounded-lg border border-slate-500 px-3 py-3">
                                             <textarea
-                                                placeholder="Description"
+                                                placeholder={t('description_placeholder')}
                                                 value={description}
                                                 onChange={(e) => setDescription(e.target.value)}
                                                 onBlur={(e) => {
@@ -1087,7 +1094,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                 }}
                                                 className="w-full text-sm text-black placeholder:text-slate-400 focus:outline-none px-1 bg-white resize-y min-h-[100px] block"
                                             />
-                                            <p className="text-[10px] text-black mt-2 px-1 leading-tight">*A nice & Detail Description Might Help your Product Sell Faster</p>
+                                            <p className="text-[10px] text-black mt-2 px-1 leading-tight">{t('description_help_text')}</p>
                                         </div>
                                     </div>
 
@@ -1103,7 +1110,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                     onClick={() => !editAd && setView('category')}
                                                 >
                                                     <span className={selectedCategory ? "text-black font-bold" : "text-slate-400"}>
-                                                        {selectedCategory || 'Category'}
+                                                        {selectedCategory || t('category')}
                                                     </span>
                                                     {!editAd && <ChevronDown className="w-3 h-3 text-slate-400" />}
                                                 </div>
@@ -1115,7 +1122,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                     onClick={() => !editAd && setView('category')}
                                                 >
                                                     <span className={selectedLocation ? "text-black font-bold" : "text-slate-400"}>
-                                                        {selectedLocation || 'Location'}
+                                                        {selectedLocation || t('location')}
                                                     </span>
                                                     {!editAd && <ChevronDown className="w-3 h-3 text-slate-400" />}
                                                 </div>
@@ -1125,7 +1132,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                     onClick={() => setView('category')}
                                                     className="text-[12px] text-[#0088cc] font-bold hover:underline"
                                                 >
-                                                    {(selectedCategory || selectedLocation) ? 'Change' : 'Select'}
+                                                    {(selectedCategory || selectedLocation) ? t('change_btn') : t('select_btn')}
                                                 </button>
                                             )}
                                         </div>
@@ -1164,8 +1171,8 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                     onChange={(e) => setPriceType(e.target.value)}
                                                     className="bg-transparent text-[12px] text-slate-700 font-medium pr-6 focus:outline-none appearance-none cursor-pointer"
                                                 >
-                                                    <option value="Negotiable">আলোচনা সাপেক্ষে</option>
-                                                    <option value="Fixed">ফিক্সড</option>
+                                                    <option value="Negotiable">{t('price_negotiable')}</option>
+                                                    <option value="Fixed">{t('price_fixed')}</option>
                                                 </select>
                                                 <ChevronDown className="absolute right-0 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                                             </div>
@@ -1178,7 +1185,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                 type="text"
                                                 value={name}
                                                 onChange={(e) => setName(e.target.value)}
-                                                placeholder="Name"
+                                                placeholder={t('name_placeholder')}
                                                 className="w-full text-[13px] text-black focus:outline-none placeholder:text-black px-1 border-b border-slate-500 pb-1"
                                             />
                                         </div>
@@ -1192,7 +1199,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                 value={phone}
                                                 readOnly={!!(userData?.mobile || initialMobile || editAd?.phone)}
                                                 onChange={(e) => setPhone(e.target.value)}
-                                                placeholder="Phone Number"
+                                                placeholder={t('phone_number_placeholder')}
                                                 className={cn(
                                                     "flex-1 text-[14px] text-black tracking-wide focus:outline-none bg-transparent",
                                                     (userData?.mobile || initialMobile || editAd?.phone) ? "cursor-not-allowed" : "cursor-text"
@@ -1221,7 +1228,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                     type="password"
                                                     value={password}
                                                     onChange={(e) => setPassword(e.target.value)}
-                                                    placeholder="Password"
+                                                    placeholder={t('password_placeholder')}
                                                     className="w-full text-[13px] text-black focus:outline-none placeholder:text-black px-1 border-b border-slate-500 pb-1"
                                                 />
                                             </div>
@@ -1257,7 +1264,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                         htmlFor="additional_phone"
                                                         className="absolute text-[12px] text-slate-400 duration-300 transform -translate-y-3 scale-90 top-1 z-10 origin-[0] bg-white px-2 peer-focus:px-2 peer-focus:text-black peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-1 peer-focus:scale-90 peer-focus:-translate-y-3 left-2"
                                                     >
-                                                        {additionalPhones.length >= 5 ? "Limit reached (Max 5)" : "Add Another Number"}
+                                                        {additionalPhones.length >= 5 ? t('limit_reached_max_5') : t('add_another_number')}
                                                     </label>
                                                 </div>
 
@@ -1296,7 +1303,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                     checked={hidePhone}
                                                     onChange={(e) => setHidePhone(e.target.checked)}
                                                 />
-                                                <span className="text-[11px] text-slate-400 font-medium whitespace-nowrap">Hide Number, Only Message</span>
+                                                <span className="text-[11px] text-slate-400 font-medium whitespace-nowrap">{t('hide_number_only_message')}</span>
                                             </label>
                                         </div>
 
@@ -1323,7 +1330,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                     : "bg-[#1A1A1A] text-white hover:bg-black"
                                             )}
                                         >
-                                            {loading ? (editAd ? "UPDATING..." : "POSTING...") : (editAd ? "EDIT AD" : "POST AD")}
+                                            {loading ? (editAd ? t('updating') : t('posting')) : (editAd ? t('edit_ad_btn') : t('post_ad_btn_1'))}
                                         </button>
                                         <label className="flex items-center gap-2 mt-3 cursor-pointer">
                                             <input
@@ -1333,7 +1340,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                 onChange={(e) => setHasReadRules(e.target.checked)}
                                             />
                                             <span className="text-[10px] text-slate-500 font-medium leading-none">
-                                                I have read and accept the <span className="text-cyan-500 underline">Terms and Conditions</span>
+                                                {t('i_have_read_accept')} <span className="text-cyan-500 underline">{t('terms_and_con')}</span>
                                             </span>
                                         </label>
                                     </div>
@@ -1345,13 +1352,13 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 {/* Floating Chat Icon */}
                 <div
                     className="absolute right-5 bottom-20 z-[210] cursor-pointer"
-                    onClick={() => window.open('https://m.me/shadamon.bd', '_blank')}
+                    onClick={() => window.open('https://m.me/shadamonDotCom', '_blank')}
                 >
                     <div className="flex flex-col items-center">
                         <button className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-white shadow-xl hover:scale-105 active:scale-95 transition-all mb-1">
                             <MessageCircle className="w-5 h-5 fill-white" />
                         </button>
-                        <button className="text-[11px] text-black font-bold">HelpChat</button>
+                        <button className="text-[11px] text-black font-bold">{t('help_chat')}</button>
                     </div>
                 </div>
                 {view === 'status' && submissionStatus && (
@@ -1361,9 +1368,9 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                 <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mb-6">
                                     <Loader2 className="w-10 h-10 text-amber-500 animate-[spin_3s_linear_infinite]" />
                                 </div>
-                                <h2 className="text-2xl font-bold text-slate-800 mb-3">আপনার বিজ্ঞাপনটি রিভিউতে আছে</h2>
+                                <h2 className="text-2xl font-bold text-slate-800 mb-3">{t('ad_under_review')}</h2>
                                 <p className="text-slate-600 mb-8 leading-relaxed max-w-sm mx-auto">
-                                    অ্যাডমিন আপনার বিজ্ঞাপনটি সফলভাবে চেক করলে এটি পাবলিশ হবে। বিজ্ঞাপন টি সরাসরি পাবলিশ করতে হলে ট্রাস্টেড মার্চেন্ট হতে পারেন। অথবা দ্রুত বিক্রয় করতে চাইলে বিজ্ঞাপনটি প্রমোট করতে পারেন।
+                                    {t('ad_under_review_desc')}
                                 </p>
                                 <div className="w-full space-y-3">
                                     <button
@@ -1373,13 +1380,13 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                         }}
                                         className="w-full py-4 bg-black text-white rounded-xl font-bold text-sm tracking-widest hover:bg-slate-900 transition-all flex items-center justify-center gap-2"
                                     >
-                                        আপনার অ্যাডটি প্রমোট করুন
+                                        {t('promote_your_ad')}
                                     </button>
                                     <button
                                         onClick={onClose}
                                         className="w-full py-4 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all"
                                     >
-                                        পরে করব
+                                        {t('do_it_later')}
                                     </button>
                                 </div>
                             </>
@@ -1388,9 +1395,9 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                 <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-6">
                                     <X className="w-10 h-10 text-red-500" />
                                 </div>
-                                <h2 className="text-2xl font-bold text-slate-800 mb-3">ফ্রি অ্যাড লিমিট শেষ হবেছে!</h2>
+                                <h2 className="text-2xl font-bold text-slate-800 mb-3">{t('free_ad_limit_reached')}</h2>
                                 <p className="text-slate-600 mb-8 leading-relaxed max-w-sm mx-auto">
-                                    আপনি আপনার ফ্রি অ্যাডের সীমা ({submissionStatus.limit}) অতিক্রম করেছেন। বিজ্ঞাপন জারি রাখতে এবং সরাসরি পাবলিশ করতে হলে অনুগ্রহ করে বিজ্ঞাপনটি এখন প্রমোট করুন।
+                                    {t('free_ad_limit_reached_desc')}
                                 </p>
                                 <div className="w-full space-y-3">
                                     <button
@@ -1400,13 +1407,13 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                         }}
                                         className="w-full py-4 bg-[#FF4F01] text-white rounded-xl font-bold text-sm tracking-widest hover:bg-[#e64600] transition-all flex items-center justify-center gap-2"
                                     >
-                                        অ্যাডটি প্রমোট করুন
+                                        {t('promote_your_ad')}
                                     </button>
                                     <button
                                         onClick={onClose}
                                         className="w-full py-4 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all"
                                     >
-                                        ফিরে যান
+                                        {t('go_back_btn')}
                                     </button>
                                 </div>
                             </>

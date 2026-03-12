@@ -1929,14 +1929,14 @@ I have sent my CV for your review.`;
                                                             {ad.status !== 'deleted' && ad.status !== 'pause' && ad.status !== 'review' && (
                                                                 <button
                                                                     onClick={() => handleSeeLiveClick(ad)}
-                                                                    className="absolute top-1 left-1 bg-white/90 text-[8px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm text-slate-700 hover:bg-white"
+                                                                    className="absolute top-1 left-1 z-20 bg-white/90 text-[8px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm text-slate-700 hover:bg-white"
                                                                 >
                                                                     See Live <ExternalLink className="w-2 h-2" />
                                                                 </button>
                                                             )}
                                                             {isOwnAccount && ad.status !== 'deleted' && (
                                                                 <div
-                                                                    className="absolute bottom-1 left-1 bg-white rounded-full w-4 h-4 flex items-center justify-center cursor-pointer shadow-sm border border-slate-300"
+                                                                    className="absolute bottom-1 left-1 z-20 bg-white rounded-full w-4 h-4 flex items-center justify-center cursor-pointer shadow-sm border border-slate-300"
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         setSelectedAdForDeletion(selectedAdForDeletion === ad._id ? null : ad._id);

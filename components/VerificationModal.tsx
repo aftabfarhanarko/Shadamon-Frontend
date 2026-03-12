@@ -244,7 +244,7 @@ export default function VerificationModal({ isOpen, onClose, onSuccess, verifica
                 {/* Floating Chat Icon */}
                 <div
                     className="absolute right-5 bottom-20 z-[210] cursor-pointer"
-                    onClick={() => window.open('https://m.me/shadamon.bd', '_blank')}
+                    onClick={() => window.open('https://m.me/shadamonDotCom', '_blank')}
                 >
                     <div className="flex flex-col items-center">
                         <button className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-white shadow-xl hover:scale-105 active:scale-95 transition-all mb-1">

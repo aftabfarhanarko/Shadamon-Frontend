@@ -329,7 +329,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
                             <div className="flex items-center justify-between text-[11px] text-black px-1 mb-4">
                                 <button
                                     className="hover:underline"
-                                    onClick={() => window.open('https://m.me/shadamon.bd', '_blank')}
+                                    onClick={() => window.open('https://m.me/shadamonDotCom', '_blank')}
                                 >HelpChat</button>
                                 <button
                                     className="hover:underline"
@@ -392,7 +392,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
                                     </div>
                                     {emailNotFound && (
                                         <div
-                                            onClick={() => window.open('https://m.me/shadamon.bd', '_blank')}
+                                            onClick={() => window.open('https://m.me/shadamonDotCom', '_blank')}
                                             className="bg-red-50 border border-red-200 p-3 rounded-lg cursor-pointer hover:bg-red-100 transition-all animate-in fade-in zoom-in-95 duration-200"
                                         >
                                             <p className="text-[12px] text-red-600 font-bold text-center leading-tight">
@@ -462,7 +462,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
                 {/* Floating Chat Icon */}
                 <div
                     className="absolute right-5 bottom-20 z-[210] cursor-pointer"
-                    onClick={() => window.open('https://m.me/shadamon.bd', '_blank')}
+                    onClick={() => window.open('https://m.me/shadamonDotCom', '_blank')}
                 >
                     <div className="flex flex-col items-center">
                         <button className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-white shadow-xl hover:scale-105 active:scale-95 transition-all mb-1">

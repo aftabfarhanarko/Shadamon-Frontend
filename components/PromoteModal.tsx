@@ -749,7 +749,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                         <div className="flex justify-between px-4 text-[11px] text-slate-500 font-medium">
                             <span
                                 className="cursor-pointer hover:text-slate-800"
-                                onClick={() => window.open('https://m.me/shadamon.bd', '_blank')}
+                                onClick={() => window.open('https://m.me/shadamonDotCom', '_blank')}
                             >
                                 HelpChat
                             </span>
@@ -775,12 +775,12 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                     জুট কম কে সরাণরি।
                                 </p>
                                 <div className="space-y-0.5 text-xs text-slate-700 mb-4">
-                                    <div><span className="font-bold">বিকাশ নাম্বার:</span> 0173 266 1224</div>
-                                    <div><span className="font-bold">রকেট নাম্বার:</span> 0173 266 1224-3</div>
+                                    <div><span className="font-bold">বিকাশ নাম্বার:</span>01732661224</div>
+                                    <div><span className="font-bold">রকেট নাম্বার:</span>01732661224</div>
                                 </div>
 
                                 <button
-                                    onClick={() => window.open('https://m.me/shadamon.bd', '_blank')}
+                                    onClick={() => window.open('https://m.me/shadamonDotCom', '_blank')}
                                     className="w-full bg-[#0088cc] text-white font-bold py-3 rounded-lg shadow-sm hover:bg-[#0077b5] transition-colors"
                                 >
                                     Message us

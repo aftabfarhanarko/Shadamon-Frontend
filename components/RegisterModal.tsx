@@ -411,7 +411,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, initia
                     <div className="flex items-center justify-center gap-2 mb-4 text-[11px] text-black">
                         <button
                             className="hover:text-black"
-                            onClick={() => window.open('https://m.me/shadamon.bd', '_blank')}
+                            onClick={() => window.open('https://m.me/shadamonDotCom', '_blank')}
                         >HelpChat</button>
                         <span>|</span>
                         <button className="hover:text-black">HelpLine</button>
@@ -432,7 +432,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, initia
                 {/* Floating Chat Icon */}
                 <div
                     className="absolute right-5 bottom-20 z-[210] cursor-pointer"
-                    onClick={() => window.open('https://m.me/shadamon.bd', '_blank')}
+                    onClick={() => window.open('https://m.me/shadamonDotCom', '_blank')}
                 >
                     <div className="flex flex-col items-center">
                         <button className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-white shadow-xl hover:scale-105 active:scale-95 transition-all mb-1">

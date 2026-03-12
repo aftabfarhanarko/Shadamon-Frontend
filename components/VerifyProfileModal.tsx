@@ -149,7 +149,7 @@ export default function VerifyProfileModal({ isOpen, onClose, user }: VerifyProf
                         <div className="flex justify-between px-2 text-[12px] text-slate-700 font-medium">
                             <span
                                 className="cursor-pointer hover:text-black"
-                                onClick={() => window.open('https://m.me/shadamon.bd', '_blank')}
+                                onClick={() => window.open('https://m.me/shadamonDotCom', '_blank')}
                             >
                                 HelpChat
                             </span>
@@ -174,11 +174,11 @@ export default function VerifyProfileModal({ isOpen, onClose, user }: VerifyProf
                                     যে প্যাকেজটি কিনতে চান, সমপরিমান টাকা পাঠিয়ে আমাদের ম্যসেজ করুন।
                                 </p>
                                 <div className="space-y-1 text-[13px] text-slate-800 mb-3 font-medium">
-                                    <div>বিকাশ নাম্বার: 0173 266 1224</div>
-                                    <div>রকেট নাম্বার: 0173 266 1224-3</div>
+                                    <div>বিকাশ নাম্বার: 01732661224</div>
+                                    <div>রকেট নাম্বার: 01732661224</div>
                                 </div>
                                 <button
-                                    onClick={() => window.open('https://m.me/shadamon.bd', '_blank')}
+                                    onClick={() => window.open('https://m.me/shadamonDotCom', '_blank')}
                                     className="w-full bg-[#4285F4] text-white font-bold py-2 rounded shadow-sm hover:bg-blue-600 transition-colors text-[13px]"
                                 >
                                     Message us

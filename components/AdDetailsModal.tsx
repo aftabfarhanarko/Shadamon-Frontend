@@ -910,16 +910,11 @@ I have sent my CV for your review.`;
                                         {localFollowers?.length || 0} {t('follower')}
                                     </div>
 
-                                    <div className="flex items-center gap-0.5">
-                                        {[1, 2, 3, 4, 5].map((s) => (
-                                            <Star
-                                                key={s}
-                                                className={`w-3 h-3 ${s <= Math.round((ad as any).user?.rating || 4) ? 'fill-[#0088cc] text-[#0088cc]' : 'fill-slate-200 text-slate-200'}`}
-                                            />
-                                        ))}
-                                        <span className="text-[10px] text-slate-400 ml-1">
-                                            ({(ad as any).user?.ratingCount || 9})
-                                        </span>
+                                    <div className="flex items-center gap-2 text-sm text-black leading-tight mt-0.5">
+                                        <div className="text-black flex items-center font-medium">
+                                            {(ad as any).user?.rating || 0}
+                                            <span className="text-black font-normal ml-0.5">☆ Seller</span>
+                                        </div>
                                     </div>
                                 </div>
 
