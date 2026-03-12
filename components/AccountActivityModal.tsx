@@ -1450,14 +1450,23 @@ I have sent my CV for your review.`;
                                     </button>
                                 </div>
                                 <div className="flex-1">
-                                    <h2 className="text-[16px] text-slate-700">{displayUser.name}</h2>
+                                    <h2 className="text-[16px] text-slate-700 flex items-center gap-1">
+                                        {displayUser.name}
+                                        {displayUser.mVerified && (
+                                            <div className="w-3.5 h-3.5 bg-blue-500 rounded-full flex items-center justify-center shrink-0" title="Verified Seller">
+                                                <Check className="w-2 h-2 text-white stroke-[3]" />
+                                            </div>
+                                        )}
+                                    </h2>
                                     {/* <div className="flex items-center gap-1 text-[11px] text-slate-500">
                                         <span>{profileForm.mobile}</span>
                                         <User className="w-3 h-3 ml-1" />
                                     </div> */}
-                                    <p className="text-[14px] text-slate-400 leading-tight mt-0.5">
-                                        Add a Verification Badge to your profile to become a trusted Customer or Seller.
-                                    </p>
+                                    {!displayUser.mVerified && (
+                                        <p className="text-[14px] text-slate-400 leading-tight mt-0.5">
+                                            Add a Verification Badge to your profile to become a trusted Customer or Seller.
+                                        </p>
+                                    )}
                                     <div className="flex items-center gap-2 mt-1">
                                         <p className="text-[14px] font-bold text-slate-400 leading-tight shrink-0">
                                             {displayUser._id}

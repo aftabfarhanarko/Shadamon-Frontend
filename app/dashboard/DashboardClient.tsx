@@ -85,6 +85,9 @@ interface ActiveAd {
     createdAt: string;
     adType: 'Free' | 'Promoted';
     promoteTag?: string;
+    promoteType?: 'call_msg' | 'traffic';
+    trafficLink?: string;
+    trafficButtonType?: string;
 }
 
 interface PremiumUser {
@@ -321,22 +324,47 @@ export default function DashboardClient() {
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        setSelectedAd(data.data);
+                        const ad = data.data;
+                        if (ad.promoteType === 'traffic' && ad.trafficLink) {
+                            window.open(ad.trafficLink, '_blank');
+                            // Clear the param and stay on dashboard
+                            const params = new URLSearchParams(searchParams.toString());
+                            params.delete('ad');
+                            router.replace(params.toString() ? `/dashboard?${params.toString()}` : '/dashboard', { scroll: false });
+                            return;
+                        }
+                        setSelectedAd(ad);
                     } else {
                         // Fallback to local data if fetch fails
                         const foundAd = ads.find(a => a._id === adId);
-                        if (foundAd) setSelectedAd(foundAd);
+                        if (foundAd) {
+                            if (foundAd.promoteType === 'traffic' && foundAd.trafficLink) {
+                                window.open(foundAd.trafficLink, '_blank');
+                                // Clear the param and stay on dashboard
+                                const params = new URLSearchParams(searchParams.toString());
+                                params.delete('ad');
+                                router.replace(params.toString() ? `/dashboard?${params.toString()}` : '/dashboard', { scroll: false });
+                                return;
+                            }
+                            setSelectedAd(foundAd);
+                        }
                     }
                 })
                 .catch(err => {
                     console.error("Error fetching specific ad:", err);
                     const foundAd = ads.find(a => a._id === adId);
-                    if (foundAd) setSelectedAd(foundAd);
+                    if (foundAd) {
+                        if (foundAd.promoteType === 'traffic' && foundAd.trafficLink) {
+                            window.location.href = foundAd.trafficLink;
+                            return;
+                        }
+                        setSelectedAd(foundAd);
+                    }
                 });
         } else {
             setSelectedAd(null);
         }
-    }, [searchParams, ads]);
+    }, [searchParams, ads, router]);
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -1332,9 +1360,14 @@ export default function DashboardClient() {
                                             {chunk.blocks.map((block, blockIndex) => (
                                                 <React.Fragment key={blockIndex}>
                                                     {block.bigAd && (
-                                                        <Link
-                                                            href={getAdUrl(block.bigAd)}
-                                                            scroll={false}
+                                                        <div
+                                                            onClick={(e) => {
+                                                                if (block.bigAd && block.bigAd.adType === 'Promoted' && block.bigAd.promoteType === 'traffic' && block.bigAd.trafficLink) {
+                                                                    window.open(block.bigAd.trafficLink, '_blank');
+                                                                } else if (block.bigAd) {
+                                                                    router.push(getAdUrl(block.bigAd), { scroll: false });
+                                                                }
+                                                            }}
                                                             className="bg-white rounded-xl cursor-pointer group block border border-slate-100 shadow-sm"
                                                         >
                                                             <div className="relative h-[315px] w-full rounded-t-xl overflow-hidden group">
@@ -1377,19 +1410,36 @@ export default function DashboardClient() {
                                                                             <div className="flex items-center gap-1"><Grid className="w-3 h-3 text-black" />{block.bigAd.category}</div>
                                                                         </div>
                                                                     </div>
-                                                                    <button className="border border-slate-300 text-black bg-gray-200 px-3 py-1 rounded text-xs font-bold hover:bg-slate-50">Detail</button>
+                                                                    {block.bigAd.adType === 'Promoted' && block.bigAd.promoteType === 'traffic' && block.bigAd.trafficLink ? (
+                                                                        <a
+                                                                            href={block.bigAd.trafficLink}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                            className="border border-slate-300 text-black bg-gray-200 px-3 py-1 rounded text-xs font-bold hover:bg-slate-50"
+                                                                        >
+                                                                            {block.bigAd.trafficButtonType || 'Visit'}
+                                                                        </a>
+                                                                    ) : (
+                                                                        <button className="border border-slate-300 text-black bg-gray-200 px-3 py-1 rounded text-xs font-bold hover:bg-slate-50">Detail</button>
+                                                                    )}
                                                                 </div>
                                                             </div>
-                                                        </Link>
+                                                        </div>
                                                     )}
 
                                                     {block.smallAds.length > 0 && (
                                                         <div className="flex flex-col gap-2 bg-white rounded-lg pb-2">
                                                             {block.smallAds.map((ad) => (
-                                                                <Link
+                                                                <div
                                                                     key={ad._id}
-                                                                    href={getAdUrl(ad)}
-                                                                    scroll={false}
+                                                                    onClick={() => {
+                                                                        if (ad.adType === 'Promoted' && ad.promoteType === 'traffic' && ad.trafficLink) {
+                                                                            window.open(ad.trafficLink, '_blank');
+                                                                        } else {
+                                                                            router.push(getAdUrl(ad), { scroll: false });
+                                                                        }
+                                                                    }}
                                                                     className="bg-white rounded-lg p-3 pb-0 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50"
                                                                 >
                                                                     <div className="w-[200px] h-[130px] rounded-lg overflow-hidden shrink-0 relative group-hover:scale-[1.02] transition-transform">
@@ -1415,12 +1465,14 @@ export default function DashboardClient() {
                                                                         <div className="flex items-center gap-2 text-[10px] text-black">
                                                                             <div className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" /><span className="truncate max-w-[80px]">{ad.location}</span></div>
                                                                             <div className="flex items-center gap-0.5"><Grid className="w-2.5 h-2.5" /><span className="truncate max-w-[80px]">{ad.category}</span></div>
-                                                                            <div className="ml-auto text-black">
-                                                                                {ad.adType !== 'Promoted' && timeAgo(ad.createdAt, language as 'en' | 'bn')}
-                                                                            </div>
+                                                                            {ad.adType !== 'Promoted' && (
+                                                                                <div className="ml-auto text-black text-[10px]">
+                                                                                    {timeAgo(ad.createdAt, language as 'en' | 'bn')}
+                                                                                </div>
+                                                                            )}
                                                                         </div>
                                                                     </div>
-                                                                </Link>
+                                                                </div>
                                                             ))}
                                                         </div>
                                                     )}
@@ -1452,7 +1504,13 @@ export default function DashboardClient() {
                                                                 <div
                                                                     key={ad._id}
                                                                     className="min-w-[240px] w-[240px] bg-white border border-slate-200 rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-                                                                    onClick={() => router.push(getAdUrl(ad), { scroll: false })}
+                                                                    onClick={() => {
+                                                                        if (ad.adType === 'Promoted' && ad.promoteType === 'traffic' && ad.trafficLink) {
+                                                                            window.open(ad.trafficLink, '_blank');
+                                                                        } else {
+                                                                            router.push(getAdUrl(ad), { scroll: false });
+                                                                        }
+                                                                    }}
                                                                 >
                                                                     <div className="h-40 relative rounded-t-lg overflow-hidden bg-slate-100">
                                                                         {getImageUrl(ad.images?.[0]) && (
@@ -1466,9 +1524,11 @@ export default function DashboardClient() {
                                                                             </>
                                                                         )}
                                                                     </div>
-                                                                    <div className="p-2.5">
-                                                                        <h4 className="text-black truncate text-sm mb-0.5">{ad.headline}</h4>
-                                                                        <p className="text-black text-sm">TK {ad.price?.toLocaleString() || 'N/A'}</p>
+                                                                    <div className="p-2.5 flex items-center justify-between gap-2">
+                                                                        <div className="min-w-0">
+                                                                            <h4 className="text-black truncate text-sm mb-0.5">{ad.headline}</h4>
+                                                                            <p className="text-black text-sm">TK {ad.price?.toLocaleString() || 'N/A'}</p>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             ))}

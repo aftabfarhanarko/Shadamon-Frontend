@@ -807,7 +807,15 @@ I have sent my CV for your review.`;
                                         <div
                                             key={pad._id}
                                             className="min-w-[260px] max-w-[260px] bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm flex flex-col cursor-pointer shrink-0 snap-center"
-                                            onClick={() => window.location.href = `/dashboard?ad=${pad._id}`}
+                                            onClick={() => {
+                                                if (pad.adType === 'Promoted' && pad.promoteType === 'traffic' && pad.trafficLink) {
+                                                    window.open(pad.trafficLink, '_blank');
+                                                } else {
+                                                    const params = new URLSearchParams(window.location.search);
+                                                    params.set('ad', pad._id);
+                                                    router.push(`/dashboard?${params.toString()}`, { scroll: false });
+                                                }
+                                            }}
                                         >
                                             <div className="relative h-40 bg-slate-100">
                                                 <img
@@ -837,13 +845,15 @@ I have sent my CV for your review.`;
                                                         <span className="truncate max-w-[100px]">{pad.category}</span>
                                                     </div>
                                                 </div>
-                                                <div className="text-sm text-black flex items-center gap-1.5 flex-wrap">
-                                                    <span>{pad.price ? `৳ ${pad.price.toLocaleString()}` : t('price_on_ask')}</span>
-                                                    {pad.price && (
-                                                        <span className="text-[10px] text-slate-500 font-normal">
-                                                            ({pad.priceType === 'Negotiable' ? t('price_negotiable') : t('price_fixed')})
-                                                        </span>
-                                                    )}
+                                                <div className="text-sm text-black flex items-center justify-between gap-1.5 flex-wrap">
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        <span>{pad.price ? `৳ ${pad.price.toLocaleString()}` : t('price_on_ask')}</span>
+                                                        {pad.price && (
+                                                            <span className="text-[10px] text-slate-500 font-normal">
+                                                                ({pad.priceType === 'Negotiable' ? t('price_negotiable') : t('price_fixed')})
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -938,7 +948,19 @@ I have sent my CV for your review.`;
                                 <h3 className="text-black text-sm mb-1">Similar Product</h3>
                                 <div className="space-y-3">
                                     {similarAds.slice(0, 5).map((sad) => (
-                                        <div key={sad._id} className="flex gap-3 bg-white border border-slate-100 rounded-lg overflow-hidden shadow-sm p-2 pt-0 cursor-pointer" onClick={() => window.location.href = `/dashboard?ad=${sad._id}`}>
+                                        <div
+                                            key={sad._id}
+                                            className="flex gap-3 bg-white border border-slate-100 rounded-lg overflow-hidden shadow-sm p-2 pt-0 cursor-pointer"
+                                            onClick={() => {
+                                                if (sad.adType === 'Promoted' && sad.promoteType === 'traffic' && sad.trafficLink) {
+                                                    window.open(sad.trafficLink, '_blank');
+                                                } else {
+                                                    const params = new URLSearchParams(window.location.search);
+                                                    params.set('ad', sad._id);
+                                                    router.push(`/dashboard?${params.toString()}`, { scroll: false });
+                                                }
+                                            }}
+                                        >
                                             <div className="w-24 h-20 bg-slate-100 rounded bg-cover bg-center shrink-0">
                                                 {getImageUrl(sad.images?.[0]) && (
                                                     <img
@@ -961,13 +983,15 @@ I have sent my CV for your review.`;
                                                         <span className="truncate max-w-[80px]">{sad.category}</span>
                                                     </div>
                                                 </div>
-                                                <div className="text-sm text-slate-900 flex items-center gap-1.5 flex-wrap">
-                                                    <span>{sad.price ? `৳ ${sad.price.toLocaleString()}` : t('price_on_ask')}</span>
-                                                    {sad.price && (
-                                                        <span className="text-[10px] text-slate-500 font-normal">
-                                                            ({sad.priceType === 'Negotiable' ? t('price_negotiable') : t('price_fixed')})
-                                                        </span>
-                                                    )}
+                                                <div className="text-sm text-slate-900 flex items-center justify-between gap-1.5 flex-wrap">
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        <span>{sad.price ? `৳ ${sad.price.toLocaleString()}` : t('price_on_ask')}</span>
+                                                        {sad.price && (
+                                                            <span className="text-[10px] text-slate-500 font-normal">
+                                                                ({sad.priceType === 'Negotiable' ? t('price_negotiable') : t('price_fixed')})
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
