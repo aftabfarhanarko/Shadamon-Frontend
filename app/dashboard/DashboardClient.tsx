@@ -1357,21 +1357,37 @@ export default function DashboardClient() {
                         const freePool = [...displayAdsList.filter(ad => ad.adType !== 'Promoted')];
                         const chunks = [];
 
-                        while (promotedPool.length > 0 || freePool.length > 0) {
+                        // 1. Process Promoted Ads until pool is empty
+                        while (promotedPool.length > 0) {
                             const b1 = promotedPool.shift() || null;
-                            const s1 = freePool.splice(0, 10);
+                            const s1 = promotedPool.splice(0, 5);
                             const b2 = promotedPool.shift() || null;
+                            const s2 = promotedPool.splice(0, 5);
+
+                            chunks.push({
+                                type: 'promoted',
+                                blocks: [
+                                    { bigAd: b1, smallAds: s1 },
+                                    { bigAd: b2, smallAds: s2 }
+                                ].filter(b => b.bigAd || b.smallAds.length > 0),
+                                showCategoryBatch: true
+                            });
+                        }
+
+                        // 2. Process Free Ads (Small only)
+                        while (freePool.length > 0) {
+                            const s1 = freePool.splice(0, 10);
                             const s2 = freePool.splice(0, 10);
 
-                            if (b1 || s1.length > 0 || b2 || s2.length > 0) {
+                            if (s1.length > 0 || s2.length > 0) {
                                 chunks.push({
+                                    type: 'free',
                                     blocks: [
-                                        { bigAd: b1, smallAds: s1 },
-                                        { bigAd: b2, smallAds: s2 }
-                                    ].filter(b => b.bigAd || b.smallAds.length > 0)
+                                        { bigAd: null, smallAds: s1 },
+                                        { bigAd: null, smallAds: s2 }
+                                    ].filter(b => b.smallAds.length > 0),
+                                    showCategoryBatch: freePool.length > 0 // Maybe show category row between free chunks too?
                                 });
-                            } else {
-                                break;
                             }
                         }
 
@@ -1415,14 +1431,11 @@ export default function DashboardClient() {
                                 </div>
 
                                 {chunks.map((chunk, chunkIndex) => {
+                                    const categoryToShow = feedAdsCategories[chunkIndex % feedAdsCategories.length];
+
                                     return (
                                         <div key={chunkIndex} className="flex flex-col gap-4">
                                             {chunk.blocks.map((block, blockIndex) => {
-                                                // Each chunk has 2 blocks. Each block gets one category from the feed categories.
-                                                // Calculate index for the category based on chunkIndex and blockIndex.
-                                                const categoryIndex = (chunkIndex * 2) + blockIndex;
-                                                const categoryToShow = feedAdsCategories[categoryIndex % feedAdsCategories.length];
-
                                                 return (
                                                     <React.Fragment key={blockIndex}>
                                                         {block.bigAd && (
@@ -1577,92 +1590,95 @@ export default function DashboardClient() {
                                                             </div>
                                                         )}
 
-                                                        {categoryToShow && (
-                                                            <div className="bg-white relative group/cat rounded-lg p-2 pb-0 mt-2">
-                                                                <div className="bg-white flex items-center justify-between px-2 mb-2">
-                                                                    <h3 className="text-sm font-medium text-black">{categoryToShow.name}</h3>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            const params = new URLSearchParams(searchParams.toString());
-                                                                            params.set('category', categoryToShow.name);
-                                                                            router.push(`/dashboard?${params.toString()}`, { scroll: false });
-                                                                            setFilters(prev => ({ ...prev, category: categoryToShow.name }));
-                                                                        }}
-                                                                        className="text-xs text-black hover:underline"
-                                                                    >
-                                                                        {language === 'bn' ? 'সব দেখুন' : 'See All'}
-                                                                    </button>
-                                                                </div>
-                                                                <div className="relative">
-                                                                    <div
-                                                                        id={`feed-scroll-cat-${categoryToShow._id}-${categoryIndex}`}
-                                                                        className="flex gap-3 overflow-x-auto no-scrollbar scroll-smooth pb-2"
-                                                                    >
-                                                                        {ads.filter(ad => ad.category === categoryToShow.name).slice(0, 10).map(ad => (
-                                                                            <div
-                                                                                key={ad._id}
-                                                                                className={cn(
-                                                                                    "min-w-[240px] w-[240px] bg-white border rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow",
-                                                                                    hasHighlightLabel(ad)
-                                                                                        ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-1 ring-orange-400/30"
-                                                                                        : "border-slate-200"
-                                                                                )}
-                                                                                onClick={() => {
-                                                                                    if (ad.adType === 'Promoted' && ad.promoteType === 'traffic' && ad.trafficLink) {
-                                                                                        window.open(ad.trafficLink, '_blank');
-                                                                                    } else {
-                                                                                        router.push(getAdUrl(ad), { scroll: false });
-                                                                                    }
-                                                                                }}
-                                                                            >
-                                                                                <div className="h-40 relative rounded-t-lg overflow-hidden bg-slate-100">
-                                                                                    {getImageUrl(ad.images?.[0]) && (
-                                                                                        <>
-                                                                                            <img
-                                                                                                src={getImageUrl(ad.images?.[0]) || undefined}
-                                                                                                alt=""
-                                                                                                className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-70"
-                                                                                            />
-                                                                                            <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-contain" loading="lazy" />
-                                                                                        </>
-                                                                                    )}
-                                                                                    {getNonHighlightLabels(ad).length > 0 && (
-                                                                                        <div className="absolute top-2 left-2 z-20 flex flex-col gap-1">
-                                                                                            {getNonHighlightLabels(ad).map((label: string) => (
-                                                                                                <span
-                                                                                                    key={label}
-                                                                                                    className="bg-white/90 text-[10px] font-bold text-slate-800 px-2 py-0.5 rounded border border-slate-200 shadow-sm"
-                                                                                                >
-                                                                                                    {label}
-                                                                                                </span>
-                                                                                            ))}
-                                                                                        </div>
-                                                                                    )}
-                                                                                </div>
-                                                                                <div className="p-2.5 flex items-center justify-between gap-2">
-                                                                                    <div className="min-w-0">
-                                                                                        <h4 className="text-black truncate text-sm mb-0.5">{ad.headline}</h4>
-                                                                                        <p className="text-black text-sm">TK {ad.price?.toLocaleString() || 'N/A'}</p>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            const el = document.getElementById(`feed-scroll-cat-${categoryToShow._id}-${categoryIndex}`);
-                                                                            if (el) el.scrollBy({ left: 250, behavior: 'smooth' });
-                                                                        }}
-                                                                        className="absolute -right-3 top-[43%] -translate-y-1/2 w-9 h-9 bg-white shadow-md rounded-full flex items-center justify-center text-black z-20 border border-slate-100 hover:bg-slate-50"
-                                                                    >
-                                                                        <ChevronRight className="w-5 h-5" />
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        )}
+                                                        {/* Category row moved outside block map */}
                                                     </React.Fragment>
                                                 );
                                             })}
+
+                                            {/* Render Category Row after the chunk (every 2 blocks) */}
+                                            {chunk.showCategoryBatch && categoryToShow && (
+                                                <div className="bg-white relative group/cat rounded-lg p-2 pb-0 mt-2">
+                                                    <div className="bg-white flex items-center justify-between px-2 mb-2">
+                                                        <h3 className="text-sm font-medium text-black">{categoryToShow.name}</h3>
+                                                        <button
+                                                            onClick={() => {
+                                                                const params = new URLSearchParams(searchParams.toString());
+                                                                params.set('category', categoryToShow.name);
+                                                                router.push(`/dashboard?${params.toString()}`, { scroll: false });
+                                                                setFilters(prev => ({ ...prev, category: categoryToShow.name }));
+                                                            }}
+                                                            className="text-xs text-black hover:underline"
+                                                        >
+                                                            {language === 'bn' ? 'সব দেখুন' : 'See All'}
+                                                        </button>
+                                                    </div>
+                                                    <div className="relative">
+                                                        <div
+                                                            id={`feed-scroll-cat-${categoryToShow._id}-${chunkIndex}`}
+                                                            className="flex gap-3 overflow-x-auto no-scrollbar scroll-smooth pb-2"
+                                                        >
+                                                            {(totalAds.filter(ad => ad.category === categoryToShow.name)).slice(0, 10).map((ad) => (
+                                                                <div
+                                                                    key={ad._id}
+                                                                    className={cn(
+                                                                        "min-w-[240px] w-[240px] bg-white border rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow",
+                                                                        hasHighlightLabel(ad)
+                                                                            ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-1 ring-orange-400/30"
+                                                                            : "border-slate-200"
+                                                                    )}
+                                                                    onClick={() => {
+                                                                        if (ad.adType === 'Promoted' && ad.promoteType === 'traffic' && ad.trafficLink) {
+                                                                            window.open(ad.trafficLink, '_blank');
+                                                                        } else {
+                                                                            router.push(getAdUrl(ad), { scroll: false });
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <div className="h-40 relative rounded-t-lg overflow-hidden bg-slate-100">
+                                                                        {getImageUrl(ad.images?.[0]) && (
+                                                                            <>
+                                                                                <img
+                                                                                    src={getImageUrl(ad.images?.[0]) || undefined}
+                                                                                    alt=""
+                                                                                    className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-70"
+                                                                                />
+                                                                                <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-contain" loading="lazy" />
+                                                                            </>
+                                                                        )}
+                                                                        {getNonHighlightLabels(ad).length > 0 && (
+                                                                            <div className="absolute top-2 left-2 z-20 flex flex-col gap-1">
+                                                                                {getNonHighlightLabels(ad).map((label: string) => (
+                                                                                    <span
+                                                                                        key={label}
+                                                                                        className="bg-white/90 text-[10px] font-bold text-slate-800 px-2 py-0.5 rounded border border-slate-200 shadow-sm"
+                                                                                    >
+                                                                                        {label}
+                                                                                    </span>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="p-2.5 flex items-center justify-between gap-2">
+                                                                        <div className="min-w-0">
+                                                                            <h4 className="text-black truncate text-sm mb-0.5">{ad.headline}</h4>
+                                                                            <p className="text-black text-sm">TK {ad.price?.toLocaleString() || 'N/A'}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        <button
+                                                            onClick={() => {
+                                                                const el = document.getElementById(`feed-scroll-cat-${categoryToShow._id}-${chunkIndex}`);
+                                                                if (el) el.scrollBy({ left: 250, behavior: 'smooth' });
+                                                            }}
+                                                            className="absolute -right-3 top-[43%] -translate-y-1/2 w-9 h-9 bg-white shadow-md rounded-full flex items-center justify-center text-black z-20 border border-slate-100 hover:bg-slate-50"
+                                                        >
+                                                            <ChevronRight className="w-5 h-5" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}

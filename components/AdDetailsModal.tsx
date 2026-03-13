@@ -121,7 +121,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
                         setPromotedAds(promoted);
 
                         // Filter Similar Ads (Same Category)
-                        const similar = allAds.filter((a: any) => a.category === ad.category && a._id !== ad._id);
+                        const similar = allAds.filter((a: any) => a.category === ad.category && a._id !== ad._id).sort((a: any, b: any) => (a.adType === 'Promoted' ? -1 : 1));
                         setSimilarAds(similar);
                     }
                 })
