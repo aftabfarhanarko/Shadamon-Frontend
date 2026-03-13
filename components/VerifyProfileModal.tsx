@@ -135,7 +135,7 @@ export default function VerifyProfileModal({ isOpen, onClose, user }: VerifyProf
                         </button>
                     </div>
 
-                    <p className="text-[10px] text-slate-600 text-left pt-1">
+                    <p className="text-[12px] text-slate-600 text-center pt-1">
                         By Proceeding you agree to the{' '}
                         <span className="text-slate-800 font-medium cursor-pointer hover:underline">Privacy</span>
                         {', '}

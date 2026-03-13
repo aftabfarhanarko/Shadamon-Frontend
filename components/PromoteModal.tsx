@@ -52,16 +52,20 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
         labels: [],
         freeAdCredits: []
     });
-    const [selectedLabel, setSelectedLabel] = useState<any>(null);
+    const [selectedLabels, setSelectedLabels] = useState<any[]>([]);
     const [currentPlan, setCurrentPlan] = useState<any>(null);
     const [minAmount, setMinAmount] = useState(100);
     const [maxAmount, setMaxAmount] = useState(5000);
-    const [gapAmount, setGapAmount] = useState(50); // Step for slider
+    const [sliderStep, setSliderStep] = useState(50); // Step for slider
     const [showManualPayment, setShowManualPayment] = useState(false);
     const [showHelpline, setShowHelpline] = useState(false);
     const [isEditingBudget, setIsEditingBudget] = useState(false);
     const [activeSection, setActiveSection] = useState<'promoteType' | 'location' | null>(null);
     const [selectedDetailAd, setSelectedDetailAd] = useState<any>(null);
+    const [userAdCount, setUserAdCount] = useState<number | null>(null);
+    const [appliedOfferId, setAppliedOfferId] = useState<string | null>(null);
+    const [discountAmount, setDiscountAmount] = useState(0);
+    const [trafficLinkError, setTrafficLinkError] = useState(false);
 
     // Info Modal States
     const [showPrivacy, setShowPrivacy] = useState(false);
@@ -78,14 +82,50 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
             setSelectedLocations([]);
             setDurationDays(1);
             updateEndDate(1);
-            setAmount(gapAmount * 2);
+            setAmount(500);
             setShowManualPayment(false);
             setShowHelpline(false);
             setIsEditingBudget(false);
             setActiveSection(null);
+            setAppliedOfferId(null);
+            setDiscountAmount(0);
             fetchConfigs();
+            fetchUserAdCount();
         }
     }, [isOpen]);
+
+    const fetchUserAdCount = async () => {
+        const token = Cookies.get('token');
+        if (!token) return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/ads/me`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.success && data.data) {
+                setUserAdsCountFromApi(data.data.length);
+            }
+        } catch (error) {
+            console.error("Error fetching user ads count:", error);
+        }
+    };
+
+    const [userAdsCountFromApi, setUserAdsCountFromApi] = useState<number | null>(null);
+
+    // Update minAmount based on promoteType and currentPlan
+    useEffect(() => {
+        if (currentPlan) {
+            const min = promoteType === 'traffic'
+                ? (Number(currentPlan.minTraffic) || 300)
+                : (Number(currentPlan.minReach) || 100);
+            setMinAmount(min);
+
+            // Ensure amount is not below minimum
+            if (amount < min) {
+                setAmount(min);
+            }
+        }
+    }, [currentPlan, promoteType]);
 
     const fetchConfigs = async () => {
         try {
@@ -106,13 +146,8 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
 
                 if (plan) {
                     setCurrentPlan(plan);
-                    const planMax = Number(plan.amount);
-                    const planGap = Number(plan.gapAmount) || 50;
-
-                    setMaxAmount(planMax);
-                    setGapAmount(planGap);
-                    setMinAmount(planGap); // Assuming min is at least one step
-                    setAmount(planGap * 2); // Default to some initial value
+                    setMaxAmount(5000);
+                    setAmount(500);
                 } else {
                     // Fallback or use details from all plans if generic?
                     // For now, keep defaults or log
@@ -137,6 +172,46 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
         if (type === 'dec' && newDays > 1) newDays--;
         setDurationDays(newDays);
         updateEndDate(newDays);
+    };
+
+    const toggleLabel = (label: any) => {
+        setSelectedLabels(prev => 
+            prev.some(l => l._id === label._id)
+                ? prev.filter(l => l._id !== label._id)
+                : [...prev, label]
+        );
+    };
+
+    const handleApplyOffer = (offer: any) => {
+        if (appliedOfferId === offer._id) {
+            setAppliedOfferId(null);
+            setDiscountAmount(0);
+            toast.success("Offer removed");
+            return;
+        }
+
+        // Logic check
+        if (offer.forType === 'product' && offer.forValue === 'FirstProduct') {
+            // If user has more than 1 ad, it's not their first product
+            if (userAdsCountFromApi !== null && userAdsCountFromApi > 1) {
+                toast.error("This offer is only for your first product.");
+                return;
+            }
+        } else if (offer.forType === 'category') {
+            if (ad.category !== offer.forValue) {
+                toast.error(`This offer is only for ${offer.forValue} category.`);
+                return;
+            }
+        } else if (offer.forType === 'product' && offer.forValue !== 'FirstProduct') {
+            if (ad._id !== offer.forValue) {
+                toast.error("This offer is for a different product.");
+                return;
+            }
+        }
+
+        setAppliedOfferId(offer._id);
+        setDiscountAmount(Number(offer.amount));
+        toast.success(`৳${offer.amount} discount applied!`);
     };
 
     const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,15 +239,17 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
     let estimatedMaxViews = 0;
 
     if (currentPlan) {
-        const ratio = amount / maxAmount;
-        estimatedMinViews = Math.floor(currentPlan.minReach * ratio * durationDays);
-        estimatedMaxViews = Math.floor(currentPlan.reach * ratio * durationDays);
+        const planBaseAmount = Number(currentPlan.amount) || 100;
+        const ratio = amount / planBaseAmount;
 
-        // Use traffic stats if promoteType is traffic? (Optional enhancement)
-        if (promoteType === 'traffic') {
-            estimatedMinViews = Math.floor(currentPlan.minTraffic * ratio * durationDays);
-            estimatedMaxViews = Math.floor(currentPlan.traffic * ratio * durationDays);
-        }
+        const basePerformance = promoteType === 'traffic'
+            ? (Number(currentPlan.traffic) || 0)
+            : (Number(currentPlan.reach) || 0);
+
+        const gapPercent = parseFloat(currentPlan.gapAmount) || 0;
+
+        estimatedMinViews = Math.floor(basePerformance * ratio * durationDays);
+        estimatedMaxViews = Math.floor((basePerformance * ratio * (1 + gapPercent / 100)) * durationDays);
     } else {
         estimatedMinViews = Math.floor(amount * 0.2 * durationDays);
         estimatedMaxViews = Math.floor(amount * 0.4 * durationDays);
@@ -180,12 +257,21 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
 
     const viewLabel = promoteType === 'traffic' ? 'Visitors' : 'Views';
 
-    const totalAmount = (amount * durationDays) +
+    const baseTotal = (amount * durationDays) +
         (isVerifyBadge ? Number(premierSettings.verifyBadgePrice || 0) : 0) +
         (isHighlight ? Number(premierSettings.highlightPostPrice || 0) : 0) +
-        (isPostLevel && selectedLabel ? Number(selectedLabel.price || 0) : 0);
+        (isPostLevel ? selectedLabels.reduce((sum, l) => sum + Number(l.price || 0), 0) : 0);
+
+    const totalAmount = Math.max(0, baseTotal - discountAmount);
 
     const handlePromote = async () => {
+        if (promoteType === 'traffic' && !trafficLink.trim()) {
+            setTrafficLinkError(true);
+            setActiveSection('promoteType');
+            toast.error("Please provide a traffic link URL");
+            return;
+        }
+
         try {
             const token = Cookies.get('token');
 
@@ -204,7 +290,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                 isHighlight,
                 highlightType: isHighlight ? highlightType : null,
                 isPostLevel,
-                selectedLabel: isPostLevel ? selectedLabel?.name : null,
+                selectedLabels: isPostLevel ? selectedLabels.map(l => l.name) : [],
                 totalAmount
             };
 
@@ -438,9 +524,15 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                                     <input
                                                         type="url"
                                                         value={trafficLink}
-                                                        onChange={(e) => setTrafficLink(e.target.value)}
+                                                        onChange={(e) => {
+                                                            setTrafficLink(e.target.value);
+                                                            if (trafficLinkError) setTrafficLinkError(false);
+                                                        }}
                                                         placeholder="www.example.com"
-                                                        className="flex-1 min-w-0 text-[11px] px-2 py-1.5 border border-slate-300 rounded focus:border-[#0088cc] outline-none transition-colors"
+                                                        className={cn(
+                                                            "flex-1 min-w-0 text-[11px] px-2 py-1.5 border rounded focus:border-[#0088cc] outline-none transition-colors",
+                                                            trafficLinkError ? "border-red-500 bg-red-50" : "border-slate-300"
+                                                        )}
                                                     />
                                                     <span className="text-[11px] font-bold text-slate-600 shrink-0 pl-1">Hit Button</span>
                                                     <select
@@ -575,11 +667,17 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                                 value={amount}
                                                 onChange={(e) => {
                                                     const val = Number(e.target.value);
-                                                    if (val <= maxAmount) setAmount(val);
+                                                    setAmount(val);
                                                 }}
-                                                onBlur={() => setIsEditingBudget(false)}
+                                                onBlur={() => {
+                                                    if (amount < minAmount) {
+                                                        setAmount(minAmount);
+                                                        toast.error(`Minimum amount is ৳${minAmount}`);
+                                                    }
+                                                    setIsEditingBudget(false);
+                                                }}
                                                 autoFocus
-                                                className="w-[80px] bg-transparent border-none outline-none text-2xl font-black text-[#0088cc] p-0 focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-center"
+                                                className="w-[140px] bg-transparent border-none outline-none text-2xl font-black text-[#0088cc] p-0 focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-center"
                                             />
                                         ) : (
                                             <span>{amount}</span>
@@ -595,18 +693,18 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                             type="range"
                                             min={minAmount}
                                             max={maxAmount}
-                                            step={gapAmount}
+                                            step={sliderStep}
                                             value={amount}
                                             onChange={(e) => setAmount(Number(e.target.value))}
                                             className="absolute w-full h-full opacity-0 z-10 cursor-pointer"
                                         />
                                         <div
                                             className="absolute left-0 top-0 h-full bg-[#0088cc] rounded-full"
-                                            style={{ width: `${((amount - minAmount) / (maxAmount - minAmount)) * 100}%` }}
+                                            style={{ width: `${Math.min(100, ((amount - minAmount) / (maxAmount - minAmount)) * 100)}%` }}
                                         ></div>
                                         <div
                                             className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-[#0088cc] rounded-full border-2 border-white shadow-sm pointer-events-none"
-                                            style={{ left: `${((amount - minAmount) / (maxAmount - minAmount)) * 100}%` }}
+                                            style={{ left: `${Math.min(100, ((amount - minAmount) / (maxAmount - minAmount)) * 100)}%` }}
                                         ></div>
                                     </div>
 
@@ -641,7 +739,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                     </label>
 
                                     {/* Highlight Post */}
-                                    <label className="flex items-start gap-2 cursor-pointer group">
+                                    {/* <label className="flex items-start gap-2 cursor-pointer group">
                                         <div className={cn("w-5 h-5 rounded border flex items-center justify-center mt-0.5 transition-colors", isHighlight ? 'bg-[#0088cc] border-[#0088cc]' : 'border-slate-400 bg-white')}>
                                             {isHighlight && <Check className="w-3.5 h-3.5 text-white" />}
                                         </div>
@@ -649,7 +747,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                         <span className="text-xs font-bold text-slate-700 group-hover:text-slate-900 mt-0.5">
                                             পোস্টটি হাইলাইট করুন (+ ৳{premierSettings.highlightPostPrice})
                                         </span>
-                                    </label>
+                                    </label> */}
 
                                     {/* Post Level / Labels */}
                                     <div>
@@ -666,56 +764,59 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
 
                                         {isPostLevel && premierSettings.labels && premierSettings.labels.length > 0 && (
                                             <div className="pl-6 space-y-1.5 mb-2 animate-in slide-in-from-top-2 fade-in">
-                                                {premierSettings.labels.map((label: any) => (
-                                                    <label key={label._id} className="flex items-center gap-2 cursor-pointer">
-                                                        <div className={cn("w-3.5 h-3.5 rounded-full border flex items-center justify-center", selectedLabel?._id === label._id ? 'border-[#0088cc]' : 'border-slate-400')}>
-                                                            {selectedLabel?._id === label._id && <div className="w-2 h-2 rounded-full bg-[#0088cc]" />}
-                                                        </div>
-                                                        <input
-                                                            type="radio"
-                                                            name="selectedLabel"
-                                                            className="hidden"
-                                                            checked={selectedLabel?._id === label._id}
-                                                            onChange={() => setSelectedLabel(label)}
-                                                        />
-                                                        <span className="text-xs text-slate-600">{label.name} (+ ৳{label.price})</span>
-                                                    </label>
-                                                ))}
+                                                {premierSettings.labels.map((label: any) => {
+                                                    const isSelected = selectedLabels.some(l => l._id === label._id);
+                                                    return (
+                                                        <label key={label._id} className="flex items-center gap-2 cursor-pointer">
+                                                            <div className={cn("w-3.5 h-3.5 rounded border flex items-center justify-center transition-colors", isSelected ? 'bg-[#0088cc] border-[#0088cc]' : 'border-slate-400')}>
+                                                                {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
+                                                            </div>
+                                                            <input
+                                                                type="checkbox"
+                                                                className="hidden"
+                                                                checked={isSelected}
+                                                                onChange={() => toggleLabel(label)}
+                                                            />
+                                                            <span className="text-xs text-slate-600">{label.name} (+ ৳{label.price})</span>
+                                                        </label>
+                                                    );
+                                                })}
                                             </div>
                                         )}
                                     </div>
 
                                     {/* Free Ad Credits Offers */}
-                                    {premierSettings.freeAdCredits && premierSettings.freeAdCredits.filter((c: any) => c.status).length > 0 && (
+                                    {premierSettings.freeAdCredits && premierSettings.freeAdCredits.some((c: any) => c.status) && (
                                         <div className="space-y-2 mt-4 pt-2 border-t border-slate-200">
                                             <h4 className="text-xs font-bold text-slate-700 uppercase">Available Offers</h4>
                                             {premierSettings.freeAdCredits
-                                                .filter((c: any) => {
-                                                    if (!c.status) return false;
-                                                    // Only show 'all' type or 'category' if it matches
-                                                    if (c.forType === 'all') return true;
-                                                    if (c.forType === 'category' && c.forValue === ad.category) return true;
-                                                    if (c.forType === 'product' && c.forValue === ad._id) return true;
-                                                    return false;
-                                                })
-                                                .map((offer: any, idx: number) => (
-                                                    <div key={idx} className="flex items-center justify-between bg-white border border-emerald-100 p-2 rounded">
-                                                        <div className="flex flex-col">
-                                                            <span className="text-xs font-bold text-slate-800">
-                                                                ৳{offer.amount} Free Ad Credit ({offer.forValue === 'All' ? 'All Ads' : offer.forValue})
-                                                            </span>
-                                                            {offer.endDate && (
-                                                                <span className="text-[10px] text-slate-500">Valid till: {format(new Date(offer.endDate), 'dd MMM, yyyy')}</span>
-                                                            )}
+                                                .filter((c: any) => c.status)
+                                                .map((offer: any, idx: number) => {
+                                                    const isApplied = appliedOfferId === offer._id;
+                                                    return (
+                                                        <div key={offer._id || idx} className={cn("flex items-center justify-between border p-2 rounded transition-colors", isApplied ? "border-emerald-500 bg-emerald-50" : "bg-white border-slate-200")}>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-xs font-bold text-slate-800">
+                                                                    ৳{offer.amount} Free Ad Credit ({offer.forType === 'all' ? 'All' : offer.forValue})
+                                                                </span>
+                                                                {offer.endDate && (
+                                                                    <span className="text-[10px] text-slate-500">Valid till: {format(new Date(offer.endDate), 'dd MMM, yyyy')}</span>
+                                                                )}
+                                                            </div>
+                                                            <button
+                                                                onClick={() => handleApplyOffer(offer)}
+                                                                className={cn(
+                                                                    "text-[11px] font-bold px-3 py-1.5 rounded shadow-sm transition-colors",
+                                                                    isApplied 
+                                                                        ? "bg-slate-200 text-slate-700 hover:bg-slate-300" 
+                                                                        : "bg-[#FF3B30] text-white hover:bg-red-600"
+                                                                )}
+                                                            >
+                                                                {isApplied ? 'Remove' : 'Apply'}
+                                                            </button>
                                                         </div>
-                                                        <button
-                                                            onClick={() => toast.success(`Offer ৳${offer.amount} Applied!`)}
-                                                            className="bg-[#FF3B30] text-white text-[11px] font-bold px-3 py-1.5 rounded shadow-sm hover:bg-red-600 transition-colors"
-                                                        >
-                                                            Apply
-                                                        </button>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                         </div>
                                     )}
                                 </div>
@@ -771,12 +872,11 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                             <div className="bg-white p-3 rounded-lg border border-slate-300 shadow-sm animate-in fade-in slide-in-from-top-1">
                                 <h4 className="font-bold text-sm text-slate-800 mb-1">Manual Payment</h4>
                                 <p className="text-[11px] text-slate-600 mb-2">
-                                    যে প্যাকেজটি কিনতে চান, সমপরিমান টাকা পাঠিয়ে
-                                    জুট কম কে সরাণরি।
+                                    যে প্যাকেজটি কিনতে চান, সমপরিমান টাকা পাঠিয়ে Shadamon কে মেসেজ করুন।
                                 </p>
                                 <div className="space-y-0.5 text-xs text-slate-700 mb-4">
-                                    <div><span className="font-bold">বিকাশ নাম্বার:</span>01732661224</div>
-                                    <div><span className="font-bold">রকেট নাম্বার:</span>01732661224</div>
+                                    <div><span className="font-bold">বিকাশ নাম্বার: </span>01732661224</div>
+                                    <div><span className="font-bold">রকেট নাম্বার: </span>01732661224</div>
                                 </div>
 
                                 <button

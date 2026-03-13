@@ -8,6 +8,7 @@ import { twMerge } from 'tailwind-merge';
 import Cookies from 'js-cookie';
 import { API_BASE_URL } from '../utils/apiConfig';
 import { getImageUrl } from '../utils/imageUrl';
+import { getNonHighlightLabels, hasHighlightLabel } from '../utils/labels';
 import { useLanguage } from '../app/context/LanguageContext';
 import Image from 'next/image';
 import { toast } from 'react-hot-toast';
@@ -196,6 +197,13 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
 
     // Activity State
     const [activityData, setActivityData] = useState<any>(null);
+    const ACTIVITY_PAGE_SIZE = 5;
+    const [followingPage, setFollowingPage] = useState(1);
+    const [favoritesPage, setFavoritesPage] = useState(1);
+    const [paymentsPage, setPaymentsPage] = useState(1);
+    const [loadingMoreFollowing, setLoadingMoreFollowing] = useState(false);
+    const [loadingMoreFavorites, setLoadingMoreFavorites] = useState(false);
+    const [loadingMorePayments, setLoadingMorePayments] = useState(false);
     const [categories, setCategories] = useState<any[]>([]);
     const [locations, setLocations] = useState<any[]>([]);
     const [expandedActivity, setExpandedActivity] = useState<string | null>('followed');
@@ -276,13 +284,147 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
         try {
             const token = Cookies.get('token');
             if (!token) return;
-            const res = await fetch(`${API_BASE_URL}/api/user/activity`, {
+            const params = new URLSearchParams();
+            params.set('followingPage', '1');
+            params.set('followingLimit', String(ACTIVITY_PAGE_SIZE));
+            params.set('favoritesPage', '1');
+            params.set('favoritesLimit', String(ACTIVITY_PAGE_SIZE));
+            params.set('paymentsPage', '1');
+            params.set('paymentsLimit', String(ACTIVITY_PAGE_SIZE));
+
+            const res = await fetch(`${API_BASE_URL}/api/user/activity?${params.toString()}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
             setActivityData(data);
+            setFollowingPage(1);
+            setFavoritesPage(1);
+            setPaymentsPage(1);
         } catch (error) {
             console.error("Error fetching activity", error);
+        }
+    };
+
+    const loadMoreFollowing = async () => {
+        try {
+            if (!activityData?.followingHasMore) return;
+            const token = Cookies.get('token');
+            if (!token) return;
+            setLoadingMoreFollowing(true);
+            const nextPage = followingPage + 1;
+            const params = new URLSearchParams();
+            params.set('followingPage', String(nextPage));
+            params.set('followingLimit', String(ACTIVITY_PAGE_SIZE));
+            params.set('favoritesLimit', '0'); // do not re-fetch favorites
+
+            const res = await fetch(`${API_BASE_URL}/api/user/activity?${params.toString()}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setActivityData((prev: any) => ({
+                ...prev,
+                following: [...(prev?.following || []), ...(data.following || [])],
+                followingTotal: data.followingTotal ?? prev?.followingTotal,
+                followingHasMore: data.followingHasMore
+            }));
+            setFollowingPage(nextPage);
+        } catch (error) {
+            console.error("Error loading more following", error);
+        } finally {
+            setLoadingMoreFollowing(false);
+        }
+    };
+
+    const loadMoreFavorites = async () => {
+        try {
+            if (!activityData?.favoritesHasMore) return;
+            const token = Cookies.get('token');
+            if (!token) return;
+            setLoadingMoreFavorites(true);
+            const nextPage = favoritesPage + 1;
+            const params = new URLSearchParams();
+            params.set('favoritesPage', String(nextPage));
+            params.set('favoritesLimit', String(ACTIVITY_PAGE_SIZE));
+            params.set('followingLimit', '0'); // do not re-fetch following
+
+            const res = await fetch(`${API_BASE_URL}/api/user/activity?${params.toString()}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setActivityData((prev: any) => ({
+                ...prev,
+                favorites: [...(prev?.favorites || []), ...(data.favorites || [])],
+                favoritesTotal: data.favoritesTotal ?? prev?.favoritesTotal,
+                favoritesHasMore: data.favoritesHasMore
+            }));
+            setFavoritesPage(nextPage);
+        } catch (error) {
+            console.error("Error loading more favorites", error);
+        } finally {
+            setLoadingMoreFavorites(false);
+        }
+    };
+
+    const loadMorePayments = async () => {
+        try {
+            if (!activityData?.paymentsHasMore) return;
+            const token = Cookies.get('token');
+            if (!token) return;
+            setLoadingMorePayments(true);
+            const nextPage = paymentsPage + 1;
+            const params = new URLSearchParams();
+            params.set('paymentsPage', String(nextPage));
+            params.set('paymentsLimit', String(ACTIVITY_PAGE_SIZE));
+            params.set('followingLimit', '0');
+            params.set('favoritesLimit', '0');
+
+            const res = await fetch(`${API_BASE_URL}/api/user/activity?${params.toString()}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setActivityData((prev: any) => ({
+                ...prev,
+                transactions: [...(prev?.transactions || []), ...(data.transactions || [])],
+                paymentsTotal: data.paymentsTotal ?? prev?.paymentsTotal,
+                paymentsHasMore: data.paymentsHasMore
+            }));
+            setPaymentsPage(nextPage);
+        } catch (error) {
+            console.error("Error loading more payments", error);
+        } finally {
+            setLoadingMorePayments(false);
+        }
+    };
+
+    const formatInvoiceDate = (value: any) => {
+        try {
+            const d = new Date(value);
+            if (d.toString() === 'Invalid Date') return 'N/A';
+            return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        } catch {
+            return 'N/A';
+        }
+    };
+
+    const handleUnfollowFromList = async (targetUserId: string) => {
+        try {
+            const token = Cookies.get('token');
+            if (!token) return;
+            const res = await fetch(`${API_BASE_URL}/api/user/follow/${targetUserId}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (res.ok) {
+                toast.success(data.message || 'Unfollowed');
+                // Refresh first page to keep pagination consistent
+                fetchActivityData();
+            } else {
+                toast.error(data.message || 'Failed to unfollow');
+            }
+        } catch (error) {
+            console.error("Error unfollowing user", error);
+            toast.error("Failed to unfollow");
         }
     };
 
@@ -1246,7 +1388,12 @@ I have sent my CV for your review.`;
                                                     <div
                                                         key={ad._id}
                                                         onClick={() => handleSeeLiveClick(ad)}
-                                                        className="bg-white rounded shadow-sm overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition-shadow"
+                                                        className={cn(
+                                                            "bg-white rounded shadow-sm overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition-shadow border",
+                                                            hasHighlightLabel(ad)
+                                                                ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-1 ring-orange-400/30"
+                                                                : "border-slate-200"
+                                                        )}
                                                     >
                                                         <div className="h-24 bg-slate-900 relative flex items-center justify-center overflow-hidden">
                                                             {/* Image */}
@@ -1257,6 +1404,18 @@ I have sent my CV for your review.`;
                                                                     </div>
                                                                     <img src={getImageUrl(ad.images[0]) || undefined} className="relative max-w-full max-h-full object-contain z-10" loading="lazy" />
                                                                 </>
+                                                            )}
+                                                            {getNonHighlightLabels(ad).length > 0 && (
+                                                                <div className="absolute top-1 left-1 z-20 flex flex-col gap-0.5">
+                                                                    {getNonHighlightLabels(ad).map((label: string) => (
+                                                                        <span
+                                                                            key={label}
+                                                                            className="bg-white/90 text-[9px] font-bold text-slate-800 px-1.5 py-0.5 rounded border border-slate-200 shadow-sm leading-none"
+                                                                        >
+                                                                            {label}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
                                                             )}
                                                             {/* {(ad.status === 'pause' || ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) && (
                                                                 <div className="absolute top-1 left-1 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
@@ -1307,7 +1466,12 @@ I have sent my CV for your review.`;
                                                 <div
                                                     key={ad._id}
                                                     onClick={() => handleSeeLiveClick(ad)}
-                                                    className="bg-white rounded shadow-sm overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition-shadow"
+                                                    className={cn(
+                                                        "bg-white rounded shadow-sm overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition-shadow border",
+                                                        hasHighlightLabel(ad)
+                                                            ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-1 ring-orange-400/30"
+                                                            : "border-slate-200"
+                                                    )}
                                                 >
                                                     <div className="h-40 bg-slate-900 relative flex items-center justify-center overflow-hidden">
                                                         {ad.images && ad.images.length > 0 && (
@@ -1318,11 +1482,28 @@ I have sent my CV for your review.`;
                                                                 <img src={getImageUrl(ad.images[0]) || undefined} className="relative max-w-full max-h-full object-contain z-10" loading="lazy" />
                                                             </>
                                                         )}
-                                                        {(ad.status === 'pause' || ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) && (
+                                                        {/* {(ad.status === 'pause' || ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) && (
                                                             <div className="absolute top-2 left-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                                                                 {ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)
                                                                     ? 'Preparing'
                                                                     : ((ad.userUpdated || ad.userNewPhotos) ? 'Update in Review' : 'In Review')}
+                                                            </div>
+                                                        )} */}
+                                                        {getNonHighlightLabels(ad).length > 0 && (
+                                                            <div
+                                                                className={cn(
+                                                                    "absolute left-2 z-20 flex flex-col gap-1",
+                                                                    (ad.status === 'pause' || ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) ? "top-10" : "top-2"
+                                                                )}
+                                                            >
+                                                                {getNonHighlightLabels(ad).map((label: string) => (
+                                                                    <span
+                                                                        key={label}
+                                                                        className="bg-white/90 text-[10px] font-bold text-slate-800 px-2 py-0.5 rounded border border-slate-200 shadow-sm leading-none"
+                                                                    >
+                                                                        {label}
+                                                                    </span>
+                                                                ))}
                                                             </div>
                                                         )}
                                                         {productTab === 'Popular' && (
@@ -1370,7 +1551,12 @@ I have sent my CV for your review.`;
                                                         <div
                                                             key={ad._id}
                                                             onClick={() => handleSeeLiveClick(ad)}
-                                                            className="bg-white rounded shadow-sm overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition-shadow"
+                                                            className={cn(
+                                                                "bg-white rounded shadow-sm overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition-shadow border",
+                                                                hasHighlightLabel(ad)
+                                                                    ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-1 ring-orange-400/30"
+                                                                    : "border-slate-200"
+                                                            )}
                                                         >
                                                             <div className="h-24 bg-slate-100 relative flex items-center justify-center overflow-hidden">
                                                                 {ad.images && ad.images.length > 0 && (
@@ -1381,11 +1567,28 @@ I have sent my CV for your review.`;
                                                                         <img src={getImageUrl(ad.images[0]) || undefined} className="relative max-w-full max-h-full object-contain z-10" loading="lazy" />
                                                                     </>
                                                                 )}
-                                                                {(ad.status === 'pause' || ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) && (
+                                                                {/* {(ad.status === 'pause' || ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) && (
                                                                     <div className="absolute top-1 left-1 bg-blue-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
                                                                         {ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)
                                                                             ? 'Preparing'
                                                                             : ((ad.userUpdated || ad.userNewPhotos) ? 'Update in Review' : 'In Review')}
+                                                                    </div>
+                                                                )} */}
+                                                                {getNonHighlightLabels(ad).length > 0 && (
+                                                                    <div
+                                                                        className={cn(
+                                                                            "absolute left-1 z-20 flex flex-col gap-0.5",
+                                                                            (ad.status === 'pause' || ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) ? "top-7" : "top-1"
+                                                                        )}
+                                                                    >
+                                                                        {getNonHighlightLabels(ad).map((label: string) => (
+                                                                            <span
+                                                                                key={label}
+                                                                                className="bg-white/90 text-[9px] font-bold text-slate-800 px-1.5 py-0.5 rounded border border-slate-200 shadow-sm leading-none"
+                                                                            >
+                                                                                {label}
+                                                                            </span>
+                                                                        ))}
                                                                     </div>
                                                                 )}
                                                                 {productTab === 'Popular' && (
@@ -1919,7 +2122,10 @@ I have sent my CV for your review.`;
                                     {userAds.map((ad, idx) => (
                                         <React.Fragment key={ad._id || idx}>
                                             <div className={cn(
-                                                "bg-white rounded-lg overflow-hidden transition-all duration-200 mb-2",
+                                                "bg-white rounded-lg overflow-hidden transition-all duration-200 mb-2 border",
+                                                hasHighlightLabel(ad) && ad.status !== 'deleted'
+                                                    ? "border-orange-500 shadow-[0_12px_30px_rgba(249,115,22,0.20)] ring-1 ring-orange-400/30"
+                                                    : "border-slate-200",
                                                 ad.status === 'deleted' && "grayscale opacity-60 bg-slate-50 pointer-events-none"
                                             )}>
                                                 {/* Admin Notification Dialogue */}
@@ -2000,16 +2206,30 @@ I have sent my CV for your review.`;
                                                     {/* Right: Info & Performance */}
                                                     <div className="flex-1 min-w-0 flex flex-col gap-1">
                                                         {/* Top Details */}
-                                                        <div className="flex flex-col gap-0">
-                                                            <h3 className="text-sm text-black line-clamp-1" title={ad.headline}>
-                                                                {ad.headline}
-                                                            </h3>
-                                                            <div className="text-[12px] text-black truncate">
-                                                                {ad.category || 'Category'}, {ad.location || 'Location'}
+                                                        <div className="flex items-start justify-between gap-2">
+                                                            <div className="flex flex-col gap-0 min-w-0">
+                                                                <h3 className="text-sm text-black line-clamp-1" title={ad.headline}>
+                                                                    {ad.headline}
+                                                                </h3>
+                                                                <div className="text-[12px] text-black truncate">
+                                                                    {ad.category || 'Category'}, {ad.location || 'Location'}
+                                                                </div>
+                                                                <div className="text-[12px] text-black">
+                                                                    Publish {ad.createdAt ? new Date(ad.createdAt).toLocaleDateString('en-GB').replace(/\//g, '.') : 'N/A'}
+                                                                </div>
                                                             </div>
-                                                            <div className="text-[12px] text-black">
-                                                                Publish {ad.createdAt ? new Date(ad.createdAt).toLocaleDateString('en-GB').replace(/\//g, '.') : 'N/A'}
-                                                            </div>
+                                                            {getNonHighlightLabels(ad).length > 0 && (
+                                                                <div className="shrink-0 flex flex-col items-end gap-1">
+                                                                    {getNonHighlightLabels(ad).map((label: string) => (
+                                                                        <span
+                                                                            key={label}
+                                                                            className="bg-slate-50 text-[10px] font-bold text-slate-800 px-2 py-0.5 rounded border border-slate-200 shadow-sm leading-none"
+                                                                        >
+                                                                            {label}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
                                                         </div>
 
                                                         {/* Horizontal Divider */}
@@ -2126,42 +2346,55 @@ I have sent my CV for your review.`;
                                     className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50"
                                     onClick={() => toggleActivitySection('followed')}
                                 >
-                                    <span className="text-sm font-bold text-slate-800">
-                                        Followed List <span className="text-xs font-normal text-slate-500">({activityData?.following?.length || 0})</span>
+                                    <span className="text-sm text-slate-800">
+                                        Followed List <span className="text-xs font-normal text-slate-500">({activityData?.followingTotal ?? activityData?.following?.length ?? 0})</span>
                                     </span>
                                     <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", expandedActivity === 'followed' && "rotate-180")} />
                                 </div>
                                 {expandedActivity === 'followed' && (
                                     <div className="p-2 border-t border-slate-100 bg-slate-50 space-y-2">
-                                        {activityData?.following?.map((user: any) => (
-                                            <div key={user._id} className="flex items-center justify-between bg-white p-2 rounded border border-slate-200 shadow-sm">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-8 h-8 rounded overflow-hidden bg-slate-200">
-                                                        {user.photo ? <img src={getImageUrl(user.photo) || ''} alt={user.name} className="w-full h-full object-cover" loading="lazy" /> : <div className="w-full h-full bg-slate-300" />}
+                                        <div className="max-h-[260px] overflow-y-auto pr-1 space-y-2">
+                                            {activityData?.following?.map((user: any) => (
+                                                <div key={user._id} className="flex items-center justify-between bg-white p-2 rounded border border-slate-200 shadow-sm gap-2">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <div className="w-8 h-8 rounded overflow-hidden bg-slate-200 shrink-0">
+                                                            {user.photo ? <img src={getImageUrl(user.photo) || ''} alt={user.name} className="w-full h-full object-cover" loading="lazy" /> : <div className="w-full h-full bg-slate-300" />}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <h4 className="text-xs text-slate-800 truncate">{user.storeName || user.name}</h4>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <h4 className="text-xs font-bold text-slate-800">{user.storeName || user.name}</h4>
+                                                    <div className="flex items-center gap-1.5 shrink-0">
+                                                        <button
+                                                            onClick={() => {
+                                                                onClose();
+                                                                window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: user._id, activeTab: 'Page' } }));
+                                                            }}
+                                                            className="text-[10px] text-slate-700 font-bold border border-slate-300 px-2 py-0.5 rounded-full hover:bg-slate-50"
+                                                        >
+                                                            Visit
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleUnfollowFromList(user._id)}
+                                                            className="text-[10px] text-white bg-red-500 font-bold border border-red-500 px-2 py-0.5 rounded-full hover:bg-red-600"
+                                                        >
+                                                            Unfollow
+                                                        </button>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] text-slate-500 font-bold">FOLLOWING</span>
-                                                    <button className="p-1 hover:bg-slate-100 rounded-full" title="Visit">
-                                                        <Activity className="w-4 h-4 text-slate-700" /> {/* Using Activity icon as placeholder for Eye/Visit if Eye not imported, wait Eye is likely not imported or I need to check. Icons imported: ... 'Eye' is NOT in the list at top of file view 1, but 'Activity' is. I'll use ArrowRight or similar if Eye missing. I'll use 'ArrowRight' for visit. */}
-                                                        {/* Actually I can use imported icons. 'User' is there. 'LogOut' is there. 
-                                                          I will check imports again. 
-                                                          Line 5: X, ArrowLeft, Star, Heart, MapPin, Share2, MoreVertical, Edit2, Plus, ArrowRight, Grid, User, Clock, Settings, FileText, Activity, Trash2, CheckCircle2, ChevronDown, Check, LogOut. 
-                                                          No 'Eye'. I will use 'ArrowRight' for visit. 
-                                                        */}
-                                                        <ArrowRight className="w-4 h-4 text-slate-700" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {(!activityData?.following || activityData.following.length === 0) && (
-                                            <div className="text-center text-xs text-slate-400 py-2">No followed users.</div>
-                                        )}
+                                            ))}
+                                            {(!activityData?.following || activityData.following.length === 0) && (
+                                                <div className="text-center text-xs text-slate-400 py-2">No followed users.</div>
+                                            )}
+                                        </div>
                                         <div className="text-center">
-                                            <button className="text-[10px] text-slate-500 hover:text-slate-700 py-1">See More</button>
+                                            <button
+                                                onClick={loadMoreFollowing}
+                                                disabled={!activityData?.followingHasMore || loadingMoreFollowing}
+                                                className="text-[10px] text-slate-500 hover:text-slate-700 py-1 disabled:opacity-50"
+                                            >
+                                                {loadingMoreFollowing ? 'Loading...' : (activityData?.followingHasMore ? 'See More' : 'No More')}
+                                            </button>
                                         </div>
                                     </div>
                                 )}
@@ -2173,32 +2406,47 @@ I have sent my CV for your review.`;
                                     className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50"
                                     onClick={() => toggleActivitySection('favorites')}
                                 >
-                                    <span className="text-sm font-bold text-slate-800">
-                                        Favourite List <span className="text-xs font-normal text-slate-500">({activityData?.favorites?.length || 0})</span>
+                                    <span className="text-sm text-slate-800">
+                                        Favourite List <span className="text-xs font-normal text-slate-500">({activityData?.favoritesTotal ?? activityData?.favorites?.length ?? 0})</span>
                                     </span>
                                     <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", expandedActivity === 'favorites' && "rotate-180")} />
                                 </div>
                                 {expandedActivity === 'favorites' && (
                                     <div className="p-2 border-t border-slate-100 bg-slate-50 space-y-2">
-                                        {activityData?.favorites?.map((ad: any) => (
-                                            <div key={ad._id} className="flex items-center justify-between bg-white p-2 rounded border border-slate-200 shadow-sm">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-8 h-8 rounded overflow-hidden bg-slate-200">
-                                                        {ad.images && ad.images[0] ? <img src={getImageUrl(ad.images[0]) || undefined} alt="Ad" className="w-full h-full object-cover" loading="lazy" /> : <div className="w-full h-full bg-slate-300" />}
+                                        <div className="max-h-[260px] overflow-y-auto pr-1 space-y-2">
+                                            {activityData?.favorites?.map((ad: any) => (
+                                                <div key={ad._id} className="flex items-center justify-between bg-white p-2 rounded border border-slate-200 shadow-sm gap-2">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <div className="w-8 h-8 rounded overflow-hidden bg-slate-200 shrink-0">
+                                                            {ad.images && ad.images[0] ? <img src={getImageUrl(ad.images[0]) || undefined} alt="Ad" className="w-full h-full object-cover" loading="lazy" /> : <div className="w-full h-full bg-slate-300" />}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <h4 className="text-xs text-slate-800 line-clamp-1">{ad.headline}</h4>
+                                                            <span className="text-[10px] text-slate-500">{ad.price ? `TK ${ad.price}` : 'N/A'}</span>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <h4 className="text-xs font-bold text-slate-800 line-clamp-1">{ad.headline}</h4>
-                                                        <span className="text-[10px] text-slate-500">{ad.price ? `TK ${ad.price}` : 'N/A'}</span>
-                                                    </div>
+                                                    <button
+                                                        onClick={() => handleSeeLiveClick(ad)}
+                                                        className="p-1 hover:bg-slate-100 rounded-full shrink-0"
+                                                        title="Open"
+                                                    >
+                                                        <ArrowRight className="w-4 h-4 text-slate-700" />
+                                                    </button>
                                                 </div>
-                                                <button className="p-1 hover:bg-slate-100 rounded-full">
-                                                    <ArrowRight className="w-4 h-4 text-slate-700" />
-                                                </button>
-                                            </div>
-                                        ))}
-                                        {(!activityData?.favorites || activityData.favorites.length === 0) && (
-                                            <div className="text-center text-xs text-slate-400 py-2">No favorite items.</div>
-                                        )}
+                                            ))}
+                                            {(!activityData?.favorites || activityData.favorites.length === 0) && (
+                                                <div className="text-center text-xs text-slate-400 py-2">No favorite items.</div>
+                                            )}
+                                        </div>
+                                        <div className="text-center">
+                                            <button
+                                                onClick={loadMoreFavorites}
+                                                disabled={!activityData?.favoritesHasMore || loadingMoreFavorites}
+                                                className="text-[10px] text-slate-500 hover:text-slate-700 py-1 disabled:opacity-50"
+                                            >
+                                                {loadingMoreFavorites ? 'Loading...' : (activityData?.favoritesHasMore ? 'See More' : 'No More')}
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -2209,27 +2457,50 @@ I have sent my CV for your review.`;
                                     className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50"
                                     onClick={() => toggleActivitySection('payment')}
                                 >
-                                    <span className="text-sm font-bold text-slate-800">Payment Info</span>
+                                    <span className="text-sm text-slate-800">Payment Info</span>
                                     <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", expandedActivity === 'payment' && "rotate-180")} />
                                 </div>
                                 {expandedActivity === 'payment' && (
                                     <div className="p-2 border-t border-slate-100 bg-slate-50 space-y-2">
-                                        {activityData?.payments?.map((payment: any) => (
-                                            <div key={payment._id} className="bg-white p-2 rounded border border-slate-200 shadow-sm text-xs">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    {/* Avatar placeholder for Payment Method if needed */}
-                                                    <div className="font-bold text-slate-700">TK {payment.amount}, Pay By {payment.method}</div>
-                                                </div>
-                                                <div className="text-[10px] text-slate-500 space-y-0.5 ml-0">
-                                                    <div>Post ID : {payment.ad || 'N/A'}, TId : {payment.transactionId}</div>
-                                                    <div>Valid : {payment.validTill ? new Date(payment.validTill).toLocaleDateString() : 'N/A'}</div>
-                                                    <div>Result : {payment.result || 'N/A'}</div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {(!activityData?.payments || activityData.payments.length === 0) && (
-                                            <div className="text-center text-xs text-slate-400 py-2">No payment history.</div>
-                                        )}
+                                        <div className="max-h-[300px] overflow-y-auto pr-1 space-y-2">
+                                            {(activityData?.transactions || []).map((tx: any) => {
+                                                const txDate = tx.payTime || tx.createdAt;
+                                                const profileOrProductId = tx.productId?._id || tx.productId || tx.sellerId || 'N/A';
+                                                const durationDays = (tx.item || '').toLowerCase().includes('verify')
+                                                    ? 365
+                                                    : (tx.productId?.promoteDuration || 0);
+                                                const durationText = durationDays ? `${durationDays} Days` : 'N/A';
+                                                const payBy = tx.payType || tx.mode || 'N/A';
+                                                const total = tx.amount ?? 0;
+
+                                                return (
+                                                    <div key={tx._id} className="bg-white p-2 rounded border border-slate-200 shadow-sm text-xs">
+                                                        <div className="font-bold text-slate-800 text-[12px]">SHADAMON Promotion Invoice</div>
+                                                        <div className="text-[10px] text-slate-600 mt-0.5">Date: {formatInvoiceDate(txDate)}</div>
+                                                        <div className="text-[10px] text-slate-600">Profile/Product ID: {String(profileOrProductId)}</div>
+                                                        <div className="text-[10px] text-slate-600">Transaction ID: {tx.tnxId || 'N/A'}</div>
+                                                        <div className="text-[10px] text-slate-600">
+                                                            Product: {tx.item || 'N/A'}, Duration: {durationText}
+                                                        </div>
+                                                        <div className="text-[10px] text-slate-600">
+                                                            Total: {total}, Payment by {payBy}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                            {(!activityData?.transactions || activityData.transactions.length === 0) && (
+                                                <div className="text-center text-xs text-slate-400 py-2">No payment history.</div>
+                                            )}
+                                        </div>
+                                        <div className="text-center">
+                                            <button
+                                                onClick={loadMorePayments}
+                                                disabled={!activityData?.paymentsHasMore || loadingMorePayments}
+                                                className="text-[10px] text-slate-500 hover:text-slate-700 py-1 disabled:opacity-50"
+                                            >
+                                                {loadingMorePayments ? 'Loading...' : (activityData?.paymentsHasMore ? 'See More' : 'No More')}
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -2240,7 +2511,7 @@ I have sent my CV for your review.`;
                                     className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50"
                                     onClick={() => toggleActivitySection('notify')}
                                 >
-                                    <span className="text-sm font-bold text-slate-800">Set 'Notify Me' Product</span>
+                                    <span className="text-sm text-slate-800">Set 'Notify Me' Product</span>
                                     <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", expandedActivity === 'notify' && "rotate-180")} />
                                 </div>
                                 {expandedActivity === 'notify' && (
@@ -2255,7 +2526,7 @@ I have sent my CV for your review.`;
                                         </div>
 
                                         <div className="relative">
-                                            <label className="text-[10px] font-bold text-slate-500 mb-1 block">Select Categories to get notified</label>
+                                            <label className="text-[10px] text-slate-500 mb-1 block">Select Categories to get notified</label>
                                             <div className="max-h-[150px] overflow-y-auto border border-slate-200 rounded bg-white p-1 grid grid-cols-2 gap-1">
                                                 {categories.map((cat: any) => {
                                                     const isSelected = activityData?.notifyCategories?.includes(cat.name);
@@ -2284,7 +2555,7 @@ I have sent my CV for your review.`;
                                     className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50"
                                     onClick={() => toggleActivitySection('notifyPrefs')}
                                 >
-                                    <span className="text-sm font-bold text-slate-800">
+                                    <span className="text-sm text-slate-800">
                                         Saved Notify Preferences <span className="text-xs font-normal text-slate-500">({activityData?.notifyPreferences?.length || 0})</span>
                                     </span>
                                     <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", expandedActivity === 'notifyPrefs' && "rotate-180")} />

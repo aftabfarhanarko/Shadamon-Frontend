@@ -19,6 +19,7 @@ import { API_BASE_URL } from '../../utils/apiConfig';
 import { useLanguage } from '../context/LanguageContext';
 import { timeAgo } from '../../utils/timeAgo';
 import { getImageUrl } from '../../utils/imageUrl';
+import { getNonHighlightLabels, hasHighlightLabel } from '../../utils/labels';
 import Image from 'next/image';
 import LatestFreeAdPromo from '../../components/LatestFreeAdPromo';
 import AdDetailsModal from '../../components/AdDetailsModal';
@@ -1447,7 +1448,12 @@ export default function DashboardClient() {
                                                                         router.push(getAdUrl(block.bigAd), { scroll: false });
                                                                     }
                                                                 }}
-                                                                className="bg-white rounded-xl cursor-pointer group block border border-slate-100 shadow-sm"
+                                                                className={cn(
+                                                                    "bg-white rounded-xl cursor-pointer group block border shadow-sm",
+                                                                    hasHighlightLabel(block.bigAd)
+                                                                        ? "border-orange-500 shadow-[0_12px_30px_rgba(249,115,22,0.25)] ring-1 ring-orange-400/40"
+                                                                        : "border-slate-100"
+                                                                )}
                                                             >
                                                                 <div className="relative h-[315px] w-full rounded-t-xl overflow-hidden group">
                                                                     {getImageUrl(block.bigAd.images?.[0]) && (
@@ -1464,6 +1470,18 @@ export default function DashboardClient() {
                                                                                 loading="lazy"
                                                                             />
                                                                         </>
+                                                                    )}
+                                                                    {getNonHighlightLabels(block.bigAd).length > 0 && (
+                                                                        <div className="absolute top-2 left-2 z-20 flex flex-col gap-1">
+                                                                            {getNonHighlightLabels(block.bigAd).map((label: string) => (
+                                                                                <span
+                                                                                    key={label}
+                                                                                    className="bg-white/90 text-[10px] font-bold text-slate-800 px-2 py-0.5 rounded border border-slate-200 shadow-sm"
+                                                                                >
+                                                                                    {label}
+                                                                                </span>
+                                                                            ))}
+                                                                        </div>
                                                                     )}
                                                                 </div>
                                                                 <div className="p-3">
@@ -1519,7 +1537,12 @@ export default function DashboardClient() {
                                                                                 router.push(getAdUrl(ad), { scroll: false });
                                                                             }
                                                                         }}
-                                                                        className="bg-white rounded-lg p-3 pb-0 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50"
+                                                                        className={cn(
+                                                                            "bg-white rounded-lg p-3 pb-0 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50 border",
+                                                                            hasHighlightLabel(ad)
+                                                                                ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-1 ring-orange-400/30"
+                                                                                : "border-transparent"
+                                                                        )}
                                                                     >
                                                                         <div className="w-[200px] h-[130px] rounded-lg overflow-hidden shrink-0 relative group-hover:scale-[1.02] transition-transform">
                                                                             {getImageUrl(ad.images?.[0]) && (
@@ -1531,6 +1554,18 @@ export default function DashboardClient() {
                                                                                     />
                                                                                     <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-contain" loading="lazy" />
                                                                                 </>
+                                                                            )}
+                                                                            {getNonHighlightLabels(ad).length > 0 && (
+                                                                                <div className="absolute top-2 left-2 z-20 flex flex-col gap-1">
+                                                                                    {getNonHighlightLabels(ad).map((label: string) => (
+                                                                                        <span
+                                                                                            key={label}
+                                                                                            className="bg-white/90 text-[10px] font-bold text-slate-800 px-2 py-0.5 rounded border border-slate-200 shadow-sm"
+                                                                                        >
+                                                                                            {label}
+                                                                                        </span>
+                                                                                    ))}
+                                                                                </div>
                                                                             )}
                                                                         </div>
                                                                         <div className="flex-1 min-w-0 flex flex-col justify-center">
@@ -1580,7 +1615,12 @@ export default function DashboardClient() {
                                                                         {ads.filter(ad => ad.category === categoryToShow.name).slice(0, 10).map(ad => (
                                                                             <div
                                                                                 key={ad._id}
-                                                                                className="min-w-[240px] w-[240px] bg-white border border-slate-200 rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                                                                                className={cn(
+                                                                                    "min-w-[240px] w-[240px] bg-white border rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow",
+                                                                                    hasHighlightLabel(ad)
+                                                                                        ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-1 ring-orange-400/30"
+                                                                                        : "border-slate-200"
+                                                                                )}
                                                                                 onClick={() => {
                                                                                     if (ad.adType === 'Promoted' && ad.promoteType === 'traffic' && ad.trafficLink) {
                                                                                         window.open(ad.trafficLink, '_blank');
@@ -1599,6 +1639,18 @@ export default function DashboardClient() {
                                                                                             />
                                                                                             <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-contain" loading="lazy" />
                                                                                         </>
+                                                                                    )}
+                                                                                    {getNonHighlightLabels(ad).length > 0 && (
+                                                                                        <div className="absolute top-2 left-2 z-20 flex flex-col gap-1">
+                                                                                            {getNonHighlightLabels(ad).map((label: string) => (
+                                                                                                <span
+                                                                                                    key={label}
+                                                                                                    className="bg-white/90 text-[10px] font-bold text-slate-800 px-2 py-0.5 rounded border border-slate-200 shadow-sm"
+                                                                                                >
+                                                                                                    {label}
+                                                                                                </span>
+                                                                                            ))}
+                                                                                        </div>
                                                                                     )}
                                                                                 </div>
                                                                                 <div className="p-2.5 flex items-center justify-between gap-2">

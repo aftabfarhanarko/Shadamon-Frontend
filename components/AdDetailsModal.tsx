@@ -8,6 +8,7 @@ import { BsChatDotsFill } from 'react-icons/bs';
 import { API_BASE_URL } from '../utils/apiConfig';
 // Use centralized url helper
 import { getImageUrl } from '../utils/imageUrl';
+import { getNonHighlightLabels, hasHighlightLabel } from '../utils/labels';
 import { formatDistanceToNow } from 'date-fns';
 import { useRef, useEffect } from 'react';
 import Cookies from 'js-cookie';
@@ -825,9 +826,9 @@ I have sent my CV for your review.`;
                                                     loading="lazy"
                                                 />
                                                 {/* Top Left Badge */}
-                                                <div className="absolute top-2 left-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm shadow-sm">
+                                                {/* <div className="absolute top-2 left-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm shadow-sm">
                                                     FEATURED
-                                                </div>
+                                                </div> */}
                                                 {/* Top Right Star */}
                                                 <button className="absolute top-2 right-2 p-1.5 bg-black/20 hover:bg-black/40 rounded-full text-white backdrop-blur-[2px] transition-colors">
                                                     <Star className="w-3.5 h-3.5" />
@@ -950,7 +951,12 @@ I have sent my CV for your review.`;
                                     {similarAds.slice(0, 5).map((sad) => (
                                         <div
                                             key={sad._id}
-                                            className="flex gap-3 bg-white border border-slate-100 rounded-lg overflow-hidden shadow-sm p-2 pt-0 cursor-pointer"
+                                            className={cn(
+                                                "flex gap-3 bg-white border rounded-lg overflow-hidden shadow-sm p-2 pt-0 cursor-pointer",
+                                                hasHighlightLabel(sad)
+                                                    ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-1 ring-orange-400/30"
+                                                    : "border-slate-100"
+                                            )}
                                             onClick={() => {
                                                 if (sad.adType === 'Promoted' && sad.promoteType === 'traffic' && sad.trafficLink) {
                                                     window.open(sad.trafficLink, '_blank');
@@ -961,7 +967,7 @@ I have sent my CV for your review.`;
                                                 }
                                             }}
                                         >
-                                            <div className="w-24 h-20 bg-slate-100 rounded bg-cover bg-center shrink-0">
+                                            <div className="w-24 h-20 bg-slate-100 rounded bg-cover bg-center shrink-0 relative overflow-hidden">
                                                 {getImageUrl(sad.images?.[0]) && (
                                                     <img
                                                         src={getImageUrl(sad.images?.[0]) || ''}
@@ -969,6 +975,18 @@ I have sent my CV for your review.`;
                                                         className="w-full h-full object-cover"
                                                         loading="lazy"
                                                     />
+                                                )}
+                                                {getNonHighlightLabels(sad).length > 0 && (
+                                                    <div className="absolute top-1 left-1 z-20 flex flex-col gap-0.5">
+                                                        {getNonHighlightLabels(sad).map((label: string) => (
+                                                            <span
+                                                                key={label}
+                                                                className="bg-white/90 text-[9px] font-bold text-slate-800 px-1.5 py-0.5 rounded border border-slate-200 shadow-sm leading-none"
+                                                            >
+                                                                {label}
+                                                            </span>
+                                                        ))}
+                                                    </div>
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0 flex flex-col justify-center">
