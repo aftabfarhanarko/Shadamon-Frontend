@@ -7,10 +7,10 @@ import {
     Home, CheckCircle2, Store, Smartphone, Grid, Package, ChevronDown, ChevronRight,
     Search, MapPin, Menu, X, Plus, Inbox, User, Globe, Clock, Eye, ArrowRight, ArrowLeft, ArrowUp, SlidersHorizontal, Bookmark
 } from 'lucide-react';
-import { RiCheckboxCircleFill } from 'react-icons/ri';
 import { FaAndroid, FaFacebookF, FaTiktok, FaInstagram, FaYoutube } from 'react-icons/fa';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import VerifiedBadge from '../../components/VerifiedBadge';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -26,20 +26,6 @@ import AdDetailsModal from '../../components/AdDetailsModal';
 import FilterModal, { FilterState } from '../../components/FilterModal';
 import Cookies from 'js-cookie';
 import { useSettings } from '../context/SettingsContext';
-
-const VerifiedBadge = () => (
-    <div className="relative group/badge inline-flex items-center justify-center translate-y-[0.5px]">
-        <RiCheckboxCircleFill className="w-3.5 h-3.5 text-[#0088cc] shrink-0 cursor-pointer" />
-        <div className="absolute bottom-full left-1/2 -translate-x-[20%] lg:-translate-x-1/2 mb-2 hidden group-hover/badge:block w-[220px] sm:w-[240px] bg-slate-50 border border-slate-200 shadow-xl rounded-xl p-3 z-[100] animate-in fade-in zoom-in-95 duration-200 pointer-events-none text-left">
-            <p className="text-[13px] text-slate-700 font-medium leading-relaxed whitespace-normal font-normal">
-                <span className="font-bold text-black">Verified</span> by mobile number & additional checks to ensure authenticity.
-            </p>
-            <div className="absolute top-full left-[20%] lg:left-1/2 -translate-x-1/2 -mt-[1px]">
-                <div className="w-3 h-3 bg-slate-50 border-b border-r border-slate-200 transform rotate-45" />
-            </div>
-        </div>
-    </div>
-);
 
 interface SubItem {
     _id: string;
@@ -1498,7 +1484,7 @@ export default function DashboardClient() {
                                                                                 >
                                                                                     {block.bigAd.user?.storeName || block.bigAd.user?.name || 'User'}
                                                                                 </span>
-                                                                                {block.bigAd.user?.mVerified && <VerifiedBadge />}
+                                                                                {block.bigAd.user?.mVerified && <VerifiedBadge className="translate-y-[0.5px]" />}
                                                                             </div>
                                                                             <h3 className="font-bold text-lg text-black leading-tight mb-0.5">{block.bigAd.headline}</h3>
                                                                             <div className="font-bold text-base text-black mb-1">৳ {block.bigAd.price?.toLocaleString() || 'N/A'}</div>
@@ -1572,7 +1558,7 @@ export default function DashboardClient() {
                                                                             <div className="flex items-center gap-1 text-[10px] text-black mb-0.5">
                                                                                 <span>{ad.adType === 'Promoted' ? 'Promoted By' : 'Post By'}</span>
                                                                                 <span className="font-bold text-black hover:text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id } })); }}>{ad.user?.storeName || ad.user?.name || 'User'}</span>
-                                                                                {ad.user?.mVerified && <VerifiedBadge />}
+                                                                                {ad.user?.mVerified && <VerifiedBadge className="translate-y-[0.5px]" />}
                                                                             </div>
                                                                             <h4 className="text-sm text-black truncate mb-0.5">{ad.headline}</h4>
                                                                             <div className="text-sm text-black mb-1">৳ {ad.price?.toLocaleString() || 'N/A'}</div>
@@ -1779,7 +1765,7 @@ export default function DashboardClient() {
                                                 <h4 className="font-bold text-black text-[14px] truncate group-hover/name:text-[#0088cc] transition-colors">
                                                     {user.storeName || user.name}
                                                 </h4>
-                                                {user.mVerified && <VerifiedBadge />}
+                                                {user.mVerified && <VerifiedBadge className="translate-y-[0.5px]" />}
                                             </div>
                                             <p className="text-[10px] text-slate-500 -mt-0.5">
                                                 {user.followers?.length || 0} {t('follower')}

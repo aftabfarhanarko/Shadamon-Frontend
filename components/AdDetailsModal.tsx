@@ -16,23 +16,9 @@ import { useLanguage } from '../app/context/LanguageContext';
 import { useRouter } from 'next/navigation';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { RiCheckboxCircleFill } from 'react-icons/ri';
 import InfoModal from './InfoModal';
 import { useSettings } from '../app/context/SettingsContext';
-
-const VerifiedBadge = () => (
-    <div className="relative group/badge flex items-center justify-center -mt-0.5 ml-1">
-        <RiCheckboxCircleFill className="w-5 h-5 text-[#0088cc] shrink-0 cursor-pointer" />
-        <div className="absolute bottom-full left-1/2 -translate-x-[20%] lg:-translate-x-1/2 mb-2 hidden group-hover/badge:block w-[240px] bg-slate-50 border border-slate-200 shadow-xl rounded-xl p-3 z-[100] animate-in fade-in zoom-in-95 duration-200 pointer-events-none text-left">
-            <p className="text-[13px] text-slate-700 font-medium leading-relaxed whitespace-normal break-words normal-case">
-                <span className="font-bold text-black">Verified</span> by mobile number & additional checks to ensure authenticity.
-            </p>
-            <div className="absolute top-full left-[20%] lg:left-1/2 -translate-x-1/2 -mt-[1px]">
-                <div className="w-3 h-3 bg-slate-50 border-b border-r border-slate-200 transform rotate-45" />
-            </div>
-        </div>
-    </div>
-);
+import VerifiedBadge from './VerifiedBadge';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs));
@@ -914,7 +900,9 @@ I have sent my CV for your review.`;
                                         >
                                             {(ad as any).user?.storeName || 'Store Name'}
                                         </h4>
-                                        {(ad as any).user?.mVerified && <VerifiedBadge />}
+                                        {(ad as any).user?.mVerified && (
+                                            <VerifiedBadge className="-mt-0.5 ml-1" iconClassName="w-5 h-5" tooltipWidthClassName="w-[240px]" />
+                                        )}
                                     </div>
 
                                     <div className="text-[11px] text-slate-500 leading-none mb-1">

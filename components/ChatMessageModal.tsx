@@ -79,6 +79,7 @@ export default function ChatMessageModal({ isOpen, onClose, onBack, ad, otherUse
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [selectedAdForDetail, setSelectedAdForDetail] = useState<any>(null);
     const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
+    const [fetchedOtherUser, setFetchedOtherUser] = useState<any>(null);
 
 
     // Determine who the "other" person is in the chat
@@ -177,6 +178,31 @@ export default function ChatMessageModal({ isOpen, onClose, onBack, ad, otherUse
             }
         }
     }, [isOpen, ad, currentUser, socket, otherUserProp]);
+
+    // Fetch other user details for name/badge
+    useEffect(() => {
+        if (!isOpen) {
+            setFetchedOtherUser(null);
+            return;
+        }
+
+        const loadOtherUser = async () => {
+            const id = getOtherUserId();
+            if (!id) return;
+            
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/user/profile/${id}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setFetchedOtherUser(data);
+                }
+            } catch (err) {
+                console.error("Error fetching other user profile:", err);
+            }
+        };
+
+        loadOtherUser();
+    }, [isOpen, otherUserId, ad?._id]);
 
     // Socket listeners
     useEffect(() => {
@@ -292,6 +318,9 @@ export default function ChatMessageModal({ isOpen, onClose, onBack, ad, otherUse
     if (!isOpen || !ad) return null;
 
     const getOtherUserName = () => {
+        // If we have fetched data, use it as priority
+        if (fetchedOtherUser) return fetchedOtherUser.name || fetchedOtherUser.storeName || 'User';
+
         // If we have otherUserProp (passed from MessageModal list), use it
         if (otherUserProp) return otherUserProp.name || otherUserProp.storeName || 'User';
 
@@ -307,8 +336,8 @@ export default function ChatMessageModal({ isOpen, onClose, onBack, ad, otherUse
     };
 
     const sellerName = getOtherUserName();
-    const otherUserPhoto = otherUserProp?.photo || ad?.user?.photo || otherUserProp?.storeLogo || ad?.user?.storeLogo;
-    const isVerified = otherUserProp?.mVerified || ad?.user?.mVerified;
+    const otherUserPhoto = fetchedOtherUser?.photo || fetchedOtherUser?.storeLogo || otherUserProp?.photo || ad?.user?.photo || otherUserProp?.storeLogo || ad?.user?.storeLogo;
+    const isVerified = fetchedOtherUser?.mVerified || otherUserProp?.mVerified || ad?.user?.mVerified;
 
     return (
         <div className="fixed inset-0 z-[1100] flex items-start justify-center pt-16 font-sans">
