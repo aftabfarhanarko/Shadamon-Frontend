@@ -472,6 +472,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             setSocket(null);
         }
         sessionStorage.removeItem('ad_session_views');
+        sessionStorage.removeItem('ad_session_view_tokens');
         window.dispatchEvent(new Event('auth-change'));
         toast.success("Logged out successfully");
         window.location.href = '/dashboard';

@@ -46,7 +46,7 @@ interface AccountActivityModalProps {
 export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPostAd, onEditAd, initialTab = 'Page' }: AccountActivityModalProps) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'Page' | 'Profile' | 'Settings' | 'Post' | 'Activity'>(initialTab);
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const [productTab, setProductTab] = useState<'All' | 'Popular'>('All');
     const [expandedSetting, setExpandedSetting] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -76,6 +76,18 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
     // CV Send State
     const [pendingCvAd, setPendingCvAd] = useState<any>(null);
     const [highlightCvFields, setHighlightCvFields] = useState(false);
+
+    const normalizeText = (value: unknown) => String(value ?? '').trim().toLowerCase();
+    const getAdTypeLower = (ad: any) => normalizeText(ad?.adType);
+    const getAdStatusLower = (ad: any) => normalizeText(ad?.status);
+    const isPromotionLive = (ad: any) => getAdStatusLower(ad) === 'active' && getAdTypeLower(ad) === 'promoted';
+    const isProcessingPromotion = (ad: any) => getAdStatusLower(ad) === 'review' && getAdTypeLower(ad) === 'processing';
+    const getPostButtonLabel = (ad: any) => {
+        if (isPromotionLive(ad)) return 'Promotion Live';
+        if (isProcessingPromotion(ad)) return 'Processing';
+        if (getAdTypeLower(ad) === 'free') return 'Promote';
+        return 'Promote';
+    };
 
     useEffect(() => {
         const handleInitSendCv = (e: CustomEvent) => {
@@ -757,8 +769,24 @@ I have sent my CV for your review.`;
             window.dispatchEvent(new CustomEvent('open-mobile-entry-modal'));
             return;
         }
-        // Placeholder for future implementation
-        toast.success("Message feature coming soon");
+
+        if (!userData) return;
+
+        // Message feature needs an ad reference. Pick the first one from userAds.
+        const targetAd = userAds?.find(ad => ad.status === 'active') || userAds?.[0];
+
+        if (!targetAd) {
+            toast.error("This user has no active ads to start a conversation.");
+            return;
+        }
+
+        window.dispatchEvent(new CustomEvent('open-chat-modal', {
+            detail: {
+                ad: targetAd,
+                otherUser: userData
+            }
+        }));
+        onClose();
     };
 
     const handleLogout = () => {
@@ -1230,13 +1258,13 @@ I have sent my CV for your review.`;
                                                                     <img src={getImageUrl(ad.images[0]) || undefined} className="relative max-w-full max-h-full object-contain z-10" loading="lazy" />
                                                                 </>
                                                             )}
-                                                            {(ad.status === 'pause' || ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) && (
+                                                            {/* {(ad.status === 'pause' || ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) && (
                                                                 <div className="absolute top-1 left-1 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
                                                                     {ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)
                                                                         ? 'Preparing'
                                                                         : ((ad.userUpdated || ad.userNewPhotos) ? 'Update in Review' : 'In Review')}
                                                                 </div>
-                                                            )}
+                                                            )} */}
                                                             {productTab === 'Popular' && (
                                                                 <div className="absolute top-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1">
                                                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
@@ -1246,29 +1274,29 @@ I have sent my CV for your review.`;
                                                         </div>
                                                         <div className="p-1.5 flex-1 flex flex-col">
                                                             <div className="font-black text-[13px] text-slate-900 leading-tight mb-0.5">
-                                                                {ad.price ? `${(ad.price / 100000).toFixed(1)} L` : 'N/A'}
+                                                                {ad.price ? `${(ad.price)}` : 'N/A'}
                                                             </div>
                                                             <div className="text-[10px] text-slate-500 leading-tight line-clamp-2 mb-1.5 min-h-[2.5em]">
                                                                 {ad.headline}
                                                             </div>
                                                             <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    if (ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)) {
-                                                                        toast("This ad is being prepared and is currently under review.");
-                                                                        return;
-                                                                    }
-                                                                    handlePromoteClick(ad);
-                                                                }}
-                                                                className={cn(
-                                                                    "mt-auto w-full text-white text-[10px] font-bold py-2.5 rounded transition-colors",
-                                                                    ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)
-                                                                        ? "bg-amber-500 hover:bg-amber-600"
-                                                                        : "bg-[#0088cc] hover:bg-[#0077b5]"
-                                                                )}
-                                                            >
-                                                                {ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) ? 'Preparing' : 'Promote This Post'}
-                                                            </button>
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        if (isProcessingPromotion(ad)) {
+                                                                            toast("This promotion is processing and is currently under review.");
+                                                                            return;
+                                                                        }
+                                                                        handlePromoteClick(ad);
+                                                                    }}
+                                                                    className={cn(
+                                                                        "mt-auto w-full text-white text-[10px] font-bold py-2.5 rounded transition-colors",
+                                                                        isProcessingPromotion(ad)
+                                                                            ? "bg-[#0088cc] hover:bg-[#0077b5]"
+                                                                            : "bg-[#0088cc] hover:bg-[#0077b5]"
+                                                                    )}
+                                                                >
+                                                                    {getPostButtonLabel(ad)}
+                                                                </button>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -1291,7 +1319,7 @@ I have sent my CV for your review.`;
                                                             </>
                                                         )}
                                                         {(ad.status === 'pause' || ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) && (
-                                                            <div className="absolute top-2 left-2 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                                                            <div className="absolute top-2 left-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                                                                 {ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)
                                                                     ? 'Preparing'
                                                                     : ((ad.userUpdated || ad.userNewPhotos) ? 'Update in Review' : 'In Review')}
@@ -1306,7 +1334,7 @@ I have sent my CV for your review.`;
                                                     </div>
                                                     <div className="p-2">
                                                         <div className="font-black text-[14px] text-slate-900 mb-0.5">
-                                                            {ad.price ? `${(ad.price / 100000).toFixed(1)} L` : 'N/A'}
+                                                            {ad.price ? `${(ad.price)}` : 'N/A'}
                                                         </div>
                                                         <div className="text-[12px] font-bold text-slate-700 mb-2 truncate">
                                                             {ad.headline}
@@ -1320,15 +1348,15 @@ I have sent my CV for your review.`;
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    if (ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)) {
-                                                                        toast("This ad is being prepared and is currently under review.");
+                                                                    if (isProcessingPromotion(ad)) {
+                                                                        toast("This promotion is processing and is currently under review.");
                                                                         return;
                                                                     }
                                                                     handlePromoteClick(ad);
                                                                 }}
                                                                 className="flex-1 text-white text-[11px] font-bold pl-1 py-1.5"
                                                             >
-                                                                {ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) ? 'Preparing' : 'Promote This Post'}
+                                                                {getPostButtonLabel(ad)}
                                                             </button>
                                                         </div>
                                                     </div>
@@ -1354,7 +1382,7 @@ I have sent my CV for your review.`;
                                                                     </>
                                                                 )}
                                                                 {(ad.status === 'pause' || ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) && (
-                                                                    <div className="absolute top-1 left-1 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
+                                                                    <div className="absolute top-1 left-1 bg-blue-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
                                                                         {ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)
                                                                             ? 'Preparing'
                                                                             : ((ad.userUpdated || ad.userNewPhotos) ? 'Update in Review' : 'In Review')}
@@ -1377,20 +1405,20 @@ I have sent my CV for your review.`;
                                                                 <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
-                                                                        if (ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)) {
-                                                                            toast("This ad is being prepared and is currently under review.");
+                                                                        if (isProcessingPromotion(ad)) {
+                                                                            toast("This promotion is processing and is currently under review.");
                                                                             return;
                                                                         }
                                                                         handlePromoteClick(ad);
                                                                     }}
                                                                     className={cn(
                                                                         "mt-auto w-full text-white text-[10px] font-bold py-2.5 rounded transition-colors",
-                                                                        ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)
-                                                                            ? "bg-amber-500 hover:bg-amber-600"
+                                                                        isProcessingPromotion(ad)
+                                                                            ? "bg-[#0088cc] hover:bg-[#0077b5]"
                                                                             : "bg-[#0088cc] hover:bg-[#0077b5]"
                                                                     )}
                                                                 >
-                                                                    {ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) ? 'Preparing' : 'Promote This Post'}
+                                                                    {getPostButtonLabel(ad)}
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -1906,7 +1934,17 @@ I have sent my CV for your review.`;
                                                     </div>
                                                 )}
                                                 {/* Review Notice - Top of Post */}
-                                                {(ad.status === 'pause' || ad.status === 'review') && (
+                                                {(ad.status === 'pause') && (
+                                                    <div className="bg-red-50 p-2 px-3 flex items-center gap-2 border-b border-red-100">
+                                                        <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center shrink-0">
+                                                            <Search className="w-3.5 h-3.5 text-white stroke-[3]" />
+                                                        </div>
+                                                        <div className="text-[11px] text-red-600 font-bold bg-red-50 px-2 py-1 rounded-sm mb-1 leading-tight">
+                                                            {t('free_ad_limit_reached_desc')}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {(ad.status === 'review') && (
                                                     <div className="bg-[#EEF2FF] p-2 px-3 flex items-center gap-2 border-b border-[#E0E7FF]">
                                                         <div className="w-6 h-6 rounded-full bg-[#3B82F6] flex items-center justify-center shrink-0">
                                                             <Search className="w-3.5 h-3.5 text-white stroke-[3]" />
@@ -1966,14 +2004,13 @@ I have sent my CV for your review.`;
                                                             <h3 className="text-sm text-black line-clamp-1" title={ad.headline}>
                                                                 {ad.headline}
                                                             </h3>
-                                                            <div className="text-[11px] text-black truncate">
+                                                            <div className="text-[12px] text-black truncate">
                                                                 {ad.category || 'Category'}, {ad.location || 'Location'}
                                                             </div>
-                                                            <div className="text-[10px] text-black">
+                                                            <div className="text-[12px] text-black">
                                                                 Publish {ad.createdAt ? new Date(ad.createdAt).toLocaleDateString('en-GB').replace(/\//g, '.') : 'N/A'}
                                                             </div>
                                                         </div>
-
 
                                                         {/* Horizontal Divider */}
                                                         <div className="h-px bg-slate-500 w-[80%] my-0"></div>
@@ -1981,7 +2018,7 @@ I have sent my CV for your review.`;
                                                         {/* Bottom Subsection: Performance + Actions */}
                                                         <div className="flex items-start justify-between gap-1">
                                                             {/* Promote Performance Stats */}
-                                                            <div className="text-[10px] text-black flex-1">
+                                                            <div className="text-[12px] text-black flex-1">
                                                                 {ad.adType === 'Promoted' ? (
                                                                     <>
                                                                         <div className="mb-0.5 font-bold">Promote Performance</div>
@@ -2018,11 +2055,12 @@ I have sent my CV for your review.`;
                                                                         "text-[10px] font-bold py-0.5 rounded-full w-[65px] inline-flex items-center justify-center transition-all duration-200",
                                                                         ad.adType === 'Promoted' && ad.status !== 'deleted' && "cursor-pointer hover:opacity-80 active:scale-95",
                                                                         ad.status === 'pause' ? "bg-amber-100 text-amber-700 ring-1 ring-amber-200" :
-                                                                            ad.status === 'deleted' ? "bg-red-100 text-red-600" : "bg-[#0088cc] text-white shadow-sm"
+                                                                            ad.status === 'review' ? "bg-amber-100 text-amber-700 ring-1 ring-amber-200" :
+                                                                                ad.status === 'deleted' ? "bg-red-100 text-red-600" : "bg-[#0088cc] text-white shadow-sm"
                                                                     )}
                                                                 >
-                                                                    {ad.status === 'pause' ? (ad.adType === 'Promoted' ? 'PAUSED' : 'In Review') :
-                                                                        ad.status === 'deleted' ? 'Deleted' : (ad.adType === 'Promoted' ? 'AD On' : 'Free Ad')}
+                                                                    {ad.status === 'review' ? (ad.adType === 'Promoted' ? 'In Review' : 'In Review') :
+                                                                        ad.status === 'deleted' ? 'Deleted' : ad.status === 'pause' ? 'Free Ad' : (ad.adType === 'Promoted' ? 'AD On' : 'Free Ad')}
                                                                 </span>
                                                                 <div className="flex items-center gap-1.5">
                                                                     {selectedAdForDeletion === ad._id && isOwnAccount && ad.status !== 'deleted' && (
@@ -2051,17 +2089,20 @@ I have sent my CV for your review.`;
                                                 {/* Full Width Button */}
                                                 <div className="px-3 pb-3 pt-0">
                                                     <button
-                                                        onClick={() => handlePromoteClick(ad)}
+                                                        onClick={() => {
+                                                            if (isProcessingPromotion(ad)) {
+                                                                toast("This promotion is processing and is currently under review.");
+                                                                return;
+                                                            }
+                                                            handlePromoteClick(ad);
+                                                        }}
                                                         disabled={ad.status === 'deleted'}
                                                         className={cn(
                                                             "w-full text-white text-[13px] font-medium py-1.5 rounded-md text-center transition-colors shadow-sm",
                                                             ad.status === 'deleted' ? "bg-slate-400 cursor-not-allowed" : "bg-[#3B82F6] hover:bg-blue-600"
                                                         )}
                                                     >
-                                                        {ad.status === 'deleted' ? 'Post Deleted' :
-                                                            ad.adType === 'Promoted' ? (
-                                                                userData?.merchantTrustStatus === 'Trusted' ? 'Promotion Live' : 'Preparing'
-                                                            ) : 'Promote'}
+                                                        {ad.status === 'deleted' ? 'Post Deleted' : getPostButtonLabel(ad)}
                                                     </button>
                                                 </div>
                                             </div>

@@ -103,6 +103,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [newAdditionalType, setNewAdditionalType] = useState("whatsapp");
     const [additionalPhones, setAdditionalPhones] = useState<{ number: string, types: string[] }[]>([]);
     const [featureValues, setFeatureValues] = useState<Record<string, any>>({});
+    const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
     // OTP State
     const [showOtpVerification, setShowOtpVerification] = useState(false);
@@ -589,6 +590,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setAttemptedSubmit(true);
 
         if (!hasReadRules) {
             toast.error("Please accept the Terms and Conditions");
@@ -596,7 +598,16 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         }
 
         // Basic validation before OTP
-        if (!headline || !phone || (!isUserLoggedIn && !password)) {
+        if (
+            !headline ||
+            !phone ||
+            (!isUserLoggedIn && !password) ||
+            (images.length === 0 && existingImages.length === 0) ||
+            !selectedCategory ||
+            !selectedLocation ||
+            (subCat?.priceBoxShow && !price) ||
+            !name
+        ) {
             toast.error("Please fill in required fields");
             return;
         }
@@ -1025,7 +1036,13 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                 </div>
                             ) : (
                                 <>
-                                    <div className="bg-white rounded-lg p-3 border border-slate-100">
+                                    <div className={cn(
+                                        "bg-white rounded-lg p-3 border",
+                                        attemptedSubmit && images.length === 0 && existingImages.length === 0 ? "border-red-500" : "border-slate-100"
+                                    )}>
+                                        {attemptedSubmit && images.length === 0 && existingImages.length === 0 && (
+                                            <p className="text-[10px] text-red-500 font-bold mb-1 uppercase tracking-tight">{t('field_required')}</p>
+                                        )}
                                         <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
                                             {existingImages.map((imgUrl, i) => (
                                                 <div key={imgUrl} className="relative min-w-[80px] h-[80px] rounded-xl overflow-hidden bg-slate-50 border border-slate-100 group">
@@ -1060,7 +1077,11 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                     </div>
 
                                     <div className="space-y-2 font-sans bg-slate-100">
-                                        <div className="bg-white rounded-lg border border-slate-500 px-3 py-2 relative">
+                                        <div className={cn(
+                                            "bg-white rounded-lg border px-3 py-2 relative",
+                                            attemptedSubmit && !headline.trim() ? "border-red-500" : "border-slate-500"
+                                        )}>
+                                            {attemptedSubmit && !headline.trim() && <p className="text-[9px] text-red-500 font-bold uppercase">{t('field_required')}</p>}
                                             <input
                                                 ref={headlineInputRef}
                                                 type="text"
@@ -1079,7 +1100,11 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                             />
                                         </div>
 
-                                        <div className="bg-white rounded-lg border border-slate-500 px-3 py-3">
+                                        <div className={cn(
+                                            "bg-white rounded-lg border px-3 py-3",
+                                            attemptedSubmit && !description.trim() ? "border-red-500" : "border-slate-500"
+                                        )}>
+                                            {attemptedSubmit && !description.trim() && <p className="text-[9px] text-red-500 font-bold uppercase">{t('field_required')}</p>}
                                             <textarea
                                                 placeholder={t('description_placeholder')}
                                                 value={description}
@@ -1099,7 +1124,11 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                     </div>
 
                                     {/* Category & Location Selection Section */}
-                                    <div className="bg-white rounded-lg border border-slate-500 p-3 shadow-sm font-sans space-y-2">
+                                    <div className={cn(
+                                        "bg-white rounded-lg border p-3 shadow-sm font-sans space-y-2",
+                                        attemptedSubmit && (!selectedCategory || !selectedLocation) ? "border-red-500" : "border-slate-500"
+                                    )}>
+                                        {attemptedSubmit && (!selectedCategory || !selectedLocation) && <p className="text-[9px] text-red-500 font-bold uppercase">{t('field_required')}</p>}
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-4 text-[13px] text-slate-600 font-medium">
                                                 <div
@@ -1152,9 +1181,15 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                     </div>
 
                                     {subCat?.priceBoxShow && (
-                                        <div className="bg-slate-100 rounded-lg border border-slate-500 flex items-center overflow-hidden h-10 px-3">
+                                        <div className={cn(
+                                            "bg-slate-100 rounded-lg border flex items-center overflow-hidden h-10 px-3",
+                                            attemptedSubmit && !price.trim() ? "border-red-500" : "border-slate-500"
+                                        )}>
                                             <div className="flex-1 flex items-center pr-2">
-                                                <span className="text-[13px] text-slate-800 pr-2 border-r border-slate-300 whitespace-nowrap">
+                                                <span className={cn(
+                                                    "text-[13px] pr-2 border-r whitespace-nowrap",
+                                                    attemptedSubmit && !price.trim() ? "text-red-500 border-red-500" : "text-slate-800 border-slate-300"
+                                                )}>
                                                     {subCat.priceBoxName || "দাম"}
                                                 </span>
                                                 <input
@@ -1179,18 +1214,28 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                         </div>
                                     )}
 
-                                    <div className="bg-white rounded-lg border border-slate-500 p-3.5 space-y-2 shadow-sm font-sans">
+                                    <div className={cn(
+                                        "bg-white rounded-lg border p-3.5 space-y-2 shadow-sm font-sans",
+                                        attemptedSubmit && (!name.trim() || !phone.trim() || (!isUserLoggedIn && !password.trim())) ? "border-red-500" : "border-slate-500"
+                                    )}>
+                                        {attemptedSubmit && (!name.trim() || !phone.trim() || (!isUserLoggedIn && !password.trim())) && <p className="text-[9px] text-red-500 font-bold uppercase">{t('field_required')}</p>}
                                         <div className="space-y-1">
                                             <input
                                                 type="text"
                                                 value={name}
                                                 onChange={(e) => setName(e.target.value)}
                                                 placeholder={t('name_placeholder')}
-                                                className="w-full text-[13px] text-black focus:outline-none placeholder:text-black px-1 border-b border-slate-500 pb-1"
+                                                className={cn(
+                                                    "w-full text-[13px] text-black focus:outline-none placeholder:text-black px-1 border-b pb-1",
+                                                    attemptedSubmit && !name.trim() ? "border-red-300" : "border-slate-500"
+                                                )}
                                             />
                                         </div>
 
-                                        <div className="flex items-center gap-2 border-b border-slate-500 pb-1">
+                                        <div className={cn(
+                                            "flex items-center gap-2 border-b pb-1",
+                                            attemptedSubmit && !phone.trim() ? "border-red-300" : "border-slate-500"
+                                        )}>
                                             <div className="flex items-center justify-center w-4 h-4 rounded-full bg-cyan-400 text-white shrink-0">
                                                 <Check className="w-2.5 h-2.5 stroke-[4]" />
                                             </div>
@@ -1229,7 +1274,10 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                     value={password}
                                                     onChange={(e) => setPassword(e.target.value)}
                                                     placeholder={t('password_placeholder')}
-                                                    className="w-full text-[13px] text-black focus:outline-none placeholder:text-black px-1 border-b border-slate-500 pb-1"
+                                                    className={cn(
+                                                        "w-full text-[13px] text-black focus:outline-none placeholder:text-black px-1 border-b pb-1",
+                                                        attemptedSubmit && !password.trim() ? "border-red-300" : "border-slate-500"
+                                                    )}
                                                 />
                                             </div>
                                         )}
@@ -1314,18 +1362,10 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                         <button
                                             type="button"
                                             onClick={handleSubmit}
-                                            disabled={
-                                                loading ||
-                                                (images.length === 0 && existingImages.length === 0) ||
-                                                !headline.trim() ||
-                                                !description.trim() ||
-                                                !phone.trim() ||
-                                                (!isUserLoggedIn && !password.trim()) ||
-                                                (subCat?.priceBoxShow && !price.trim())
-                                            }
+                                            disabled={loading}
                                             className={cn(
                                                 "w-full py-3.5 rounded-lg text-[13px] font-bold tracking-widest active:scale-[0.98] transition-all",
-                                                (loading || (images.length === 0 && existingImages.length === 0) || !headline.trim() || !description.trim() || !phone.trim() || (!isUserLoggedIn && !password.trim()) || (subCat?.priceBoxShow && !price.trim()))
+                                                loading
                                                     ? "bg-slate-300 text-slate-500 cursor-not-allowed"
                                                     : "bg-[#1A1A1A] text-white hover:bg-black"
                                             )}

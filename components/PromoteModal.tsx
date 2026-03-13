@@ -354,11 +354,11 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                             <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
                                 <div>
                                     <h4 className="text-xs text-black leading-tight font-bold mb-0.5 line-clamp-2">{ad.headline}</h4>
-                                    <div className="text-[11px] text-slate-600 truncate leading-tight">
+                                    <div className="text-[12px] text-slate-600 truncate leading-tight">
                                         {ad.category || 'Category'}, {ad.location || 'Location'}
                                     </div>
                                 </div>
-                                <div className="text-[10px] text-black leading-tight space-y-0.5 mt-2">
+                                <div className="text-[12px] text-black leading-tight space-y-0.5 mt-2">
                                     <div>Publish {ad.createdAt ? format(new Date(ad.createdAt), 'dd.MM.yyyy') : format(new Date(), 'dd.MM.yyyy')}</div>
                                     <div>Duration {format(new Date(), 'dd.MM.yyyy')} to {endDate ? format(new Date(endDate), 'dd.MM.yyyy') : '...'}</div>
                                     <div className="text-slate-800 font-bold pt-0.5">Promote Amount ৳{amount}</div>
@@ -377,8 +377,8 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                     onClick={() => setActiveSection(activeSection === 'promoteType' ? null : 'promoteType')}
                                 >
                                     <div className="flex flex-col">
-                                        <span className="text-[9px] text-slate-500">Promote Type</span>
-                                        <span className="text-[11px] text-slate-700 font-bold">{promoteType === 'call_msg' ? 'Call & Message' : 'Visit Traffic'}</span>
+                                        <span className="text-[12px] text-slate-500">Promote Type</span>
+                                        <span className="text-[12px] text-slate-700 font-bold">{promoteType === 'call_msg' ? 'Call & Message' : 'Visit Traffic'}</span>
                                     </div>
                                     <Edit2 className={cn("w-3 h-3 transition-colors", activeSection === 'promoteType' ? 'text-[#0088cc]' : 'text-slate-400')} />
                                 </div>

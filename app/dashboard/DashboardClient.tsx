@@ -111,6 +111,24 @@ export default function DashboardClient() {
     const { t, language } = useLanguage();
     const { settings } = useSettings();
 
+    const getFiltersFromSearchParams = (): FilterState => {
+        const urlCategory = searchParams.get('category');
+        const urlSubCategory = searchParams.get('subCategory');
+        const urlLocation = searchParams.get('location');
+        const urlSubLocation = searchParams.get('subLocation');
+        const urlSearch = searchParams.get('search');
+
+        return {
+            category: urlCategory || "",
+            subCategory: urlSubCategory || "",
+            location: urlLocation || "",
+            subLocation: urlSubLocation || "",
+            search: urlSearch || "",
+            promoteTag: searchParams.get('promoteTag') || "All",
+            sort: searchParams.get('sort') || "newest"
+        };
+    };
+
     const [categories, setCategories] = useState<Category[]>([]);
     const [locations, setLocations] = useState<Location[]>([]);
     const [premiumUsers, setPremiumUsers] = useState<PremiumUser[]>([]);
@@ -120,6 +138,7 @@ export default function DashboardClient() {
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
+    const [feedAdsCategories, setFeedAdsCategories] = useState<any[]>([]);
 
     const [expandedCategory, setExpandedCategory] = useState<string | null>('main');
     const [expandedLocation, setExpandedLocation] = useState<string | null>(null);
@@ -129,18 +148,16 @@ export default function DashboardClient() {
     const [headerOffset, setHeaderOffset] = useState(0);
 
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-    const [filters, setFilters] = useState<FilterState>({
-        category: "",
-        subCategory: "",
-        location: "",
-        subLocation: "",
-        promoteTag: "All",
-        sort: "newest",
-        search: ""
-    });
+    const [filters, setFilters] = useState<FilterState>(() => getFiltersFromSearchParams());
 
     const [isViewingSavedSearch, setIsViewingSavedSearch] = useState(false);
     const [savedAdsData, setSavedAdsData] = useState<ActiveAd[]>([]);
+
+    const hasFetchedMetaRef = useRef(false);
+    const seenAdIdsRef = useRef<Set<string>>(new Set());
+    useEffect(() => {
+        seenAdIdsRef.current = new Set(ads.map(a => a._id));
+    }, [ads]);
 
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(true);
@@ -236,22 +253,7 @@ export default function DashboardClient() {
 
     // Initialize filters from URL on mount
     useEffect(() => {
-
-        const urlCategory = searchParams.get('category');
-        const urlSubCategory = searchParams.get('subCategory');
-        const urlLocation = searchParams.get('location');
-        const urlSubLocation = searchParams.get('subLocation');
-        const urlSearch = searchParams.get('search');
-
-        const currentFilters = {
-            category: urlCategory || "",
-            subCategory: urlSubCategory || "",
-            location: urlLocation || "",
-            subLocation: urlSubLocation || "",
-            search: urlSearch || "",
-            promoteTag: searchParams.get('promoteTag') || "All",
-            sort: searchParams.get('sort') || "newest"
-        };
+        const currentFilters = getFiltersFromSearchParams();
 
         // Only update state if values actually changed to avoid cycles
         if (
@@ -278,7 +280,7 @@ export default function DashboardClient() {
                 if (loc) setExpandedLocation(loc._id);
             }
         }
-    }, [searchParams, categories.length, locations.length]);
+    }, [searchParams, categories.length, locations.length, filters, categories, locations]);
 
     // Update URL when filters change
     const isInitialMount = useRef(true);
@@ -390,6 +392,29 @@ export default function DashboardClient() {
         }
 
         try {
+            const AD_SESSION_VIEWS_KEY = 'ad_session_views';
+            const AD_SESSION_VIEW_TOKENS_KEY = 'ad_session_view_tokens';
+
+            const readSessionJson = <T,>(key: string, fallback: T): T => {
+                try {
+                    const raw = sessionStorage.getItem(key);
+                    if (!raw) return fallback;
+                    return JSON.parse(raw) as T;
+                } catch {
+                    return fallback;
+                }
+            };
+
+            const writeSessionJson = (key: string, value: unknown) => {
+                try {
+                    sessionStorage.setItem(key, JSON.stringify(value));
+                } catch { }
+            };
+
+            const pageToken = String(
+                (window as any)?.performance?.timeOrigin ?? ((window as any).__shadamonAdPageToken ??= Date.now())
+            );
+
             const params = new URLSearchParams();
             if (filters.category) params.append('category', filters.category);
             if (filters.subCategory) params.append('subCategory', filters.subCategory);
@@ -398,14 +423,11 @@ export default function DashboardClient() {
             if (filters.promoteTag && filters.promoteTag !== 'All') params.append('promoteTag', filters.promoteTag);
             if (filters.sort) params.append('sort', filters.sort);
             if (filters.search) params.append('search', filters.search);
-            params.append('page', pageNum.toString());
 
-            const fetchPromises: Promise<any>[] = [
-                fetch(`${API_BASE_URL}/api/ads/public/feed?${params.toString()}`).then(res => res.json())
-            ];
-
-            if (!append && categories.length === 0) {
-                fetchPromises.push(
+            const shouldFetchMeta = !append && !hasFetchedMetaRef.current;
+            const metaPromises: Promise<any>[] = [];
+            if (shouldFetchMeta) {
+                metaPromises.push(
                     fetch(`${API_BASE_URL}/api/categories`).then(res => res.json()),
                     fetch(`${API_BASE_URL}/api/categories/sub`).then(res => res.json()),
                     fetch(`${API_BASE_URL}/api/locations`).then(res => res.json()),
@@ -413,7 +435,9 @@ export default function DashboardClient() {
                 );
             }
 
-            const [adsRes, catRes, subCatRes, locRes, subLocRes] = await Promise.all(fetchPromises);
+            const [catRes, subCatRes, locRes, subLocRes] = metaPromises.length > 0
+                ? await Promise.all(metaPromises)
+                : [undefined, undefined, undefined, undefined];
 
             if (catRes?.success && subCatRes?.success) {
                 const cats = catRes.data
@@ -439,44 +463,78 @@ export default function DashboardClient() {
                 setLocations(locs);
             }
 
-            if (adsRes.success) {
-                const limit = settings.userRepeatAdViewTime || 0;
-                let filteredAds = adsRes.data;
+            if (catRes?.success && subCatRes?.success && locRes?.success && subLocRes?.success) {
+                hasFetchedMetaRef.current = true;
+            }
 
-                const isFiltering = !!(filters.category || filters.location || filters.search || (filters.promoteTag && filters.promoteTag !== 'All'));
+            const limit = settings.userRepeatAdViewTime || 0;
+            const isFiltering = !!(filters.category || filters.location || filters.search || (filters.promoteTag && filters.promoteTag !== 'All'));
+
+            type SessionViews = Record<string, number>;
+            type SessionViewTokens = Record<string, string>;
+            const sessionViews = readSessionJson<SessionViews>(AD_SESSION_VIEWS_KEY, {});
+            const sessionTokens = readSessionJson<SessionViewTokens>(AD_SESSION_VIEW_TOKENS_KEY, {});
+
+            const collectAds: ActiveAd[] = [];
+            const collectedIds = new Set<string>();
+            const maxAutoPages = 6;
+            let currentPage = pageNum;
+            let lastHasMore = false;
+            let allFeedCategories: any[] = [];
+
+            for (let i = 0; i < maxAutoPages; i++) {
+                const pageParams = new URLSearchParams(params.toString());
+                pageParams.set('page', currentPage.toString());
+
+                const adsRes = await fetch(`${API_BASE_URL}/api/ads/public/feed?${pageParams.toString()}`).then(res => res.json());
+                if (!adsRes?.success) break;
+
+                lastHasMore = !!adsRes.hasMore;
+                if (adsRes.feedCategories) allFeedCategories.push(...adsRes.feedCategories);
+                const rawAds: ActiveAd[] = adsRes.data || [];
+
+                let eligible = rawAds;
                 if (limit > 0 && !isFiltering) {
-                    const sessionViews = JSON.parse(sessionStorage.getItem('ad_session_views') || '{}');
-                    const filtered = adsRes.data.filter((ad: ActiveAd) => {
-                        const views = sessionViews[ad._id] || 0;
-                        return views < limit;
-                    });
-
-                    filteredAds = filtered;
-                    filteredAds.forEach((ad: ActiveAd) => {
-                        sessionViews[ad._id] = (sessionViews[ad._id] || 0) + 1;
-                    });
-                    sessionStorage.setItem('ad_session_views', JSON.stringify(sessionViews));
+                    eligible = rawAds.filter((ad: ActiveAd) => (sessionViews[ad._id] || 0) < limit);
                 }
 
-                setAds(prev => {
-                    if (append) {
-                        const existingIds = new Set(prev.map(a => a._id));
-                        const uniqueNewAds = filteredAds.filter((a: ActiveAd) => !existingIds.has(a._id));
-                        return [...prev, ...uniqueNewAds];
-                    }
-                    return filteredAds;
+                const alreadySeen = append ? seenAdIdsRef.current : new Set<string>();
+                const deduped = eligible.filter((ad: ActiveAd) => !alreadySeen.has(ad._id) && !collectedIds.has(ad._id));
+
+                deduped.forEach(ad => collectedIds.add(ad._id));
+                collectAds.push(...deduped);
+
+                if (collectAds.length > 0 || !lastHasMore) {
+                    break;
+                }
+
+                currentPage += 1;
+            }
+
+            if (limit > 0 && !isFiltering) {
+                collectAds.forEach((ad: ActiveAd) => {
+                    if (sessionTokens[ad._id] === pageToken && (sessionViews[ad._id] || 0) > 0) return;
+                    sessionViews[ad._id] = Math.min(limit, (sessionViews[ad._id] || 0) + 1);
+                    sessionTokens[ad._id] = pageToken;
                 });
 
-                setHasMore(adsRes.hasMore);
-                setPage(pageNum);
+                writeSessionJson(AD_SESSION_VIEWS_KEY, sessionViews);
+                writeSessionJson(AD_SESSION_VIEW_TOKENS_KEY, sessionTokens);
             }
+
+            setAds(prev => (append ? [...prev, ...collectAds] : collectAds));
+            if (allFeedCategories.length > 0) {
+                setFeedAdsCategories(prev => (append ? [...prev, ...allFeedCategories] : allFeedCategories));
+            }
+            setHasMore(lastHasMore);
+            setPage(currentPage);
         } catch (error) {
             console.error("Failed to load dashboard data", error);
         } finally {
             if (!append) setLoading(false);
             else setIsLoadingMore(false);
         }
-    }, [language, filters, categories.length, settings.userRepeatAdViewTime]);
+    }, [filters, settings.userRepeatAdViewTime]);
 
     const fetchInitialData = React.useCallback(async () => {
         try {
@@ -621,11 +679,20 @@ export default function DashboardClient() {
     }, [handleObserver]);
 
     useEffect(() => {
-        fetchData(1, false);
         fetchInitialData();
+    }, [fetchInitialData]);
 
-        const handleRefresh = () => {
+    useEffect(() => {
+        if (!isViewingSavedSearch) {
             fetchData(1, false);
+        }
+    }, [fetchData, isViewingSavedSearch]);
+
+    useEffect(() => {
+        const handleRefresh = () => {
+            if (!isViewingSavedSearch) {
+                fetchData(1, false);
+            }
             fetchInitialData();
         };
 
@@ -658,7 +725,7 @@ export default function DashboardClient() {
             window.removeEventListener('show-search-results', handleSearch as EventListener);
             window.removeEventListener('reset-saved-search', handleResetSavedSearch);
         };
-    }, [fetchData, fetchInitialData, handleResetSavedSearch]);
+    }, [fetchData, fetchInitialData, handleResetSavedSearch, isViewingSavedSearch]);
 
     const toggleCategory = (id: string) => {
         setExpandedCategory(expandedCategory === id ? 'main' : id);
@@ -1299,19 +1366,26 @@ export default function DashboardClient() {
                             }).length;
                         })();
 
-                        const pool = [...displayAdsList];
+                        const promotedPool = [...displayAdsList.filter(ad => ad.adType === 'Promoted')];
+                        const freePool = [...displayAdsList.filter(ad => ad.adType !== 'Promoted')];
                         const chunks = [];
-                        while (pool.length > 0) {
-                            const b1 = pool.shift();
-                            const s1 = pool.splice(0, 10);
-                            const b2 = pool.shift();
-                            const s2 = pool.splice(0, 10);
-                            chunks.push({
-                                blocks: [
-                                    { bigAd: b1, smallAds: s1 },
-                                    { bigAd: b2, smallAds: s2 }
-                                ].filter(b => b.bigAd || b.smallAds.length > 0)
-                            });
+
+                        while (promotedPool.length > 0 || freePool.length > 0) {
+                            const b1 = promotedPool.shift() || null;
+                            const s1 = freePool.splice(0, 10);
+                            const b2 = promotedPool.shift() || null;
+                            const s2 = freePool.splice(0, 10);
+
+                            if (b1 || s1.length > 0 || b2 || s2.length > 0) {
+                                chunks.push({
+                                    blocks: [
+                                        { bigAd: b1, smallAds: s1 },
+                                        { bigAd: b2, smallAds: s2 }
+                                    ].filter(b => b.bigAd || b.smallAds.length > 0)
+                                });
+                            } else {
+                                break;
+                            }
                         }
 
                         const categoriesWithAds = categories.filter(cat =>
@@ -1354,197 +1428,203 @@ export default function DashboardClient() {
                                 </div>
 
                                 {chunks.map((chunk, chunkIndex) => {
-                                    const categoryToShow = categoriesWithAds[chunkIndex % categoriesWithAds.length];
                                     return (
                                         <div key={chunkIndex} className="flex flex-col gap-4">
-                                            {chunk.blocks.map((block, blockIndex) => (
-                                                <React.Fragment key={blockIndex}>
-                                                    {block.bigAd && (
-                                                        <div
-                                                            onClick={(e) => {
-                                                                if (block.bigAd && block.bigAd.adType === 'Promoted' && block.bigAd.promoteType === 'traffic' && block.bigAd.trafficLink) {
-                                                                    window.open(block.bigAd.trafficLink, '_blank');
-                                                                } else if (block.bigAd) {
-                                                                    router.push(getAdUrl(block.bigAd), { scroll: false });
-                                                                }
-                                                            }}
-                                                            className="bg-white rounded-xl cursor-pointer group block border border-slate-100 shadow-sm"
-                                                        >
-                                                            <div className="relative h-[315px] w-full rounded-t-xl overflow-hidden group">
-                                                                {getImageUrl(block.bigAd.images?.[0]) && (
-                                                                    <>
-                                                                        <img
-                                                                            src={getImageUrl(block.bigAd.images?.[0]) || undefined}
-                                                                            alt=""
-                                                                            className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-70"
-                                                                        />
-                                                                        <img
-                                                                            src={getImageUrl(block.bigAd.images?.[0]) || undefined}
-                                                                            alt={block.bigAd.headline}
-                                                                            className="relative z-10 w-full h-full object-contain"
-                                                                            loading="lazy"
-                                                                        />
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                            <div className="p-3">
-                                                                <div className="flex items-start justify-between">
-                                                                    <div>
-                                                                        <div className="flex items-center gap-1 text-[11px] text-black mb-0.5">
-                                                                            <span>{block.bigAd.adType === 'Promoted' ? 'Promoted By' : 'Post By'}</span>
-                                                                            <span
-                                                                                className="font-bold text-black cursor-pointer hover:text-blue-600 hover:underline"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: block.bigAd?.user?._id } }));
-                                                                                }}
-                                                                            >
-                                                                                {block.bigAd.user?.storeName || block.bigAd.user?.name || 'User'}
-                                                                            </span>
-                                                                            {block.bigAd.user?.mVerified && <VerifiedBadge />}
-                                                                        </div>
-                                                                        <h3 className="font-bold text-lg text-black leading-tight mb-0.5">{block.bigAd.headline}</h3>
-                                                                        <div className="font-bold text-base text-black mb-1">৳ {block.bigAd.price?.toLocaleString() || 'N/A'}</div>
-                                                                        <div className="flex items-center gap-3 text-[10px] text-black">
-                                                                            <div className="flex items-center gap-1"><MapPin className="w-3 h-3 text-black" />{block.bigAd.location}</div>
-                                                                            <div className="flex items-center gap-1"><Grid className="w-3 h-3 text-black" />{block.bigAd.category}</div>
-                                                                        </div>
-                                                                    </div>
-                                                                    {block.bigAd.adType === 'Promoted' && block.bigAd.promoteType === 'traffic' && block.bigAd.trafficLink ? (
-                                                                        <a
-                                                                            href={block.bigAd.trafficLink}
-                                                                            target="_blank"
-                                                                            rel="noopener noreferrer"
-                                                                            onClick={(e) => e.stopPropagation()}
-                                                                            className="border border-slate-300 text-black bg-gray-200 px-3 py-1 rounded text-xs font-bold hover:bg-slate-50"
-                                                                        >
-                                                                            {block.bigAd.trafficButtonType || 'Visit'}
-                                                                        </a>
-                                                                    ) : (
-                                                                        <button className="border border-slate-300 text-black bg-gray-200 px-3 py-1 rounded text-xs font-bold hover:bg-slate-50">Detail</button>
+                                            {chunk.blocks.map((block, blockIndex) => {
+                                                // Each chunk has 2 blocks. Each block gets one category from the feed categories.
+                                                // Calculate index for the category based on chunkIndex and blockIndex.
+                                                const categoryIndex = (chunkIndex * 2) + blockIndex;
+                                                const categoryToShow = feedAdsCategories[categoryIndex % feedAdsCategories.length];
+
+                                                return (
+                                                    <React.Fragment key={blockIndex}>
+                                                        {block.bigAd && (
+                                                            <div
+                                                                onClick={(e) => {
+                                                                    if (block.bigAd && block.bigAd.adType === 'Promoted' && block.bigAd.promoteType === 'traffic' && block.bigAd.trafficLink) {
+                                                                        window.open(block.bigAd.trafficLink, '_blank');
+                                                                    } else if (block.bigAd) {
+                                                                        router.push(getAdUrl(block.bigAd), { scroll: false });
+                                                                    }
+                                                                }}
+                                                                className="bg-white rounded-xl cursor-pointer group block border border-slate-100 shadow-sm"
+                                                            >
+                                                                <div className="relative h-[315px] w-full rounded-t-xl overflow-hidden group">
+                                                                    {getImageUrl(block.bigAd.images?.[0]) && (
+                                                                        <>
+                                                                            <img
+                                                                                src={getImageUrl(block.bigAd.images?.[0]) || undefined}
+                                                                                alt=""
+                                                                                className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-70"
+                                                                            />
+                                                                            <img
+                                                                                src={getImageUrl(block.bigAd.images?.[0]) || undefined}
+                                                                                alt={block.bigAd.headline}
+                                                                                className="relative z-10 w-full h-full object-contain"
+                                                                                loading="lazy"
+                                                                            />
+                                                                        </>
                                                                     )}
                                                                 </div>
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    {block.smallAds.length > 0 && (
-                                                        <div className="flex flex-col gap-2 bg-white rounded-lg pb-2">
-                                                            {block.smallAds.map((ad) => (
-                                                                <div
-                                                                    key={ad._id}
-                                                                    onClick={() => {
-                                                                        if (ad.adType === 'Promoted' && ad.promoteType === 'traffic' && ad.trafficLink) {
-                                                                            window.open(ad.trafficLink, '_blank');
-                                                                        } else {
-                                                                            router.push(getAdUrl(ad), { scroll: false });
-                                                                        }
-                                                                    }}
-                                                                    className="bg-white rounded-lg p-3 pb-0 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50"
-                                                                >
-                                                                    <div className="w-[200px] h-[130px] rounded-lg overflow-hidden shrink-0 relative group-hover:scale-[1.02] transition-transform">
-                                                                        {getImageUrl(ad.images?.[0]) && (
-                                                                            <>
-                                                                                <img
-                                                                                    src={getImageUrl(ad.images?.[0]) || undefined}
-                                                                                    alt=""
-                                                                                    className="absolute inset-0 w-full h-full object-cover blur-lg scale-110 opacity-60"
-                                                                                />
-                                                                                <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-contain" loading="lazy" />
-                                                                            </>
+                                                                <div className="p-3">
+                                                                    <div className="flex items-start justify-between">
+                                                                        <div>
+                                                                            <div className="flex items-center gap-1 text-[11px] text-black mb-0.5">
+                                                                                <span>{block.bigAd.adType === 'Promoted' ? 'Promoted By' : 'Post By'}</span>
+                                                                                <span
+                                                                                    className="font-bold text-black cursor-pointer hover:text-blue-600 hover:underline"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: block.bigAd?.user?._id } }));
+                                                                                    }}
+                                                                                >
+                                                                                    {block.bigAd.user?.storeName || block.bigAd.user?.name || 'User'}
+                                                                                </span>
+                                                                                {block.bigAd.user?.mVerified && <VerifiedBadge />}
+                                                                            </div>
+                                                                            <h3 className="font-bold text-lg text-black leading-tight mb-0.5">{block.bigAd.headline}</h3>
+                                                                            <div className="font-bold text-base text-black mb-1">৳ {block.bigAd.price?.toLocaleString() || 'N/A'}</div>
+                                                                            <div className="flex items-center gap-3 text-[10px] text-black">
+                                                                                <div className="flex items-center gap-1"><MapPin className="w-3 h-3 text-black" />{block.bigAd.location}</div>
+                                                                                <div className="flex items-center gap-1"><Grid className="w-3 h-3 text-black" />{block.bigAd.category}</div>
+                                                                            </div>
+                                                                        </div>
+                                                                        {block.bigAd.adType === 'Promoted' && block.bigAd.promoteType === 'traffic' && block.bigAd.trafficLink ? (
+                                                                            <a
+                                                                                href={block.bigAd.trafficLink}
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                onClick={(e) => e.stopPropagation()}
+                                                                                className="border border-slate-300 text-black bg-gray-200 px-3 py-1 rounded text-xs font-bold hover:bg-slate-50"
+                                                                            >
+                                                                                {block.bigAd.trafficButtonType || 'Visit'}
+                                                                            </a>
+                                                                        ) : (
+                                                                            <button className="border border-slate-300 text-black bg-gray-200 px-3 py-1 rounded text-xs font-bold hover:bg-slate-50">Detail</button>
                                                                         )}
                                                                     </div>
-                                                                    <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                                                        <div className="flex items-center gap-1 text-[10px] text-black mb-0.5">
-                                                                            <span>{ad.adType === 'Promoted' ? 'Promoted By' : 'Post By'}</span>
-                                                                            <span className="font-bold text-black hover:text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id } })); }}>{ad.user?.storeName || ad.user?.name || 'User'}</span>
-                                                                            {ad.user?.mVerified && <VerifiedBadge />}
-                                                                        </div>
-                                                                        <h4 className="text-sm text-black truncate mb-0.5">{ad.headline}</h4>
-                                                                        <div className="text-sm text-black mb-1">৳ {ad.price?.toLocaleString() || 'N/A'}</div>
-                                                                        <div className="flex items-center gap-2 text-[10px] text-black">
-                                                                            <div className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" /><span className="truncate max-w-[80px]">{ad.location}</span></div>
-                                                                            <div className="flex items-center gap-0.5"><Grid className="w-2.5 h-2.5" /><span className="truncate max-w-[80px]">{ad.category}</span></div>
-                                                                            {ad.adType !== 'Promoted' && (
-                                                                                <div className="ml-auto text-black text-[10px]">
-                                                                                    {timeAgo(ad.createdAt, language as 'en' | 'bn')}
-                                                                                </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {block.smallAds.length > 0 && (
+                                                            <div className="flex flex-col gap-2 bg-white rounded-lg pb-2">
+                                                                {block.smallAds.map((ad) => (
+                                                                    <div
+                                                                        key={ad._id}
+                                                                        onClick={() => {
+                                                                            if (ad.adType === 'Promoted' && ad.promoteType === 'traffic' && ad.trafficLink) {
+                                                                                window.open(ad.trafficLink, '_blank');
+                                                                            } else {
+                                                                                router.push(getAdUrl(ad), { scroll: false });
+                                                                            }
+                                                                        }}
+                                                                        className="bg-white rounded-lg p-3 pb-0 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50"
+                                                                    >
+                                                                        <div className="w-[200px] h-[130px] rounded-lg overflow-hidden shrink-0 relative group-hover:scale-[1.02] transition-transform">
+                                                                            {getImageUrl(ad.images?.[0]) && (
+                                                                                <>
+                                                                                    <img
+                                                                                        src={getImageUrl(ad.images?.[0]) || undefined}
+                                                                                        alt=""
+                                                                                        className="absolute inset-0 w-full h-full object-cover blur-lg scale-110 opacity-60"
+                                                                                    />
+                                                                                    <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-contain" loading="lazy" />
+                                                                                </>
                                                                             )}
                                                                         </div>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </React.Fragment>
-                                            ))}
-
-                                            {categoryToShow && (
-                                                <div className="bg-white relative group/cat rounded-lg p-2 pb-0 mt-2">
-                                                    <div className="bg-white flex items-center justify-between px-2 mb-2">
-                                                        <h3 className="text-sm font-medium text-black">{categoryToShow.name}</h3>
-                                                        <button
-                                                            onClick={() => {
-                                                                const params = new URLSearchParams(searchParams.toString());
-                                                                params.set('category', categoryToShow.name);
-                                                                router.push(`/dashboard?${params.toString()}`, { scroll: false });
-                                                                setFilters(prev => ({ ...prev, category: categoryToShow.name }));
-                                                            }}
-                                                            className="text-xs text-black hover:underline"
-                                                        >
-                                                            {language === 'bn' ? 'সব দেখুন' : 'See All'}
-                                                        </button>
-                                                    </div>
-                                                    <div className="relative">
-                                                        <div
-                                                            id={`feed-scroll-${categoryToShow._id}-${chunkIndex}`}
-                                                            className="flex gap-3 overflow-x-auto no-scrollbar scroll-smooth pb-2"
-                                                        >
-                                                            {ads.filter(ad => ad.category === categoryToShow.name).map(ad => (
-                                                                <div
-                                                                    key={ad._id}
-                                                                    className="min-w-[240px] w-[240px] bg-white border border-slate-200 rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-                                                                    onClick={() => {
-                                                                        if (ad.adType === 'Promoted' && ad.promoteType === 'traffic' && ad.trafficLink) {
-                                                                            window.open(ad.trafficLink, '_blank');
-                                                                        } else {
-                                                                            router.push(getAdUrl(ad), { scroll: false });
-                                                                        }
-                                                                    }}
-                                                                >
-                                                                    <div className="h-40 relative rounded-t-lg overflow-hidden bg-slate-100">
-                                                                        {getImageUrl(ad.images?.[0]) && (
-                                                                            <>
-                                                                                <img
-                                                                                    src={getImageUrl(ad.images?.[0]) || undefined}
-                                                                                    alt=""
-                                                                                    className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-70"
-                                                                                />
-                                                                                <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-contain" loading="lazy" />
-                                                                            </>
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="p-2.5 flex items-center justify-between gap-2">
-                                                                        <div className="min-w-0">
-                                                                            <h4 className="text-black truncate text-sm mb-0.5">{ad.headline}</h4>
-                                                                            <p className="text-black text-sm">TK {ad.price?.toLocaleString() || 'N/A'}</p>
+                                                                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                                                            <div className="flex items-center gap-1 text-[10px] text-black mb-0.5">
+                                                                                <span>{ad.adType === 'Promoted' ? 'Promoted By' : 'Post By'}</span>
+                                                                                <span className="font-bold text-black hover:text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id } })); }}>{ad.user?.storeName || ad.user?.name || 'User'}</span>
+                                                                                {ad.user?.mVerified && <VerifiedBadge />}
+                                                                            </div>
+                                                                            <h4 className="text-sm text-black truncate mb-0.5">{ad.headline}</h4>
+                                                                            <div className="text-sm text-black mb-1">৳ {ad.price?.toLocaleString() || 'N/A'}</div>
+                                                                            <div className="flex items-center gap-2 text-[10px] text-black">
+                                                                                <div className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" /><span className="truncate max-w-[80px]">{ad.location}</span></div>
+                                                                                <div className="flex items-center gap-0.5"><Grid className="w-2.5 h-2.5" /><span className="truncate max-w-[80px]">{ad.category}</span></div>
+                                                                                {ad.adType !== 'Promoted' && (
+                                                                                    <div className="ml-auto text-black text-[10px]">
+                                                                                        {timeAgo(ad.createdAt, language as 'en' | 'bn')}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
                                                                         </div>
                                                                     </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        {categoryToShow && (
+                                                            <div className="bg-white relative group/cat rounded-lg p-2 pb-0 mt-2">
+                                                                <div className="bg-white flex items-center justify-between px-2 mb-2">
+                                                                    <h3 className="text-sm font-medium text-black">{categoryToShow.name}</h3>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            const params = new URLSearchParams(searchParams.toString());
+                                                                            params.set('category', categoryToShow.name);
+                                                                            router.push(`/dashboard?${params.toString()}`, { scroll: false });
+                                                                            setFilters(prev => ({ ...prev, category: categoryToShow.name }));
+                                                                        }}
+                                                                        className="text-xs text-black hover:underline"
+                                                                    >
+                                                                        {language === 'bn' ? 'সব দেখুন' : 'See All'}
+                                                                    </button>
                                                                 </div>
-                                                            ))}
-                                                        </div>
-                                                        <button
-                                                            onClick={() => {
-                                                                const el = document.getElementById(`feed-scroll-${categoryToShow._id}-${chunkIndex}`);
-                                                                if (el) el.scrollBy({ left: 250, behavior: 'smooth' });
-                                                            }}
-                                                            className="absolute -right-3 top-[43%] -translate-y-1/2 w-9 h-9 bg-white shadow-md rounded-full flex items-center justify-center text-black z-20 border border-slate-100 hover:bg-slate-50"
-                                                        >
-                                                            <ChevronRight className="w-5 h-5" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
+                                                                <div className="relative">
+                                                                    <div
+                                                                        id={`feed-scroll-cat-${categoryToShow._id}-${categoryIndex}`}
+                                                                        className="flex gap-3 overflow-x-auto no-scrollbar scroll-smooth pb-2"
+                                                                    >
+                                                                        {ads.filter(ad => ad.category === categoryToShow.name).slice(0, 10).map(ad => (
+                                                                            <div
+                                                                                key={ad._id}
+                                                                                className="min-w-[240px] w-[240px] bg-white border border-slate-200 rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                                                                                onClick={() => {
+                                                                                    if (ad.adType === 'Promoted' && ad.promoteType === 'traffic' && ad.trafficLink) {
+                                                                                        window.open(ad.trafficLink, '_blank');
+                                                                                    } else {
+                                                                                        router.push(getAdUrl(ad), { scroll: false });
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                <div className="h-40 relative rounded-t-lg overflow-hidden bg-slate-100">
+                                                                                    {getImageUrl(ad.images?.[0]) && (
+                                                                                        <>
+                                                                                            <img
+                                                                                                src={getImageUrl(ad.images?.[0]) || undefined}
+                                                                                                alt=""
+                                                                                                className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-70"
+                                                                                            />
+                                                                                            <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-contain" loading="lazy" />
+                                                                                        </>
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="p-2.5 flex items-center justify-between gap-2">
+                                                                                    <div className="min-w-0">
+                                                                                        <h4 className="text-black truncate text-sm mb-0.5">{ad.headline}</h4>
+                                                                                        <p className="text-black text-sm">TK {ad.price?.toLocaleString() || 'N/A'}</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            const el = document.getElementById(`feed-scroll-cat-${categoryToShow._id}-${categoryIndex}`);
+                                                                            if (el) el.scrollBy({ left: 250, behavior: 'smooth' });
+                                                                        }}
+                                                                        className="absolute -right-3 top-[43%] -translate-y-1/2 w-9 h-9 bg-white shadow-md rounded-full flex items-center justify-center text-black z-20 border border-slate-100 hover:bg-slate-50"
+                                                                    >
+                                                                        <ChevronRight className="w-5 h-5" />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </React.Fragment>
+                                                );
+                                            })}
                                         </div>
                                     );
                                 })}

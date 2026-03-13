@@ -470,7 +470,8 @@ const translations: Record<string, Record<Language, string>> = {
     'do_it_later': { bn: 'পরে করব', en: 'I will do it later' },
     'free_ad_limit_reached': { bn: 'ফ্রি অ্যাড লিমিট শেষ হবেছে!', en: 'Free ad limit reached!' },
     'free_ad_limit_reached_desc': { bn: 'আপনি আপনার ফ্রি অ্যাডের সীমা অতিক্রম করেছেন। বিজ্ঞাপন জারি রাখতে এবং সরাসরি পাবলিশ করতে হলে অনুগ্রহ করে বিজ্ঞাপনটি এখন প্রমোট করুন।', en: 'You have exceeded your free ad limit. To keep the ad and publish it directly, please promote the ad now.' },
-    'go_back_btn': { bn: 'ফিরে যান', en: 'Go back' }
+    'go_back_btn': { bn: 'ফিরে যান', en: 'Go back' },
+    'field_required': { bn: 'এই তথ্যটি প্রয়োজন', en: 'This field is required' }
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
