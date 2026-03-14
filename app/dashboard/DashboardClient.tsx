@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-    Home, CheckCircle2, Store, Smartphone, Grid, Package, ChevronDown, ChevronRight,
+    Home, CheckCircle2, Store, Smartphone, Grid, Package, ChevronDown, ChevronRight, ChevronLeft,
     Search, MapPin, Menu, X, Plus, Inbox, User, Globe, Clock, Eye, ArrowRight, ArrowLeft, ArrowUp, SlidersHorizontal, Bookmark
 } from 'lucide-react';
 import { FaAndroid, FaFacebookF, FaTiktok, FaInstagram, FaYoutube } from 'react-icons/fa';
@@ -525,48 +525,19 @@ export default function DashboardClient() {
 
     const fetchInitialData = React.useCallback(async () => {
         try {
+            // 1. Fetch All Ads for global state
             const allAdsRes = await fetch(`${API_BASE_URL}/api/ads/public/all`).then(res => res.json());
-
             if (allAdsRes.success) {
-                const allAdsData = allAdsRes.data;
-                setTotalAds(allAdsData);
+                setTotalAds(allAdsRes.data);
+            }
 
-                // 1. Get unique users from all ads
-                const userMap = new Map<string, PremiumUser>();
-                allAdsData.forEach((ad: ActiveAd) => {
-                    if (!ad.user?._id) return;
-                    if (!userMap.has(ad.user._id)) {
-                        userMap.set(ad.user._id, {
-                            _id: ad.user._id,
-                            name: ad.user.name,
-                            photo: ad.user.photo,
-                            storeName: ad.user.storeName,
-                            verifiedBy: ad.user.verifiedBy,
-                            mVerified: ad.user.mVerified,
-                            followers: ad.user.followers || [],
-                            hasPromotedAds: false
-                        });
+            // 2. Fetch Popular Sellers from Backend
+            const premiumRes = await fetch(`${API_BASE_URL}/api/user/premium`).then(res => res.json());
 
-                    }
-                    if (ad.adType === 'Promoted') {
-                        const u = userMap.get(ad.user._id);
-                        if (u) u.hasPromotedAds = true;
-                    }
-                });
+            if (premiumRes.success) {
+                let sellers = premiumRes.data;
 
-                // 2. Separate promoted and free sellers
-                const sellers = Array.from(userMap.values());
-                const promotedSellers = sellers.filter(s => s.hasPromotedAds);
-                const freeSellers = sellers.filter(s => !s.hasPromotedAds);
-
-                // 3. Shuffle both for randomness
-                const shuffledPromoted = [...promotedSellers].sort(() => Math.random() - 0.5);
-                const shuffledFree = [...freeSellers].sort(() => Math.random() - 0.5);
-
-                // 4. Combine and take top 10
-                const top10Sellers = [...shuffledPromoted, ...shuffledFree].slice(0, 10);
-
-                // 5. Check following status if logged in
+                // 3. Check following status if logged in
                 const token = Cookies.get('token');
                 if (token) {
                     try {
@@ -575,14 +546,15 @@ export default function DashboardClient() {
                         });
                         const meData = await meRes.json();
                         if (meRes.ok && meData.following) {
-                            top10Sellers.forEach(u => {
-                                u.isFollowing = meData.following.includes(u._id);
-                            });
+                            sellers = sellers.map((u: any) => ({
+                                ...u,
+                                isFollowing: meData.following.includes(u._id)
+                            }));
                         }
                     } catch (e) { }
                 }
 
-                setPremiumUsers(top10Sellers);
+                setPremiumUsers(sellers);
             }
         } catch (error) {
             console.error("Failed to load initial data", error);
@@ -1667,6 +1639,15 @@ export default function DashboardClient() {
                                                                 </div>
                                                             ))}
                                                         </div>
+                                                        <button
+                                                            onClick={() => {
+                                                                const el = document.getElementById(`feed-scroll-cat-${categoryToShow._id}-${chunkIndex}`);
+                                                                if (el) el.scrollBy({ left: -250, behavior: 'smooth' });
+                                                            }}
+                                                            className="absolute -left-3 top-[43%] -translate-y-1/2 w-9 h-9 bg-white shadow-md rounded-full flex items-center justify-center text-black z-20 border border-slate-100 hover:bg-slate-50"
+                                                        >
+                                                            <ChevronLeft className="w-5 h-5" />
+                                                        </button>
                                                         <button
                                                             onClick={() => {
                                                                 const el = document.getElementById(`feed-scroll-cat-${categoryToShow._id}-${chunkIndex}`);
