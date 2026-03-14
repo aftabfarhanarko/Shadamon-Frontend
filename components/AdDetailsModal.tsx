@@ -19,6 +19,8 @@ import { twMerge } from 'tailwind-merge';
 import InfoModal from './InfoModal';
 import { useSettings } from '../app/context/SettingsContext';
 import VerifiedBadge from './VerifiedBadge';
+import ReportModal from './ReportModal';
+
 
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs));
@@ -29,10 +31,18 @@ interface AdDetailsModalProps {
     isOpen: boolean;
     onClose: () => void;
     ad: any; // Using any for flexibility with existing ad object structure
+    initialReportOpen?: boolean;
 }
 
-export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalProps) {
-    if (!isOpen || !ad) return null;
+export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen }: AdDetailsModalProps) {
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+
+    useEffect(() => {
+        if (isOpen && initialReportOpen) {
+            setIsReportModalOpen(true);
+        }
+    }, [isOpen, initialReportOpen]);
+
 
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [showPhone, setShowPhone] = useState(false);
@@ -50,17 +60,19 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
     const [subcategories, setSubcategories] = useState<any[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
 
+
+
     const [actionButtons, setActionButtons] = useState<string[]>(['Call', 'Chat']);
     const { t } = useLanguage();
     const router = useRouter();
     const { settings } = useSettings();
     const popupRef = useRef<HTMLDivElement>(null);
     const optionsButtonRef = useRef<HTMLButtonElement>(null);
-    const [localFollowers, setLocalFollowers] = useState<any[]>(ad.user?.followers || []);
+    const [localFollowers, setLocalFollowers] = useState<any[]>(ad?.user?.followers || []);
 
     useEffect(() => {
-        setLocalFollowers(ad.user?.followers || []);
-    }, [ad.user?.followers]);
+        setLocalFollowers(ad?.user?.followers || []);
+    }, [ad?.user?.followers]);
 
     useEffect(() => {
         const handleGlobalFollow = (e: any) => {
@@ -72,7 +84,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
         };
         window.addEventListener('user-followed', handleGlobalFollow as EventListener);
         return () => window.removeEventListener('user-followed', handleGlobalFollow as EventListener);
-    }, [ad.user?._id, ad.user]);
+    }, [ad?.user?._id, ad?.user]);
 
     // Close popup when clicking outside
     useEffect(() => {
@@ -92,7 +104,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
     const [promotedAds, setPromotedAds] = useState<any[]>([]);
     const [similarAds, setSimilarAds] = useState<any[]>([]);
 
-    const images = ad.images || [];
+    const images = ad?.images || [];
     const hasImages = images.length > 0;
 
     // Reset states when ad changes
@@ -228,6 +240,17 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
         onClose();
     };
 
+    const handleReportClick = () => {
+        const token = Cookies.get('token');
+        if (!token) {
+            window.dispatchEvent(new CustomEvent('open-mobile-entry-modal', { detail: { reason: 'report', ad: ad } }));
+            onClose();
+            return;
+        }
+        setIsReportModalOpen(true);
+        setShowOptionsPopup(false);
+    };
+
     const nextImage = (e: React.MouseEvent) => {
         e.stopPropagation();
         if (hasImages) {
@@ -242,7 +265,9 @@ export default function AdDetailsModal({ isOpen, onClose, ad }: AdDetailsModalPr
         }
     };
 
-    const adLink = typeof window !== 'undefined' ? `${window.location.origin}/dashboard?ad=${ad._id}` : '';
+    const adLink = typeof window !== 'undefined' ? `${window.location.origin}/dashboard?ad=${ad?._id}` : '';
+
+    if (!isOpen || !ad) return null;
 
     return (
         <div className="fixed inset-0 z-[1000] flex items-start justify-center pt-20">
@@ -1201,7 +1226,7 @@ I have sent my CV for your review.`;
                                         {isFavorited ? 'Saved' : 'Save'}
                                     </span>
                                 </div>
-                                <div className="flex flex-col items-center gap-1 cursor-pointer group">
+                                <div className="flex flex-col items-center gap-1 cursor-pointer group" onClick={handleReportClick}>
                                     <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-100 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
                                         <AlertCircle className="w-5 h-5 text-slate-700" />
                                     </div>
@@ -1321,6 +1346,17 @@ I have sent my CV for your review.`;
                         </div>
                     </div>
                 }
+            />
+
+            <ReportModal
+                isOpen={isReportModalOpen}
+                onClose={() => setIsReportModalOpen(false)}
+                onBack={() => {
+                    setIsReportModalOpen(false);
+                    setShowOptionsPopup(true);
+                }}
+                adId={(ad as any)._id}
+                ownerId={typeof (ad as any).user === 'object' ? (ad as any).user?._id : (ad as any).user}
             />
         </div>
     );

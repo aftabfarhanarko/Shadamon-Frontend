@@ -84,7 +84,10 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     const [verificationToken, setVerificationToken] = useState<string | undefined>(undefined);
     const [user, setUser] = useState<any>(null);
 
-    const [mobileEntryReason, setMobileEntryReason] = useState<'post_ad' | 'account' | 'message'>('post_ad');
+    const [mobileEntryReason, setMobileEntryReason] = useState<'post_ad' | 'account' | 'message' | 'report'>('post_ad');
+    const [reportAd, setReportAd] = useState<any>(null);
+    const [shouldOpenReportAfterLogin, setShouldOpenReportAfterLogin] = useState(false);
+
 
     const [infoModal, setInfoModal] = useState<{ isOpen: boolean; title: string; content: string }>({
         isOpen: false,
@@ -167,10 +170,21 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
         window.addEventListener('open-account-modal', handleOpenAccount as EventListener);
 
-        const handleOpenMobileEntry = () => {
+        const handleOpenMobileEntry = (e: any) => {
+            if (e.detail?.reason) {
+                setMobileEntryReason(e.detail.reason);
+                if (e.detail.reason === 'report' && e.detail.ad) {
+                    setReportAd(e.detail.ad);
+                }
+            } else {
+                setMobileEntryReason('post_ad');
+                setReportAd(null);
+            }
             setIsMobileEntryModalOpen(true);
         };
-        window.addEventListener('open-mobile-entry-modal', handleOpenMobileEntry);
+
+        window.addEventListener('open-mobile-entry-modal', handleOpenMobileEntry as EventListener);
+
 
         const handleOpenChat = (e: CustomEvent) => {
             setChatAd(e.detail?.ad);
@@ -1004,6 +1018,13 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 }}
                 initialMobile={initialMobile}
                 onSuccess={() => {
+                    if (mobileEntryReason === 'report') {
+                        setIsLoginModalOpen(false);
+                        setSelectedAdForDetail(reportAd);
+                        setShouldOpenReportAfterLogin(true);
+                        window.dispatchEvent(new Event('auth-change'));
+                        return;
+                    }
                     // Navigate to profile or message after login by reloading with param
                     const url = new URL(window.location.href);
                     if (mobileEntryReason === 'message') {
@@ -1014,6 +1035,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     window.location.href = url.toString();
 
                 }}
+
             />
 
             <RegisterModal
@@ -1030,6 +1052,12 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                         setVerificationToken(token);
                         setIsVerificationModalOpen(true);
                     } else {
+                        if (mobileEntryReason === 'report') {
+                            setSelectedAdForDetail(reportAd);
+                            setShouldOpenReportAfterLogin(true);
+                            window.dispatchEvent(new Event('auth-change'));
+                            return;
+                        }
                         // Direct to profile or message
                         const url = new URL(window.location.href);
                         if (mobileEntryReason === 'message') {
@@ -1041,6 +1069,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
                     }
                 }}
+
             />
 
             <MobileEntryModal
@@ -1056,9 +1085,6 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     setIsMobileEntryModalOpen(false);
                     if (mobileEntryReason === 'post_ad') {
                         setIsPostAdModalOpen(true);
-                    } else if (mobileEntryReason === 'message') {
-                        setInitialMobile(mobile);
-                        setIsLoginModalOpen(true);
                     } else {
                         setInitialMobile(mobile);
                         setIsLoginModalOpen(true);
@@ -1070,15 +1096,13 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     setIsMobileEntryModalOpen(false);
                     if (mobileEntryReason === 'post_ad') {
                         setIsPostAdModalOpen(true);
-                    } else if (mobileEntryReason === 'message') {
-                        setInitialMobile(mobile);
-                        setIsRegisterModalOpen(true);
                     } else {
                         setInitialMobile(mobile);
                         setIsRegisterModalOpen(true);
                     }
 
                 }}
+
             />
 
             <VerificationModal
@@ -1090,6 +1114,12 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 verificationToken={verificationToken}
                 onSuccess={() => {
                     setIsVerificationModalOpen(false);
+                    if (mobileEntryReason === 'report') {
+                        setSelectedAdForDetail(reportAd);
+                        setShouldOpenReportAfterLogin(true);
+                        window.dispatchEvent(new Event('auth-change'));
+                        return;
+                    }
                     // Reload to refresh auth state and open profile or message
                     const url = new URL(window.location.href);
                     if (mobileEntryReason === 'message') {
@@ -1100,6 +1130,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     window.location.href = url.toString();
 
                 }}
+
             />
             <AccountActivityModal
                 isOpen={isAccountModalOpen}
@@ -1127,8 +1158,13 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             <AdDetailsModal
                 isOpen={!!selectedAdForDetail}
                 ad={selectedAdForDetail}
-                onClose={() => setSelectedAdForDetail(null)}
+                onClose={() => {
+                    setSelectedAdForDetail(null);
+                    setShouldOpenReportAfterLogin(false);
+                }}
+                initialReportOpen={shouldOpenReportAfterLogin}
             />
+
 
             <MessageModal
                 isOpen={isMessageModalOpen}
