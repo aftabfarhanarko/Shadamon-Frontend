@@ -315,12 +315,13 @@ export default function DashboardClient() {
                     if (data.success) {
                         const ad = data.data;
                         if (ad.promoteType === 'traffic' && ad.trafficLink) {
-                            window.open(ad.trafficLink, '_blank');
+                            const directLink = ad.trafficLink.startsWith('http') ? ad.trafficLink : `https://${ad.trafficLink}`;
+                            window.open(directLink, '_blank');
                             // Clear the param and stay on dashboard
                             const params = new URLSearchParams(searchParams.toString());
                             params.delete('ad');
                             router.replace(params.toString() ? `/dashboard?${params.toString()}` : '/dashboard', { scroll: false });
-                            return;
+                            // Don't return, so setSelectedAd(ad) is also called
                         }
                         setSelectedAd(ad);
                     } else {
@@ -328,12 +329,13 @@ export default function DashboardClient() {
                         const foundAd = ads.find(a => a._id === adId);
                         if (foundAd) {
                             if (foundAd.promoteType === 'traffic' && foundAd.trafficLink) {
-                                window.open(foundAd.trafficLink, '_blank');
+                                const directLink = foundAd.trafficLink.startsWith('http') ? foundAd.trafficLink : `https://${foundAd.trafficLink}`;
+                                window.open(directLink, '_blank');
                                 // Clear the param and stay on dashboard
                                 const params = new URLSearchParams(searchParams.toString());
                                 params.delete('ad');
                                 router.replace(params.toString() ? `/dashboard?${params.toString()}` : '/dashboard', { scroll: false });
-                                return;
+                                // Don't return, so setSelectedAd(foundAd) is also called
                             }
                             setSelectedAd(foundAd);
                         }
@@ -344,7 +346,9 @@ export default function DashboardClient() {
                     const foundAd = ads.find(a => a._id === adId);
                     if (foundAd) {
                         if (foundAd.promoteType === 'traffic' && foundAd.trafficLink) {
-                            window.location.href = foundAd.trafficLink;
+                            const directLink = foundAd.trafficLink.startsWith('http') ? foundAd.trafficLink : `https://${foundAd.trafficLink}`;
+                            window.open(directLink, '_blank');
+                            setSelectedAd(foundAd);
                             return;
                         }
                         setSelectedAd(foundAd);
@@ -1413,9 +1417,7 @@ export default function DashboardClient() {
                                                         {block.bigAd && (
                                                             <div
                                                                 onClick={(e) => {
-                                                                    if (block.bigAd && block.bigAd.adType === 'Promoted' && block.bigAd.promoteType === 'traffic' && block.bigAd.trafficLink) {
-                                                                        window.open(block.bigAd.trafficLink, '_blank');
-                                                                    } else if (block.bigAd) {
+                                                                    if (block.bigAd) {
                                                                         router.push(getAdUrl(block.bigAd), { scroll: false });
                                                                     }
                                                                 }}
@@ -1502,11 +1504,7 @@ export default function DashboardClient() {
                                                                     <div
                                                                         key={ad._id}
                                                                         onClick={() => {
-                                                                            if (ad.adType === 'Promoted' && ad.promoteType === 'traffic' && ad.trafficLink) {
-                                                                                window.open(ad.trafficLink, '_blank');
-                                                                            } else {
-                                                                                router.push(getAdUrl(ad), { scroll: false });
-                                                                            }
+                                                                            router.push(getAdUrl(ad), { scroll: false });
                                                                         }}
                                                                         className={cn(
                                                                             "bg-white rounded-lg p-3 pb-0 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50 border",
@@ -1599,11 +1597,7 @@ export default function DashboardClient() {
                                                                             : "border-slate-200"
                                                                     )}
                                                                     onClick={() => {
-                                                                        if (ad.adType === 'Promoted' && ad.promoteType === 'traffic' && ad.trafficLink) {
-                                                                            window.open(ad.trafficLink, '_blank');
-                                                                        } else {
-                                                                            router.push(getAdUrl(ad), { scroll: false });
-                                                                        }
+                                                                        router.push(getAdUrl(ad), { scroll: false });
                                                                     }}
                                                                 >
                                                                     <div className="h-40 relative rounded-t-lg overflow-hidden bg-slate-100">

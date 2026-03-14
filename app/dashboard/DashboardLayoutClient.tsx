@@ -677,9 +677,24 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                                 <div
                                                     key={ad._id}
                                                     className="p-3 hover:bg-slate-200 cursor-pointer flex items-center justify-between group transition-colors"
-                                                    onClick={() => {
-                                                        setSelectedAdForDetail(ad);
+                                                    onClick={async () => {
                                                         setShowSuggestions(false);
+                                                        try {
+                                                            const res = await fetch(`${API_BASE_URL}/api/ads/public/${ad._id}`);
+                                                            const data = await res.json();
+                                                            if (data.success) {
+                                                                const fullAd = data.data;
+                                                                if (fullAd.promoteType === 'traffic' && fullAd.trafficLink) {
+                                                                    const directLink = fullAd.trafficLink.startsWith('http') ? fullAd.trafficLink : `https://${fullAd.trafficLink}`;
+                                                                    window.open(directLink, '_blank');
+                                                                }
+                                                                setSelectedAdForDetail(fullAd);
+                                                                return;
+                                                            }
+                                                        } catch (err) {
+                                                            console.error("Error fetching ad from search:", err);
+                                                        }
+                                                        setSelectedAdForDetail(ad);
                                                     }}
                                                 >
                                                     <div className="flex-1 min-w-0 pr-4">
