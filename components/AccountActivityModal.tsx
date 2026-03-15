@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import AdDisplay from './AdDisplay';
 import { useRouter } from 'next/navigation';
 import { X, ArrowLeft, Star, Heart, MapPin, Share2, MoreVertical, Edit2, Plus, ArrowRight, Grid, User, Clock, Settings, FileText, Activity, Trash2, CheckCircle2, ChevronDown, Check, LogOut, ExternalLink, Search, Bell, Copy } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -2164,6 +2165,7 @@ I have sent my CV for your review.`;
 
                     {activeTab === 'Post' && (
                         <div className="px-4 py-4 bg-white space-y-2 pb-20">
+                            <AdDisplay positionId={4} className="mb-2" />
                             {userAds.length > 0 ? (
                                 <div className="space-y-0">
                                     {userAds.map((ad, idx) => (

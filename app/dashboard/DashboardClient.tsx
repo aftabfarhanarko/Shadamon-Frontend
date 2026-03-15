@@ -1706,7 +1706,7 @@ export default function DashboardClient() {
 
             {/* Gap 2: 50px */}
             <div className="hidden lg:block w-[50px] flex-none relative self-stretch">
-                <div className="sticky top-[85vh] pl-1">
+                <div className="sticky top-[90vh] pl-1">
                     <button
                         onClick={() => document.getElementById('main-dashboard-scroller')?.scrollTo({ top: 0, behavior: 'smooth' })}
                         className="w-10 h-10 bg-[#0088cc] rounded-full shadow-md flex items-center justify-center hover:bg-[#0077b5] transition-colors"

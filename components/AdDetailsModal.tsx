@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import { ArrowLeft, X, Maximize2, MapPin, Grid, Eye, Share2, Phone, MessageCircle, FileText, ChevronUp, ChevronDown, Rocket, CheckCircle2, Truck, Undo2, Timer, ExternalLink, ChevronRight, Star, Bell, Search, Heart, AlertCircle, Contact, UserSquare2, SquareArrowOutUpRight, Send } from 'lucide-react';
+import { ArrowLeft, X, Maximize2, MapPin, Grid, Eye, Share2, Phone, MessageCircle, FileText, ChevronUp, ChevronDown, Rocket, CheckCircle2, Truck, Undo2, Timer, ExternalLink, ChevronRight, Star, Bell, Search, Heart, AlertCircle, Contact, UserSquare2, SquareArrowOutUpRight, Send, SlidersHorizontal, Settings, LogOut, Inbox, Plus, Home } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { RiMailFill, RiShareBoxLine, RiMoreLine, RiStarFill, RiPhoneFill, RiAlarmWarningFill } from 'react-icons/ri';
+import AdDisplay from './AdDisplay';
 import { FaWhatsapp, FaTelegramPlane } from 'react-icons/fa';
 import { BsChatDotsFill } from 'react-icons/bs';
 import { API_BASE_URL } from '../utils/apiConfig';
@@ -1054,6 +1056,7 @@ I have sent my CV for your review.`;
                                 </div>
                             </div>
                         )}
+                        <AdDisplay positionId={3} className="mt-4 mb-2" />
                     </div>
                 </div>
 

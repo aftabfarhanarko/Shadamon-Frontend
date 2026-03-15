@@ -3,6 +3,21 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { API_BASE_URL } from '../../utils/apiConfig';
 
+interface AdPosition {
+    _id: string;
+    positionId: number;
+    placeName: string;
+    deskWidth: string;
+    deskHeight: string;
+    mobWidth: string;
+    mobHeight: string;
+    link: string;
+    endDate: string;
+    status: 'Yes' | 'No';
+    imageDesk: string | null;
+    imageMob: string | null;
+}
+
 interface Settings {
     siteLogo?: string;
     favIcon?: string;
@@ -11,6 +26,7 @@ interface Settings {
     productPhotoLimit?: number;
     blockCheckInHeadline?: string[];
     blockCheckInDescription?: string[];
+    adPositions?: AdPosition[];
 }
 
 interface SettingsContextType {
@@ -18,6 +34,7 @@ interface SettingsContextType {
     loading: boolean;
     fetchDashboardSettings: () => Promise<void>;
     fetchPostAdSettings: () => Promise<void>;
+    fetchAdPositions: () => Promise<void>;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -52,9 +69,21 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             setLoading(false);
         }
     }, []);
+    
+    const fetchAdPositions = useCallback(async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/ads/public/ad-positions`);
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                setSettings(prev => ({ ...prev, adPositions: data }));
+            }
+        } catch (error) {
+            console.error("Failed to fetch ad positions:", error);
+        }
+    }, []);
 
     return (
-        <SettingsContext.Provider value={{ settings, loading, fetchDashboardSettings, fetchPostAdSettings }}>
+        <SettingsContext.Provider value={{ settings, loading, fetchDashboardSettings, fetchPostAdSettings, fetchAdPositions }}>
             {children}
         </SettingsContext.Provider>
     );
