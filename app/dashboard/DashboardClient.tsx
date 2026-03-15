@@ -1538,15 +1538,17 @@ export default function DashboardClient() {
                                                                             )}
                                                                         </div>
                                                                         <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                                                            <div className="flex items-center gap-1 text-[10px] text-black mb-0.5">
+                                                                            <div className="flex max-[390px]:flex-col items-center max-[390px]:items-start gap-1 text-[10px] text-black mb-0.5">
                                                                                 <span>{ad.adType === 'Promoted' ? 'Promoted By' : 'Post By'}</span>
-                                                                                <span className="font-bold text-black hover:text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id } })); }}>{ad.user?.storeName || ad.user?.name || 'User'}</span>
-                                                                                {ad.user?.mVerified && <VerifiedBadge className="translate-y-[0.5px]" />}
+                                                                                <div className="flex items-center gap-1">
+                                                                                    <span className="font-bold text-black hover:text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id } })); }}>{ad.user?.storeName || ad.user?.name || 'User'}</span>
+                                                                                    {ad.user?.mVerified && <VerifiedBadge className="translate-y-[0.5px]" />}
+                                                                                </div>
                                                                             </div>
                                                                             <h4 className="text-sm text-black truncate mb-0.5">{ad.headline}</h4>
                                                                             <div className="text-sm text-black mb-1">৳ {ad.price?.toLocaleString() || 'N/A'}</div>
                                                                             <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2 text-[10px] text-black group-hover:text-black">
-                                                                                <div className="flex items-center gap-2">
+                                                                                <div className="flex max-[390px]:flex-col items-center max-[390px]:items-start gap-2 max-[390px]:gap-1">
                                                                                     <div className="flex items-center gap-0.5 shrink-0"><MapPin className="w-2.5 h-2.5" /><span className="truncate max-w-[100px] md:max-w-[120px]">{ad.location}</span></div>
                                                                                     <div className="flex items-center gap-0.5 shrink-0"><Grid className="w-2.5 h-2.5" /><span className="truncate max-w-[100px] md:max-w-[120px]">{ad.category}</span></div>
                                                                                 </div>

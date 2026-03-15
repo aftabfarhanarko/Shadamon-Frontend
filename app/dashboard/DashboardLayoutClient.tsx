@@ -611,7 +611,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             <AdPopup />
             {/* Mobile Bottom Navigation */}
             <nav className={cn(
-                "md:hidden fixed bottom-1 inset-x-0 z-[60] h-[70px] transition-transform duration-300 flex justify-center",
+                "md:hidden fixed bottom-0 inset-x-0 z-[60] h-[70px] transition-transform duration-300 flex justify-center",
                 !isNavbarVisible && "translate-y-[120%]"
             )}>
                 <div className="relative w-[95%] h-full">
