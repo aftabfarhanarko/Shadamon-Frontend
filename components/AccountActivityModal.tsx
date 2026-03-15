@@ -1050,7 +1050,7 @@ I have sent my CV for your review.`;
             
             const compressed = await compressImage(file, maxWidth, quality);
             if (compressed) {
-                processedFile = new File([compressed], file.name.replace(/\.[^/.]+$/, "") + ".webp", { type: 'image/webp' });
+                processedFile = compressed;
             }
         } catch (error) {
             console.error("Compression error:", error);

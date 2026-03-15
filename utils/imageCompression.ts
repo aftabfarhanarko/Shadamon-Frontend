@@ -1,4 +1,4 @@
-export async function compressImage(file: File): Promise<File> {
+export async function compressImage(file: File, maxWidth?: number, quality?: number): Promise<File> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -7,8 +7,8 @@ export async function compressImage(file: File): Promise<File> {
       img.src = event.target?.result as string;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1200;
-        const MAX_HEIGHT = 1200;
+        const MAX_WIDTH = maxWidth || 1200;
+        const MAX_HEIGHT = maxWidth || 1200; // Keep aspect ratio logic
         let width = img.width;
         let height = img.height;
 
@@ -42,7 +42,7 @@ export async function compressImage(file: File): Promise<File> {
             }
           },
           'image/webp',
-          0.85
+          quality || 0.85
         );
       };
       img.onerror = (err) => reject(err);

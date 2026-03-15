@@ -1459,7 +1459,7 @@ export default function DashboardClient() {
                                                                 </div>
                                                                 <div className="p-3">
                                                                     <div className="flex items-start justify-between">
-                                                                        <div>
+                                                                        <div className="min-w-0">
                                                                             <div className="flex items-center gap-1 text-[11px] text-black mb-0.5">
                                                                                 <span>{block.bigAd.adType === 'Promoted' ? 'Promoted By' : 'Post By'}</span>
                                                                                 <span
@@ -1473,7 +1473,7 @@ export default function DashboardClient() {
                                                                                 </span>
                                                                                 {block.bigAd.user?.mVerified && <VerifiedBadge className="translate-y-[0.5px]" />}
                                                                             </div>
-                                                                            <h3 className="font-bold text-lg text-black leading-tight mb-0.5">{block.bigAd.headline}</h3>
+                                                                            <h3 className="font-bold text-lg text-black leading-tight mb-0.5 truncate">{block.bigAd.headline}</h3>
                                                                             <div className="font-bold text-base text-black mb-1">৳ {block.bigAd.price?.toLocaleString() || 'N/A'}</div>
                                                                             <div className="flex items-center gap-3 text-[10px] text-black">
                                                                                 <div className="flex items-center gap-1"><MapPin className="w-3 h-3 text-black" />{block.bigAd.location}</div>
