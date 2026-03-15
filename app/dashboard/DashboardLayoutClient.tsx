@@ -8,7 +8,7 @@ import {
     Home, Plus, Inbox, LogOut, Settings, Menu, X,
     Grid, MapPin, ChevronRight, ChevronDown
 } from 'lucide-react';
-import { RiMailFill, RiMailLine, RiUser3Fill } from 'react-icons/ri';
+import { RiMailFill, RiMailLine, RiUser3Fill, RiHome5Line, RiSearchLine, RiAddLine, RiUser3Line } from 'react-icons/ri';
 import Cookies from 'js-cookie';
 import { io } from 'socket.io-client';
 import { useLanguage } from '../context/LanguageContext';
@@ -33,6 +33,7 @@ import { toast } from 'react-hot-toast';
 
 import { API_BASE_URL } from '../../utils/apiConfig';
 import { getImageUrl } from '../../utils/imageUrl';
+import { div } from 'framer-motion/client';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs));
@@ -99,6 +100,55 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
     const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
+
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    const fetchUnreadCount = async () => {
+        const token = Cookies.get('token');
+        if (!token) {
+            setUnreadCount(0);
+            return;
+        }
+        try {
+            const [convRes, notifRes] = await Promise.all([
+                fetch(`${API_BASE_URL}/api/messages/conversations`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch(`${API_BASE_URL}/api/user/notifications`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+            ]);
+
+            const convData = await convRes.json();
+            const notifData = await notifRes.json();
+
+            let total = 0;
+
+            if (convData.success && Array.isArray(convData.data)) {
+                // Count how many conversations have at least one unread message
+                total += convData.data.filter((conv: any) => (conv.unreadCount || 0) > 0).length;
+            }
+
+            if (Array.isArray(notifData)) {
+                // Count unread admin notifications
+                total += notifData.filter((n: any) => !n.isRead).length;
+            }
+
+            setUnreadCount(total);
+        } catch (err) {
+            console.error("Unread count fetch error:", err);
+        }
+    };
+
+    useEffect(() => {
+        fetchUnreadCount();
+        const interval = setInterval(fetchUnreadCount, 30000); // Every 30s
+        window.addEventListener('refresh-unread-count', fetchUnreadCount);
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('refresh-unread-count', fetchUnreadCount);
+        };
+    }, []);
 
     const openInfoModal = (type: 'about' | 'terms' | 'privacy' | 'contact' | 'safety') => {
         const contentMap = {
@@ -522,7 +572,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     };
 
     const handleAccountClick = (e: React.MouseEvent) => {
-        e.preventDefault(); // Prevent navigation
+        e.preventDefault();
         const token = Cookies.get('token');
         if (!token) {
             setMobileEntryReason('account');
@@ -531,55 +581,6 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             setIsAccountModalOpen(true);
         }
     };
-
-    const [unreadCount, setUnreadCount] = useState(0);
-
-    const fetchUnreadCount = async () => {
-        const token = Cookies.get('token');
-        if (!token) {
-            setUnreadCount(0);
-            return;
-        }
-        try {
-            const [convRes, notifRes] = await Promise.all([
-                fetch(`${API_BASE_URL}/api/messages/conversations`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                }),
-                fetch(`${API_BASE_URL}/api/user/notifications`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                })
-            ]);
-
-            const convData = await convRes.json();
-            const notifData = await notifRes.json();
-
-            let total = 0;
-
-            if (convData.success && Array.isArray(convData.data)) {
-                // Count how many conversations have at least one unread message
-                total += convData.data.filter((conv: any) => (conv.unreadCount || 0) > 0).length;
-            }
-
-            if (Array.isArray(notifData)) {
-                // Count unread admin notifications
-                total += notifData.filter((n: any) => !n.isRead).length;
-            }
-
-            setUnreadCount(total);
-        } catch (err) {
-            console.error("Unread count fetch error:", err);
-        }
-    };
-
-    useEffect(() => {
-        fetchUnreadCount();
-        const interval = setInterval(fetchUnreadCount, 30000); // Every 30s
-        window.addEventListener('refresh-unread-count', fetchUnreadCount);
-        return () => {
-            clearInterval(interval);
-            window.removeEventListener('refresh-unread-count', fetchUnreadCount);
-        };
-    }, []);
 
     const handleMessageClick = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -592,7 +593,6 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             fetchUnreadCount();
         }
     };
-
 
     const [headerOffset, setHeaderOffset] = useState(0);
     const [isNavbarVisible, setIsNavbarVisible] = useState(true);
@@ -611,74 +611,99 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             <AdPopup />
             {/* Mobile Bottom Navigation */}
             <nav className={cn(
-                "md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 z-50 h-[70px] flex items-center justify-around px-2 pb-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] transition-transform duration-300",
-                !isNavbarVisible && "translate-y-full"
+                "md:hidden fixed bottom-1 inset-x-0 z-[60] h-[70px] transition-transform duration-300 flex justify-center",
+                !isNavbarVisible && "translate-y-[120%]"
             )}>
-                <Link href="/dashboard" className="flex flex-col items-center gap-1 p-2 text-[#0088cc]">
-                    <Home className="w-6 h-6" />
-                    <span className="text-[10px] font-bold">{t('home')}</span>
-                </Link>
-
-                <button
-                    onClick={() => {
-                        const newState = !isMobileSearchOpen;
-                        setIsMobileSearchOpen(newState);
-                        if (newState) {
-                            document.getElementById('main-dashboard-scroller')?.scrollTo({ top: 0, behavior: 'smooth' });
-                            setTimeout(() => searchInputRef.current?.focus(), 600);
-                        }
-                    }}
-                    className={cn(
-                        "flex flex-col items-center gap-1 p-2 transition-colors",
-                        isMobileSearchOpen ? "text-[#0088cc]" : "text-black"
-                    )}
-                >
-                    <Search className="w-6 h-6" />
-                    <span className="text-[10px] font-medium">{t('search_nav')}</span>
-                </button>
-
-                <Link
-                    href="/dashboard/post-ad"
-                    className="w-12 h-12 bg-[#0088cc] rounded-full flex items-center justify-center text-white shadow-lg shadow-[#0088cc]/30 hover:scale-105 active:scale-95 transition-all"
-                >
-                    <Plus className="w-6 h-6" />
-                </Link>
-
-                <Link
-                    href="/dashboard/inbox"
-                    onClick={handleMessageClick}
-                    className="flex flex-col items-center gap-1 p-2 text-black hover:text-black relative"
-                >
-                    <div className="relative">
-                        <RiMailLine className="w-6 h-6" />
-                        {unreadCount > 0 && (
-                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#0088cc] text-white text-[10px] flex items-center justify-center rounded-full border-2 border-white">
-                                {unreadCount}
-                            </span>
-                        )}
-                    </div>
-                    <span className="text-[10px] font-medium">{t('inbox')}</span>
-                </Link>
-
-
-                <Link
-                    href="/dashboard/profile"
-                    onClick={handleAccountClick}
-                    className="flex flex-col items-center gap-1 p-2 text-black hover:text-black transition-all"
-                >
-                    <div className="w-6 h-6 rounded-full bg-[#EDF2F7] flex items-center justify-center overflow-hidden border border-[#0088cc]">
-                        {user && user.photo ? (
-                            <img
-                                src={getImageUrl(user.photo)}
-                                alt={user.name}
-                                className="w-full h-full object-cover"
+                <div className="relative w-[95%] h-full">
+                    {/* SVG Background with Curve */}
+                    <div className="absolute inset-0 w-full h-full pointer-events-none">
+                        <svg width="100%" height="70" viewBox="0 0 350 70" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" className="w-full h-full filter drop-shadow-[0_-5px_15px_rgba(0,0,0,0.08)]">
+                            <path 
+                                d="M0 15 C0 6.71573 6.71573 0 15 0 H125 C135 0 142 8 145 15 C148 25 155 35 175 35 C195 35 202 25 205 15 C208 8 215 0 225 0 H335 C343.284 0 350 6.71573 350 15 V70 H0 V15Z" 
+                                fill="white" 
                             />
-                        ) : (
-                            <User className="w-6 h-6" />
-                        )}
+                            <path 
+                                d="M0 15 C0 6.71573 6.71573 0 15 0 H125 C135 0 142 8 145 15 C148 25 155 35 175 35 C195 35 202 25 205 15 C208 8 215 0 225 0 H335 C343.284 0 350 6.71573 350 15" 
+                                stroke="#E2E8F0" 
+                                strokeWidth="1" 
+                            />
+                        </svg>
                     </div>
-                    <span className="text-[10px] font-medium">{t('account')}</span>
-                </Link>
+
+                    <div className="relative h-full flex items-center justify-around px-2 z-10">
+                        {/* Home */}
+                        <Link href="/dashboard" className="flex flex-col items-center gap-0.5 min-w-[60px]">
+                            <RiHome5Line className="w-7 h-7 text-black" />
+                            <span className="text-[10px] text-black">{t('home')}</span>
+                        </Link>
+
+                        {/* Search */}
+                        <button
+                            onClick={() => {
+                                const newState = !isMobileSearchOpen;
+                                setIsMobileSearchOpen(newState);
+                                if (newState) {
+                                    document.getElementById('main-dashboard-scroller')?.scrollTo({ top: 0, behavior: 'smooth' });
+                                    setTimeout(() => searchInputRef.current?.focus(), 600);
+                                }
+                            }}
+                            className={cn(
+                                "flex flex-col items-center gap-0.5 min-w-[60px] transition-colors",
+                                isMobileSearchOpen ? "text-[#0088cc]" : "text-black"
+                            )}
+                        >
+                            <RiSearchLine className="w-7 h-7" />
+                            <span className="text-[10px]">{t('search_nav')}</span>
+                        </button>
+
+                        {/* Centered Floating Post Ad Button */}
+                        <div className="relative -top-5 flex flex-col items-center gap-1">
+                            <button
+                                onClick={handleAddAdClick}
+                                className="w-14 h-14 bg-[#003B95] rounded-full flex items-center justify-center text-white shadow-xl shadow-[#003B95]/30 hover:scale-105 active:scale-95 transition-all"
+                            >
+                                <RiAddLine className="w-8 h-8" />
+                            </button>
+                        </div>
+
+                        {/* Inbox */}
+                        <Link
+                            href="/dashboard/inbox"
+                            onClick={handleMessageClick}
+                            className="flex flex-col items-center gap-0.5 min-w-[60px] text-black relative"
+                        >
+                            <div className="relative">
+                                <RiMailLine className="w-7 h-7" />
+                                {unreadCount > 0 && (
+                                    <span className="absolute -top-1.5 -right-2 bg-red-600 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-white">
+                                        {unreadCount > 99 ? '99+' : unreadCount}
+                                    </span>
+                                )}
+                            </div>
+                            <span className="text-[10px] text-black">{t('inbox')}</span>
+                        </Link>
+
+                        {/* Account */}
+                        <Link
+                            href="/dashboard/profile"
+                            onClick={handleAccountClick}
+                            className="flex flex-col items-center gap-0.5 min-w-[60px] text-black transition-all"
+                        >
+                            <div className="w-7 h-7 rounded-full bg-[#EDF2F7] flex items-center justify-center overflow-hidden border border-[#0088cc]">
+                                {user && user.photo ? (
+                                    <img
+                                        src={getImageUrl(user.photo)}
+                                        alt={user.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <RiUser3Line className="w-6 h-6" />
+                                )}
+                            </div>
+                            <span className="text-[10px] text-black">{t('account')}</span>
+                        </Link>
+                    </div>
+                </div>
             </nav>
 
             {/* Main Content Area - Full width scroller to show scrollbar on the far right edge of the screen */}
@@ -708,9 +733,9 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     {/* Top Navigation Bar */}
                     <header className="bg-white border-b border-slate-200 h-16 w-full">
                         <div className="max-w-[1320px] mx-auto px-4 h-full flex items-center justify-between md:justify-center">
-                            {/* Logo Section */}
+                            {/* Section 1: 300px (Logo & Ad Count) */}
                             <div className={cn("md:w-[300px] flex-none flex items-center gap-2", isMobileSearchOpen && "hidden md:flex")}>
-                                {/* Mobile Menu Button (hidden by default as requested to only show logo/lang/msg) */}
+                                {/* Mobile Menu Button - Hidden as requested */}
                                 <button
                                     className="hidden p-2 -ml-2 text-black hover:bg-slate-100 rounded-full transition-colors"
                                     onClick={() => setIsMobileMenuOpen(true)}
@@ -740,11 +765,12 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                 </Link>
                             </div>
 
+                            {/* Gap 1: 50px */}
                             <div className="w-[50px] flex-none hidden md:block"></div>
 
-                            {/* Search Section */}
-                            <div className={cn("md:w-[565px] flex-1 md:flex-none flex items-center gap-4 relative", !isMobileSearchOpen && "hidden md:flex")} ref={searchRef}>
-                                <div className="flex-1 flex bg-[#EDF2F7] rounded relative">
+                            {/* Section 2: 565px (Search & Icons) */}
+                            <div className={cn("md:w-[565px] flex-1 md:flex-none flex items-center gap-2 md:gap-4 relative", !isMobileSearchOpen ? "flex justify-end md:justify-center" : "flex")} ref={searchRef}>
+                                <div className={cn("flex-1 flex bg-[#EDF2F7] rounded relative", !isMobileSearchOpen && "hidden md:flex")}>
                                     <div className="flex-1 relative flex items-center">
                                         <input
                                             ref={searchInputRef}
@@ -829,55 +855,45 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                     </button>
                                 </div>
 
-                                {/* Mobile Search Close Button */}
-                                <button
-                                    onClick={() => setIsMobileSearchOpen(false)}
-                                    className="md:hidden p-2 text-black hover:bg-slate-100 rounded-full transition-colors"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
+                                {/* Language & Action Icons */}
+                                <div className={cn("flex items-center gap-3 shrink-0", isMobileSearchOpen && "hidden md:flex")}>
+                                    <button
+                                        onClick={toggleLanguage}
+                                        className="w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[14px] text-black uppercase"
+                                    >
+                                        {language}
+                                    </button>
+                                    <button
+                                        onClick={handleMessageClick}
+                                        className="w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all relative"
+                                    >
+                                        <RiMailFill className="w-5 h-5" />
+                                        {unreadCount > 0 && (
+                                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#0088cc] text-white text-[10px] flex items-center justify-center rounded-full border-2 border-white">
+                                                {unreadCount}
+                                            </span>
+                                        )}
+                                    </button>
 
-                            <div className="w-[50px] flex-none hidden md:block"></div>
-
-                            {/* Actions Section */}
-                            <div className={cn("flex items-center gap-3 shrink-0", isMobileSearchOpen && "hidden md:flex")}>
-                                <button
-                                    onClick={toggleLanguage}
-                                    className="w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[14px] text-black uppercase"
-                                >
-                                    {language}
-                                </button>
-                                <button
-                                    onClick={handleMessageClick}
-                                    className="w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all relative"
-                                >
-                                    <RiMailFill className="w-5 h-5" />
-                                    {unreadCount > 0 && (
-                                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#0088cc] text-white text-[10px] flex items-center justify-center rounded-full border-2 border-white">
-                                            {unreadCount}
-                                        </span>
-                                    )}
-                                </button>
-
-                                <Link
-                                    href="/dashboard/profile"
-                                    onClick={handleAccountClick}
-                                    className={cn(
-                                        "w-10 h-10 bg-[#EDF2F7] rounded-full hidden md:flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all overflow-hidden",
-                                        user?.photo && "border-2 border-[#0088cc]"
-                                    )}
-                                >
-                                    {user && user.photo ? (
-                                        <img
-                                            src={getImageUrl(user.photo)}
-                                            alt={user.name}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <RiUser3Fill className="w-5 h-5" />
-                                    )}
-                                </Link>
+                                    <Link
+                                        href="/dashboard/profile"
+                                        onClick={handleAccountClick}
+                                        className={cn(
+                                            "w-10 h-10 bg-[#EDF2F7] rounded-full hidden md:flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all overflow-hidden",
+                                            user?.photo && "border-2 border-[#0088cc]"
+                                        )}
+                                    >
+                                        {user && user.photo ? (
+                                            <img
+                                                src={getImageUrl(user.photo)}
+                                                alt={user.name}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <RiUser3Fill className="w-5 h-5" />
+                                        )}
+                                    </Link>
+                                </div>
                             </div>
 
                             <div className="w-[50px] flex-none hidden md:block"></div>

@@ -1005,7 +1005,7 @@ export default function DashboardClient() {
                     >
                         <Grid className="w-5 h-5 text-black" />
                         <div className="flex items-center gap-1 min-w-0">
-                            <span className="text-sm text-black truncate">{filters.category ? (filters.subCategory || filters.category) : (language === 'bn' ? 'ক্যাটাগরি' : 'Category')}</span>
+                            <span className="text-xs sm:text-sm text-black truncate">{filters.category ? (filters.subCategory || filters.category) : (language === 'bn' ? 'ক্যাটাগরি' : 'Category')}</span>
                             {filters.category && (
                                 <div
                                     onClick={(e) => {
@@ -1030,7 +1030,7 @@ export default function DashboardClient() {
                     >
                         <MapPin className="w-5 h-5 text-black" />
                         <div className="flex items-center gap-1 min-w-0">
-                            <span className="text-sm text-black truncate">{filters.location ? (filters.subLocation || filters.location) : (language === 'bn' ? 'লোকেশন' : 'Location')}</span>
+                            <span className="text-xs sm:text-sm text-black truncate">{filters.location ? (filters.subLocation || filters.location) : (language === 'bn' ? 'লোকেশন' : 'Location')}</span>
                             {filters.location && (
                                 <div
                                     onClick={(e) => {
@@ -1049,7 +1049,7 @@ export default function DashboardClient() {
                         className="flex-1 px-4 py-2.5 flex items-center justify-center gap-3 hover:bg-slate-50 transition-colors"
                     >
                         <SlidersHorizontal className="w-5 h-5 text-black" />
-                        <span className="text-sm text-black">{language === 'bn' ? 'ফিল্টার' : 'Filter'}</span>
+                        <span className="text-xs sm:text-sm text-black">{language === 'bn' ? 'ফিল্টার' : 'Filter'}</span>
                     </button>
                 </div>
 
