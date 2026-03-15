@@ -10,6 +10,7 @@ import { API_BASE_URL } from '../utils/apiConfig';
 import { getImageUrl } from '../utils/imageUrl';
 import { useSettings } from '../app/context/SettingsContext';
 import { useLanguage } from '../app/context/LanguageContext';
+import { compressImage } from '../utils/imageCompression';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs));
@@ -64,6 +65,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [existingImages, setExistingImages] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingData, setLoadingData] = useState(false);
+    const [compressing, setCompressing] = useState(false);
     const { settings, fetchPostAdSettings } = useSettings();
     const { t } = useLanguage();
 
@@ -340,15 +342,29 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         }
     };
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             const newFiles = Array.from(e.target.files);
             const limit = settings.productPhotoLimit || 10;
+            
             if (images.length + existingImages.length + newFiles.length > limit) {
                 toast.error(`Maximum ${limit} images allowed`);
                 return;
             }
-            setImages([...images, ...newFiles]);
+
+            setCompressing(true);
+            try {
+                const compressedPromises = newFiles.map(file => compressImage(file));
+                const compressedFiles = await Promise.all(compressedPromises);
+                setImages([...images, ...compressedFiles]);
+            } catch (error) {
+                console.error("Compression failed:", error);
+                toast.error("Failed to process some images");
+                // Fallback to original files if compression fails
+                setImages([...images, ...newFiles]);
+            } finally {
+                setCompressing(false);
+            }
         }
     };
 
@@ -1062,14 +1078,28 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                             ))}
                                             {images.length + existingImages.length < 10 && (
                                                 <button
-                                                    onClick={() => fileInputRef.current?.click()}
-                                                    className="min-w-[80px] h-[80px] rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 text-slate-400 bg-slate-50/50 hover:bg-slate-100/80 transition-all"
+                                                    onClick={() => !compressing && fileInputRef.current?.click()}
+                                                    disabled={compressing}
+                                                    className={cn(
+                                                        "min-w-[80px] h-[80px] rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all",
+                                                        compressing 
+                                                            ? "border-slate-200 bg-slate-50 cursor-not-allowed text-slate-300" 
+                                                            : "border-slate-200 flex flex-col items-center justify-center gap-1 text-slate-400 bg-slate-50/50 hover:bg-slate-100/80 active:scale-95"
+                                                    )}
                                                 >
-                                                    <div className="bg-slate-200 p-1.5 rounded-lg shadow-sm">
-                                                        <Camera className="w-4 h-4 text-slate-600" />
+                                                    <div className={cn("p-1.5 rounded-lg shadow-sm", compressing ? "bg-slate-100" : "bg-slate-200")}>
+                                                        {compressing ? (
+                                                            <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
+                                                        ) : (
+                                                            <Camera className="w-4 h-4 text-slate-600" />
+                                                        )}
                                                     </div>
-                                                    <span className="text-[10px] font-bold leading-none">{t('add_photos_btn')}</span>
-                                                    <span className="text-[8px] font-medium opacity-70 text-center">{t('drag_and_drop')}</span>
+                                                    <span className="text-[10px] font-bold leading-none">
+                                                        {compressing ? "..." : t('add_photos_btn')}
+                                                    </span>
+                                                    <span className="text-[8px] font-medium opacity-70 text-center">
+                                                        {compressing ? t('processing') : t('drag_and_drop')}
+                                                    </span>
                                                 </button>
                                             )}
                                         </div>

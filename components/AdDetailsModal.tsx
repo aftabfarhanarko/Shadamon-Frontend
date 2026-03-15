@@ -251,6 +251,16 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
         setShowOptionsPopup(false);
     };
 
+    const handleChatClick = () => {
+        const token = Cookies.get('token');
+        if (!token) {
+            window.dispatchEvent(new CustomEvent('open-mobile-entry-modal', { detail: { reason: 'message', ad: ad } }));
+            onClose();
+            return;
+        }
+        window.dispatchEvent(new CustomEvent('open-chat-modal', { detail: { ad } }));
+    };
+
     const nextImage = (e: React.MouseEvent) => {
         e.stopPropagation();
         if (hasImages) {
@@ -558,13 +568,13 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                 <div className="flex items-center gap-2 mb-3">
                                     <div
                                         className="w-[160px] bg-[#EDF2F7] border border-slate-800 rounded-full py-1.5 px-4 cursor-pointer h-9 flex items-center shadow-sm"
-                                        onClick={() => window.dispatchEvent(new CustomEvent('open-chat-modal', { detail: { ad } }))}
+                                        onClick={handleChatClick}
                                     >
                                         <span className="text-sm text-slate-800">Hi ..</span>
                                     </div>
                                     <button
                                         className="w-9 h-9 rounded-full bg-[#0088cc] flex items-center justify-center text-white shrink-0 shadow-md hover:bg-[#0077b5] transition-all active:scale-95"
-                                        onClick={() => window.dispatchEvent(new CustomEvent('open-chat-modal', { detail: { ad } }))}
+                                        onClick={handleChatClick}
                                     >
                                         <Send className="w-5 h-5 ml-0.5" />
                                     </button>
@@ -591,9 +601,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                             {/* Chat Button - ALWAYS SHOW */}
                                             <button
                                                 className="col-span-1 bg-[#1A202C] text-white text-xs py-2 rounded-md hover:bg-black transition-colors"
-                                                onClick={() => {
-                                                    window.dispatchEvent(new CustomEvent('open-chat-modal', { detail: { ad } }));
-                                                }}
+                                                onClick={handleChatClick}
                                             >
                                                 Chat
                                             </button>
@@ -604,7 +612,8 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                                     onClick={async () => {
                                                         const token = Cookies.get('token');
                                                         if (!token) {
-                                                            window.dispatchEvent(new CustomEvent('open-mobile-entry-modal'));
+                                                            window.dispatchEvent(new CustomEvent('open-mobile-entry-modal', { detail: { reason: 'post_ad', ad: ad } }));
+                                                            onClose();
                                                             return;
                                                         }
 
@@ -1106,7 +1115,8 @@ I have sent my CV for your review.`;
                                     onClick={async () => {
                                         const token = Cookies.get('token');
                                         if (!token) {
-                                            window.dispatchEvent(new CustomEvent('open-mobile-entry-modal'));
+                                            window.dispatchEvent(new CustomEvent('open-mobile-entry-modal', { detail: { reason: 'message', ad: ad } }));
+                                            onClose();
                                             return;
                                         }
                                         try {

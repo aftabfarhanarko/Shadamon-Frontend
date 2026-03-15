@@ -10,12 +10,14 @@ import { API_BASE_URL } from '../utils/apiConfig';
 import { getImageUrl } from '../utils/imageUrl';
 import { getNonHighlightLabels, hasHighlightLabel } from '../utils/labels';
 import { useLanguage } from '../app/context/LanguageContext';
+import { compressImage } from '../utils/imageCompression';
 import Image from 'next/image';
 import { toast } from 'react-hot-toast';
 import PromoteModal from './PromoteModal';
 import AdDetailsModal from './AdDetailsModal';
 import VerifyProfileModal from './VerifyProfileModal';
 import VerifiedBadge from './VerifiedBadge';
+import { Loader2 } from 'lucide-react';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs));
@@ -49,6 +51,7 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
     const [selectedAdForDeletion, setSelectedAdForDeletion] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isUrlChecking, setIsUrlChecking] = useState(false);
+    const [isUploading, setIsUploading] = useState<string | null>(null);
     const [urlStatus, setUrlStatus] = useState<'idle' | 'available' | 'taken'>('idle');
 
     // Password Change State
@@ -910,7 +913,8 @@ I have sent my CV for your review.`;
     const handleSendMessage = () => {
         const token = Cookies.get('token');
         if (!token) {
-            window.dispatchEvent(new CustomEvent('open-mobile-entry-modal'));
+            window.dispatchEvent(new CustomEvent('open-mobile-entry-modal', { detail: { reason: 'message' } }));
+            onClose();
             return;
         }
 
@@ -1036,13 +1040,25 @@ I have sent my CV for your review.`;
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (file.size > 5 * 1024 * 1024) {
-            toast.error("File size too large (Max 5MB)");
-            return;
+        setIsUploading(type);
+        let processedFile = file;
+
+        try {
+            // Compress image based on type
+            const maxWidth = type === 'banner' ? 1200 : 800;
+            const quality = 0.8;
+            
+            const compressed = await compressImage(file, maxWidth, quality);
+            if (compressed) {
+                processedFile = new File([compressed], file.name.replace(/\.[^/.]+$/, "") + ".webp", { type: 'image/webp' });
+            }
+        } catch (error) {
+            console.error("Compression error:", error);
+            // Fallback to original file
         }
 
         // Optimistic Update with Object URL
-        const objectUrl = URL.createObjectURL(file);
+        const objectUrl = URL.createObjectURL(processedFile);
 
         let stateKey = 'photo';
         if (type === 'banner') stateKey = 'storeBanner';
@@ -1060,7 +1076,7 @@ I have sent my CV for your review.`;
             const formData = new FormData();
             // Backend expects 'storeBanner', 'storeLogo' or 'photo'
             const fieldName = type === 'banner' ? 'storeBanner' : (type === 'storeLogo' ? 'storeLogo' : 'photo');
-            formData.append(fieldName, file);
+            formData.append(fieldName, processedFile);
 
             const res = await fetch(`${API_BASE_URL}/api/user/update`, {
                 method: 'PUT',
@@ -1085,6 +1101,8 @@ I have sent my CV for your review.`;
         } catch (error: any) {
             toast.error(error.message);
             console.error("Upload error:", error);
+        } finally {
+            setIsUploading(null);
         }
     };
 
@@ -1197,10 +1215,18 @@ I have sent my CV for your review.`;
                                                 onChange={(e) => handleImageUpload(e, 'banner')}
                                             />
                                             <button
-                                                onClick={() => bannerInputRef.current?.click()}
-                                                className="absolute bottom-2 right-2 w-6 h-6 bg-[#0088cc] backdrop-blur-sm rounded-full flex items-center justify-center text-white shadow-sm hover:scale-110 transition-transform"
+                                                onClick={() => !isUploading && bannerInputRef.current?.click()}
+                                                disabled={!!isUploading}
+                                                className={cn(
+                                                    "absolute bottom-2 right-2 w-7 h-7 bg-[#0088cc] backdrop-blur-sm rounded-full flex items-center justify-center text-white shadow-sm hover:scale-110 transition-transform disabled:opacity-70 disabled:scale-100",
+                                                    isUploading === 'banner' && "animate-pulse"
+                                                )}
                                             >
-                                                <Plus className="w-3.5 h-3.5" />
+                                                {isUploading === 'banner' ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    <Plus className="w-4 h-4" />
+                                                )}
                                             </button>
                                         </>
                                     )}
@@ -1230,10 +1256,18 @@ I have sent my CV for your review.`;
                                                         onChange={(e) => handleImageUpload(e, 'storeLogo')}
                                                     />
                                                     <button
-                                                        onClick={() => logoInputRef.current?.click()}
-                                                        className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-6 h-6 bg-[#0088cc] border border-white rounded-full flex items-center justify-center text-white shadow-sm hover:scale-110 transition-transform"
+                                                        onClick={() => !isUploading && logoInputRef.current?.click()}
+                                                        disabled={!!isUploading}
+                                                        className={cn(
+                                                            "absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-7 h-7 bg-[#0088cc] border border-white rounded-full flex items-center justify-center text-white shadow-sm hover:scale-110 transition-transform disabled:opacity-70 disabled:scale-100",
+                                                            isUploading === 'storeLogo' && "animate-pulse"
+                                                        )}
                                                     >
-                                                        <Plus className="w-3 h-3" />
+                                                        {isUploading === 'storeLogo' ? (
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                        ) : (
+                                                            <Plus className="w-3.5 h-3.5" />
+                                                        )}
                                                     </button>
                                                 </>
                                             )}
