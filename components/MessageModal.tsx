@@ -290,6 +290,13 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
     if (!isOpen) return null;
 
     const filteredConversations = conversations.filter(conv => {
+        // When searching, exclude notify/callme messages
+        if (searchQuery) {
+            if (conv.lastMessage?.messageType === 'notify' || conv.lastMessage?.messageType === 'callme') {
+                return false;
+            }
+        }
+
         if (activeTab === 'Message') {
             return !conv.lastMessage?.messageType || conv.lastMessage?.messageType === 'text';
         }
@@ -305,7 +312,7 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
     // Merge notifications preferences as UI items
     const combinedList = [
         ...filteredConversations.map(c => ({ ...c, uiType: 'conversation' })),
-        ...(activeTab === 'All' || activeTab === 'Notify' ? notifyPreferences.map(p => ({
+        ...(searchQuery === '' && (activeTab === 'All' || activeTab === 'Notify') ? notifyPreferences.map(p => ({
             _id: p._id,
             uiType: 'preference',
             ad: p.ad,
@@ -313,7 +320,7 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
             createdAt: p.createdAt,
             lastMessage: { messageType: 'notify' }
         })) : []),
-        ...(activeTab === 'All' || activeTab === 'Shadamon' ? notifications.map(n => ({
+        ...(searchQuery === '' && (activeTab === 'All' || activeTab === 'Shadamon') ? notifications.map(n => ({
             ...n,
             uiType: 'notification'
         })) : [])
@@ -379,6 +386,14 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
                                 placeholder="Search By ID, Name etc"
                                 className="bg-transparent flex-1 outline-none text-sm text-black placeholder-slate-400"
                             />
+                            {searchQuery && (
+                                <button
+                                    onClick={() => setSearchQuery('')}
+                                    className="p-1 hover:bg-slate-200 rounded-full transition-colors shrink-0"
+                                >
+                                    <X className="w-4 h-4 text-slate-500" />
+                                </button>
+                            )}
                         </div>
 
                         {/* Tabs/Filters */}

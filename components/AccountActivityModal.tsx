@@ -602,13 +602,27 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
         const userLocation = userProfileData.location || 'Not specified';
         const userEducation = userProfileData.education || 'Not specified';
         const userProfession = userProfileData.profession || 'Not specified';
+        const userDob = userProfileData.dob || 'Not specified';
+        const userAbout = userProfileData.aboutYourself || 'Not provided';
+        const userExperience = userProfileData.professionalExperience || 'Not provided';
 
-        const message = `Hello, I am interested in your ad: "${adData.headline}". Here is my contact info:
+        const message = `Interest in Ad: "${adData.headline}"
+
+--- CV DETAILS ---
 Name: ${userName}
+DOB: ${userDob}
 Gender: ${userGender}
+
 Location: ${userLocation}
+
 Education: ${userEducation}
 Profession: ${userProfession}
+Experience: ${userExperience}
+
+About Myself:
+${userAbout}
+
+Contact Info:
 Phone: ${userPhone}
 Email: ${userEmail}
 
@@ -645,7 +659,7 @@ I have sent my CV for your review.`;
 
         if (pendingCvAd && highlightCvFields) {
             const hasMobile = profileForm.mobile || filteredMobiles.length > 0;
-            if (!profileForm.gender || !profileForm.location || !profileForm.education || !profileForm.profession || !hasMobile || !profileForm.email) {
+            if (!profileForm.gender || !profileForm.location || !profileForm.education || !profileForm.profession || !hasMobile || !profileForm.email || !profileForm.dob || !profileForm.aboutYourself || !profileForm.professionalExperience) {
                 toast.error("Please fill all mandatory fields (marked in red) to send CV.");
                 return;
             }
@@ -1738,7 +1752,10 @@ I have sent my CV for your review.`;
                                             readOnly={!isOwnAccount}
                                             value={profileForm.dob}
                                             onChange={(e) => handleProfileChange('dob', e.target.value)}
-                                            className="w-full border border-slate-200 rounded px-2 py-1 text-sm text-black outline-none focus:border-blue-500 bg-slate-50/50"
+                                            className={cn(
+                                                "w-full border rounded px-2 py-1 text-sm text-black outline-none bg-slate-50/50",
+                                                isCvFieldMissing('dob') ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:border-blue-500"
+                                            )}
                                         />
                                     </div>
 
@@ -1814,7 +1831,10 @@ I have sent my CV for your review.`;
                                             value={profileForm.aboutYourself}
                                             onChange={(e) => handleProfileChange('aboutYourself', e.target.value)}
                                             rows={2}
-                                            className="w-full border border-slate-200 rounded px-2 py-1 text-sm text-black outline-none focus:border-blue-500 bg-slate-50/50 resize-y min-h-[40px]"
+                                            className={cn(
+                                                "w-full border rounded px-2 py-1 text-sm text-black outline-none bg-slate-50/50 resize-y min-h-[40px]",
+                                                isCvFieldMissing('aboutYourself') ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:border-blue-500"
+                                            )}
                                         />
                                     </div>
 
@@ -1840,7 +1860,10 @@ I have sent my CV for your review.`;
                                             value={profileForm.professionalExperience}
                                             onChange={(e) => handleProfileChange('professionalExperience', e.target.value)}
                                             rows={2}
-                                            className="w-full border border-slate-200 rounded px-2 py-1 text-sm text-black outline-none focus:border-blue-500 bg-slate-50/50 resize-y min-h-[40px]"
+                                            className={cn(
+                                                "w-full border rounded px-2 py-1 text-sm text-black outline-none bg-slate-50/50 resize-y min-h-[40px]",
+                                                isCvFieldMissing('professionalExperience') ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:border-blue-500"
+                                            )}
                                         />
                                     </div>
 

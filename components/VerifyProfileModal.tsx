@@ -23,16 +23,33 @@ export default function VerifyProfileModal({ isOpen, onClose, user }: VerifyProf
     const [showManualPayment, setShowManualPayment] = useState(false);
     const [showHelpline, setShowHelpline] = useState(false);
 
-    // We can fetch from API or hardcode. For now, hardcode based on UI design
-    const badgePrice = 500;
+    const [premierSettings, setPremierSettings] = useState<any>({
+        verifyBadgePrice: 500,
+        verifyBadgeDuration: 365
+    });
+
+    const badgePrice = premierSettings.verifyBadgePrice;
 
     useEffect(() => {
         if (isOpen) {
             setIsVerifyBadge(true);
             setShowManualPayment(false);
             setShowHelpline(false);
+            fetchPremierSettings();
         }
     }, [isOpen]);
+
+    const fetchPremierSettings = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/premier-opportunity`);
+            const data = await res.json();
+            if (data.success && data.data) {
+                setPremierSettings(data.data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch premier settings:", error);
+        }
+    };
 
     const handlePayNow = async () => {
         if (!isVerifyBadge) {
@@ -117,7 +134,7 @@ export default function VerifyProfileModal({ isOpen, onClose, user }: VerifyProf
                                 onChange={() => setIsVerifyBadge(!isVerifyBadge)}
                             />
                             <span className="text-[14px] font-bold text-slate-800 group-hover:text-slate-900 leading-none">
-                                প্রোফাইলে ভেরিফাই ব্যাজ যোগ (+ ৳ ৫০০/বছর)
+                                প্রোফাইলে ভেরিফাই ব্যাজ যোগ (+ ৳ {premierSettings.verifyBadgePrice}/{premierSettings.verifyBadgeDuration === 365 ? 'বছর' : `${premierSettings.verifyBadgeDuration} দিন`})
                             </span>
                         </label>
                     </div>

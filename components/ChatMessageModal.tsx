@@ -9,26 +9,12 @@ import Cookies from 'js-cookie';
 import { API_BASE_URL } from '../utils/apiConfig';
 import { io, Socket } from 'socket.io-client';
 import AdDetailsModal from './AdDetailsModal';
-
-import { RiCheckboxCircleFill } from 'react-icons/ri';
+import VerifiedBadge from './VerifiedBadge';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs));
 }
 
-const VerifiedBadge = () => (
-    <div className="relative group/badge flex items-center justify-center -mt-0.5 ml-1">
-        <RiCheckboxCircleFill className="w-4 h-4 text-[#0088cc] shrink-0 cursor-pointer" />
-        <div className="absolute bottom-full left-1/2 -translate-x-[20%] lg:-translate-x-1/2 mb-2 hidden group-hover/badge:block w-[240px] bg-slate-50 border border-slate-200 shadow-xl rounded-xl p-3 z-[100] animate-in fade-in zoom-in-95 duration-200 pointer-events-none text-left">
-            <p className="text-[13px] text-slate-700 font-medium leading-relaxed whitespace-normal break-words">
-                <span className="font-bold text-black">Verified</span> by mobile number & additional checks to ensure authenticity.
-            </p>
-            <div className="absolute top-full left-[20%] lg:left-1/2 -translate-x-1/2 -mt-[1px]">
-                <div className="w-3 h-3 bg-slate-50 border-b border-r border-slate-200 transform rotate-45" />
-            </div>
-        </div>
-    </div>
-);
 
 interface Message {
     _id: string;
@@ -365,7 +351,7 @@ export default function ChatMessageModal({ isOpen, onClose, onBack, ad, otherUse
                 <div className="bg-white py-2 px-4 border-b border-slate-300 text-left shrink-0">
                     <div className="flex items-center gap-1 pl-[72px]">
                         <p className="text-[13px] text-slate-500">Chat with <span className="font-bold text-black">{sellerName}</span></p>
-                        {isVerified && <VerifiedBadge />}
+                        {isVerified && <VerifiedBadge className="ml-1" iconClassName="w-4 h-4" />}
                     </div>
                 </div>
 
@@ -481,7 +467,7 @@ export default function ChatMessageModal({ isOpen, onClose, onBack, ad, otherUse
                                                     </div>
                                                 )}
                                                 {msg.text && (
-                                                    <div className={cn(!isMe && msg.image ? "mt-1" : "")}>
+                                                    <div className={cn("whitespace-pre-wrap break-words", !isMe && msg.image ? "mt-1" : "")}>
                                                         {msg.text}
                                                     </div>
                                                 )}

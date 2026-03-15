@@ -611,7 +611,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                                         const adOwnerId = typeof ad.user === 'object' ? ad.user?._id : ad.user;
 
                                                         const missingMobile = !currentUser?.mobile && !currentUser?.phone;
-                                                        if (!currentUser?.gender || !currentUser?.location || !currentUser?.education || !currentUser?.profession || missingMobile || !currentUser?.email) {
+                                                        if (!currentUser?.gender || !currentUser?.location || !currentUser?.education || !currentUser?.profession || missingMobile || !currentUser?.email || !currentUser?.dob || !currentUser?.aboutYourself || !currentUser?.professionalExperience) {
                                                             window.dispatchEvent(new CustomEvent('init-send-cv', { detail: { ad } }));
                                                             onClose();
                                                             return;
@@ -625,12 +625,27 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                                         const userEducation = currentUser?.education || 'Not specified';
                                                         const userProfession = currentUser?.profession || 'Not specified';
 
-                                                        const message = `Hello, I am interested in your ad: "${ad.headline}". Here is my contact info:
+                                                        const userDob = currentUser?.dob || 'Not specified';
+                                                        const userAbout = currentUser?.aboutYourself || 'Not provided';
+                                                        const userExperience = currentUser?.professionalExperience || 'Not provided';
+
+                                                        const message = `Interest in Ad: "${ad.headline}"
+
+--- CV DETAILS ---
 Name: ${userName}
+DOB: ${userDob}
 Gender: ${userGender}
+
 Location: ${userLocation}
+
 Education: ${userEducation}
 Profession: ${userProfession}
+Experience: ${userExperience}
+
+About Myself:
+${userAbout}
+
+Contact Info:
 Phone: ${userPhone}
 Email: ${userEmail}
 

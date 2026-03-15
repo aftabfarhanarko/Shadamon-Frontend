@@ -111,7 +111,7 @@ export default function LatestFreeAdPromo() {
                     <div className="absolute bottom-4 left-4 flex z-20">
                         <div className="w-1 bg-white mr-2 self-stretch rounded-full" />
                         <div className="text-white drop-shadow-md">
-                            <h2 className="text-[18px] leading-tight font-medium">{latestAd.headline}</h2>
+                            <h2 className="text-[18px] leading-tight font-medium truncate">{latestAd.headline}</h2>
                             <p className="text-[14px] mt-0">৳ {latestAd.price || '0.00'}</p>
                         </div>
                     </div>

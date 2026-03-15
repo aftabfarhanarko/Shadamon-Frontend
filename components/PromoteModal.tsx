@@ -734,7 +734,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                         </div>
                                         <input type="checkbox" className="hidden" checked={isVerifyBadge} onChange={() => setIsVerifyBadge(!isVerifyBadge)} />
                                         <span className="text-xs font-bold text-slate-700 group-hover:text-slate-900 mt-0.5">
-                                            প্রোফাইলে ভেরিফাই ব্যাজ যোগ (+ ৳{premierSettings.verifyBadgePrice}/বছর)
+                                            প্রোফাইলে ভেরিফাই ব্যাজ যোগ (+ ৳{premierSettings.verifyBadgePrice}/{premierSettings.verifyBadgeDuration === 365 ? 'বছর' : `${premierSettings.verifyBadgeDuration} দিন`})
                                         </span>
                                     </label>
 
