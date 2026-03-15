@@ -601,7 +601,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     }, []);
 
     return (
-        <div className="h-screen bg-[#F1F5F9] font-sans overflow-hidden flex flex-col relative uppercase">
+        <div className="h-screen bg-[#F1F5F9] font-sans overflow-hidden flex flex-col relative">
             <AdPopup />
             {/* Mobile Bottom Navigation */}
             <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 z-50 h-[70px] flex items-center justify-around px-2 pb-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
