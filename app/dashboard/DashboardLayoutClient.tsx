@@ -8,7 +8,7 @@ import {
     Home, Plus, Inbox, LogOut, Settings, Menu, X,
     Grid, MapPin, ChevronRight, ChevronDown
 } from 'lucide-react';
-import { RiMailFill, RiUser3Fill } from 'react-icons/ri';
+import { RiMailFill, RiMailLine, RiUser3Fill } from 'react-icons/ri';
 import Cookies from 'js-cookie';
 import { io } from 'socket.io-client';
 import { useLanguage } from '../context/LanguageContext';
@@ -96,6 +96,9 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         title: '',
         content: ''
     });
+
+    const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
     const openInfoModal = (type: 'about' | 'terms' | 'privacy' | 'contact' | 'safety') => {
         const contentMap = {
@@ -476,6 +479,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     const handleSearchExecution = () => {
         window.dispatchEvent(new CustomEvent('show-search-results', { detail: { query: searchQuery } }));
         setShowSuggestions(false);
+        setIsMobileSearchOpen(false);
     };
 
     const handleLogout = () => {
@@ -591,6 +595,8 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
 
     const [headerOffset, setHeaderOffset] = useState(0);
+    const [isNavbarVisible, setIsNavbarVisible] = useState(true);
+    const [lastScrollTop, setLastScrollTop] = useState(0);
 
     useEffect(() => {
         const handleCenterScroll = (e: any) => {
@@ -604,25 +610,39 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         <div className="h-screen bg-[#F1F5F9] font-sans overflow-hidden flex flex-col relative">
             <AdPopup />
             {/* Mobile Bottom Navigation */}
-            <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 z-50 h-[70px] flex items-center justify-around px-2 pb-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-                <Link href="/dashboard" className="flex flex-col items-center gap-1 p-2 text-brand-600">
+            <nav className={cn(
+                "md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 z-50 h-[70px] flex items-center justify-around px-2 pb-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] transition-transform duration-300",
+                !isNavbarVisible && "translate-y-full"
+            )}>
+                <Link href="/dashboard" className="flex flex-col items-center gap-1 p-2 text-[#0088cc]">
                     <Home className="w-6 h-6" />
                     <span className="text-[10px] font-bold">{t('home')}</span>
                 </Link>
 
-                <button className="flex flex-col items-center gap-1 p-2 text-black hover:text-black">
+                <button
+                    onClick={() => {
+                        const newState = !isMobileSearchOpen;
+                        setIsMobileSearchOpen(newState);
+                        if (newState) {
+                            document.getElementById('main-dashboard-scroller')?.scrollTo({ top: 0, behavior: 'smooth' });
+                            setTimeout(() => searchInputRef.current?.focus(), 600);
+                        }
+                    }}
+                    className={cn(
+                        "flex flex-col items-center gap-1 p-2 transition-colors",
+                        isMobileSearchOpen ? "text-[#0088cc]" : "text-black"
+                    )}
+                >
                     <Search className="w-6 h-6" />
                     <span className="text-[10px] font-medium">{t('search_nav')}</span>
                 </button>
 
-                <div className="relative -top-6">
-                    <Link
-                        href="/dashboard/post-ad"
-                        className="w-14 h-14 bg-brand-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-brand-600/30 hover:scale-105 active:scale-95 transition-all"
-                    >
-                        <Plus className="w-7 h-7" />
-                    </Link>
-                </div>
+                <Link
+                    href="/dashboard/post-ad"
+                    className="w-12 h-12 bg-[#0088cc] rounded-full flex items-center justify-center text-white shadow-lg shadow-[#0088cc]/30 hover:scale-105 active:scale-95 transition-all"
+                >
+                    <Plus className="w-6 h-6" />
+                </Link>
 
                 <Link
                     href="/dashboard/inbox"
@@ -630,9 +650,9 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     className="flex flex-col items-center gap-1 p-2 text-black hover:text-black relative"
                 >
                     <div className="relative">
-                        <Inbox className="w-6 h-6" />
+                        <RiMailLine className="w-6 h-6" />
                         {unreadCount > 0 && (
-                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#0088cc] text-white text-[9px] flex items-center justify-center rounded-full border border-white">
+                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#0088cc] text-white text-[10px] flex items-center justify-center rounded-full border-2 border-white">
                                 {unreadCount}
                             </span>
                         )}
@@ -670,6 +690,14 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     const clamped = Math.min(scrollTop, 64);
                     setHeaderOffset(clamped);
                     window.dispatchEvent(new CustomEvent('center-scroll', { detail: { offset: clamped } }));
+
+                    // Mobile Navbar hide/show logic
+                    if (scrollTop > lastScrollTop && scrollTop > 100) {
+                        setIsNavbarVisible(false);
+                    } else if (scrollTop < lastScrollTop) {
+                        setIsNavbarVisible(true);
+                    }
+                    setLastScrollTop(scrollTop);
                 }}
             >
                 {/* Pos 1: Website Top - Inside scroller so it scrolls up */}
@@ -679,11 +707,12 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 <div className="z-50">
                     {/* Top Navigation Bar */}
                     <header className="bg-white border-b border-slate-200 h-16 w-full">
-                        <div className="max-w-[1320px] mx-auto px-4 h-full flex items-center justify-center">
-                            <div className="w-[300px] flex-none flex items-center gap-2">
-                                {/* Mobile Menu Button */}
+                        <div className="max-w-[1320px] mx-auto px-4 h-full flex items-center justify-between md:justify-center">
+                            {/* Logo Section */}
+                            <div className={cn("md:w-[300px] flex-none flex items-center gap-2", isMobileSearchOpen && "hidden md:flex")}>
+                                {/* Mobile Menu Button (hidden by default as requested to only show logo/lang/msg) */}
                                 <button
-                                    className="md:hidden p-2 -ml-2 text-black hover:bg-slate-100 rounded-full transition-colors"
+                                    className="hidden p-2 -ml-2 text-black hover:bg-slate-100 rounded-full transition-colors"
                                     onClick={() => setIsMobileMenuOpen(true)}
                                 >
                                     <Menu className="w-6 h-6" />
@@ -711,12 +740,14 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                 </Link>
                             </div>
 
-                            <div className="w-[50px] flex-none"></div>
+                            <div className="w-[50px] flex-none hidden md:block"></div>
 
-                            <div className="w-[565px] flex-none flex items-center gap-4 relative" ref={searchRef}>
+                            {/* Search Section */}
+                            <div className={cn("md:w-[565px] flex-1 md:flex-none flex items-center gap-4 relative", !isMobileSearchOpen && "hidden md:flex")} ref={searchRef}>
                                 <div className="flex-1 flex bg-[#EDF2F7] rounded relative">
                                     <div className="flex-1 relative flex items-center">
                                         <input
+                                            ref={searchInputRef}
                                             type="text"
                                             placeholder="Search"
                                             value={searchQuery}
@@ -798,51 +829,60 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                     </button>
                                 </div>
 
-                                {/* Language & Action Icons */}
-                                <div className="flex items-center gap-3 shrink-0">
-                                    <button
-                                        onClick={toggleLanguage}
-                                        className="w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[14px] text-black uppercase"
-                                    >
-                                        {language}
-                                    </button>
-                                    <button
-                                        onClick={handleMessageClick}
-                                        className="w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all relative"
-                                    >
-                                        <RiMailFill className="w-5 h-5" />
-                                        {unreadCount > 0 && (
-                                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#0088cc] text-white text-[10px] flex items-center justify-center rounded-full border-2 border-white">
-                                                {unreadCount}
-                                            </span>
-                                        )}
-                                    </button>
-
-
-                                    <Link
-                                        href="/dashboard/profile"
-                                        onClick={handleAccountClick}
-                                        className={cn(
-                                            "w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all overflow-hidden",
-                                            user?.photo && "border-2 border-[#0088cc]"
-                                        )}
-                                    >
-                                        {user && user.photo ? (
-                                            <img
-                                                src={getImageUrl(user.photo)}
-                                                alt={user.name}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        ) : (
-                                            <RiUser3Fill className="w-5 h-5" />
-                                        )}
-                                    </Link>
-                                </div>
+                                {/* Mobile Search Close Button */}
+                                <button
+                                    onClick={() => setIsMobileSearchOpen(false)}
+                                    className="md:hidden p-2 text-black hover:bg-slate-100 rounded-full transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
                             </div>
 
-                            <div className="w-[50px] flex-none"></div>
+                            <div className="w-[50px] flex-none hidden md:block"></div>
 
-                            <div className="w-[230px] flex-none">
+                            {/* Actions Section */}
+                            <div className={cn("flex items-center gap-3 shrink-0", isMobileSearchOpen && "hidden md:flex")}>
+                                <button
+                                    onClick={toggleLanguage}
+                                    className="w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[14px] text-black uppercase"
+                                >
+                                    {language}
+                                </button>
+                                <button
+                                    onClick={handleMessageClick}
+                                    className="w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all relative"
+                                >
+                                    <RiMailFill className="w-5 h-5" />
+                                    {unreadCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#0088cc] text-white text-[10px] flex items-center justify-center rounded-full border-2 border-white">
+                                            {unreadCount}
+                                        </span>
+                                    )}
+                                </button>
+
+                                <Link
+                                    href="/dashboard/profile"
+                                    onClick={handleAccountClick}
+                                    className={cn(
+                                        "w-10 h-10 bg-[#EDF2F7] rounded-full hidden md:flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all overflow-hidden",
+                                        user?.photo && "border-2 border-[#0088cc]"
+                                    )}
+                                >
+                                    {user && user.photo ? (
+                                        <img
+                                            src={getImageUrl(user.photo)}
+                                            alt={user.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <RiUser3Fill className="w-5 h-5" />
+                                    )}
+                                </Link>
+                            </div>
+
+                            <div className="w-[50px] flex-none hidden md:block"></div>
+
+                            <div className="w-[230px] flex-none hidden md:block">
                                 <Link
                                     href="/dashboard/post-ad"
                                     className="w-full bg-[#EDF2F7] border border-slate-400 shadow-sm text-black py-1.5 rounded text-sm uppercase tracking-widest flex items-center justify-center"

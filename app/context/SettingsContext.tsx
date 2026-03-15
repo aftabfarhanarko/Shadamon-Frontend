@@ -82,6 +82,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
     }, []);
 
+    useEffect(() => {
+        fetchDashboardSettings();
+    }, [fetchDashboardSettings]);
+
     return (
         <SettingsContext.Provider value={{ settings, loading, fetchDashboardSettings, fetchPostAdSettings, fetchAdPositions }}>
             {children}

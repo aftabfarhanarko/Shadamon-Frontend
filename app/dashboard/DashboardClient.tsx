@@ -1545,11 +1545,13 @@ export default function DashboardClient() {
                                                                             </div>
                                                                             <h4 className="text-sm text-black truncate mb-0.5">{ad.headline}</h4>
                                                                             <div className="text-sm text-black mb-1">৳ {ad.price?.toLocaleString() || 'N/A'}</div>
-                                                                            <div className="flex items-center gap-2 text-[10px] text-black">
-                                                                                <div className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" /><span className="truncate max-w-[80px]">{ad.location}</span></div>
-                                                                                <div className="flex items-center gap-0.5"><Grid className="w-2.5 h-2.5" /><span className="truncate max-w-[80px]">{ad.category}</span></div>
+                                                                            <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2 text-[10px] text-black group-hover:text-black">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <div className="flex items-center gap-0.5 shrink-0"><MapPin className="w-2.5 h-2.5" /><span className="truncate max-w-[100px] md:max-w-[120px]">{ad.location}</span></div>
+                                                                                    <div className="flex items-center gap-0.5 shrink-0"><Grid className="w-2.5 h-2.5" /><span className="truncate max-w-[100px] md:max-w-[120px]">{ad.category}</span></div>
+                                                                                </div>
                                                                                 {ad.adType !== 'Promoted' && (
-                                                                                    <div className="ml-auto text-black text-[10px]">
+                                                                                    <div className="md:ml-auto text-black/60 text-[10px] whitespace-nowrap">
                                                                                         {timeAgo(ad.createdAt, language as 'en' | 'bn')}
                                                                                     </div>
                                                                                 )}
@@ -1651,6 +1653,58 @@ export default function DashboardClient() {
                                                         >
                                                             <ChevronRight className="w-5 h-5" />
                                                         </button>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Popular Sellers for Mobile - Horizontal Scroll */}
+                                            {chunk.showCategoryBatch && premiumUsers.length > 0 && (
+                                                <div className="lg:hidden mt-2 bg-white rounded-lg p-2 pb-4">
+                                                    <div className="flex items-center justify-between px-2 mb-3">
+                                                        <h3 className="text-sm font-semibold text-black">{language === 'bn' ? 'জনপ্রিয় বিক্রেতা' : 'Popular Seller'}</h3>
+                                                    </div>
+                                                    <div className="flex gap-4 overflow-x-auto no-scrollbar pb-1 px-1">
+                                                        {premiumUsers.map((user) => (
+                                                            <div
+                                                                key={user._id}
+                                                                className="flex-none flex flex-col items-center w-[90px] gap-2 cursor-pointer"
+                                                                onClick={() => handleProfileClick(user._id)}
+                                                            >
+                                                                <div className="w-16 h-16 rounded-full overflow-hidden border border-slate-100 bg-slate-200 relative shrink-0">
+                                                                    {user.photo ? (
+                                                                        <img
+                                                                            src={getImageUrl(user.photo) || undefined}
+                                                                            alt={user.storeName || user.name}
+                                                                            className="w-full h-full object-cover"
+                                                                            loading="lazy"
+                                                                        />
+                                                                    ) : (
+                                                                        <div className="w-full h-full flex items-center justify-center text-black font-bold text-lg uppercase">
+                                                                            {(user.storeName || user.name).charAt(0)}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex flex-col items-center w-full text-center">
+                                                                    <h4 className="font-bold text-black text-[11px] leading-tight line-clamp-1 w-full">
+                                                                        {user.storeName || user.name}
+                                                                    </h4>
+                                                                    <p className="text-[9px] text-slate-500 -mt-1 mb-1">
+                                                                        {user.followers?.length || 0} {t('follower')}
+                                                                    </p>
+                                                                    <button
+                                                                        onClick={(e) => handleFollowUser(e, user._id)}
+                                                                        className={cn(
+                                                                            "mt-1 px-3 py-1 rounded-full text-[10px] font-bold transition-all w-full",
+                                                                            user.isFollowing
+                                                                                ? "bg-slate-100 text-slate-500 border border-slate-200"
+                                                                                : "bg-[#0088cc] text-white"
+                                                                        )}
+                                                                    >
+                                                                        {user.isFollowing ? t('Unfollow') : t('Follow')}
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ))}
                                                     </div>
                                                 </div>
                                             )}
