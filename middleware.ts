@@ -28,5 +28,7 @@ export function middleware(request: NextRequest) {
 // - _next/image (image optimization files)
 // - favicon.ico (favicon file)
 export const config = {
-    matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+    // Exclude Next internals and any public/static files (anything with a dot/extension),
+    // so PWA assets like /manifest.* and /sw.js are never redirected.
+    matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)'],
 };

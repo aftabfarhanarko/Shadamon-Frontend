@@ -614,18 +614,18 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 "md:hidden fixed bottom-0 inset-x-0 z-[60] h-[70px] transition-transform duration-300 flex justify-center",
                 !isNavbarVisible && "translate-y-[120%]"
             )}>
-                <div className="relative w-[95%] h-full">
+                <div className="relative w-full h-full">
                     {/* SVG Background with Curve */}
                     <div className="absolute inset-0 w-full h-full pointer-events-none">
-                        <svg width="100%" height="70" viewBox="0 0 350 70" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" className="w-full h-full filter drop-shadow-[0_-5px_15px_rgba(0,0,0,0.08)]">
-                            <path 
-                                d="M0 15 C0 6.71573 6.71573 0 15 0 H125 C135 0 142 8 145 15 C148 25 155 35 175 35 C195 35 202 25 205 15 C208 8 215 0 225 0 H335 C343.284 0 350 6.71573 350 15 V70 H0 V15Z" 
-                                fill="white" 
+                        <svg width="100%" height="70" viewBox="0 0 350 70" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" className="w-full h-full">
+                            <path
+                                d="M0 0 H115 C130 0 135 50 175 50 C215 50 220 0 235 0 H350 V70 H0 Z"
+                                fill="white"
                             />
-                            <path 
-                                d="M0 15 C0 6.71573 6.71573 0 15 0 H125 C135 0 142 8 145 15 C148 25 155 35 175 35 C195 35 202 25 205 15 C208 8 215 0 225 0 H335 C343.284 0 350 6.71573 350 15" 
-                                stroke="#E2E8F0" 
-                                strokeWidth="1" 
+                            <path
+                                d="M0 0 H115 C130 0 135 50 175 50 C215 50 220 0 235 0 H350"
+                                stroke="#000000"
+                                strokeWidth="1.2"
                             />
                         </svg>
                     </div>
@@ -660,7 +660,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                         <div className="relative -top-5 flex flex-col items-center gap-1">
                             <button
                                 onClick={handleAddAdClick}
-                                className="w-14 h-14 bg-[#003B95] rounded-full flex items-center justify-center text-white shadow-xl shadow-[#003B95]/30 hover:scale-105 active:scale-95 transition-all"
+                                className="w-14 h-14 bg-[#003B95] rounded-full flex items-center justify-center text-white"
                             >
                                 <RiAddLine className="w-8 h-8" />
                             </button>
@@ -914,7 +914,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 {/* Pos 2: Bottom of Header - Scrolls up before content */}
                 <AdDisplay positionId={2} className="bg-white border-b border-slate-100" />
 
-                <div className="max-w-[1320px] mx-auto px-4 pt-4">
+                <div className="max-w-[1320px] mx-auto px-0 lg:px-4 pt-0 lg:pt-4">
                     {children}
                 </div>
             </main>

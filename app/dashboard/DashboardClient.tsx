@@ -993,7 +993,7 @@ export default function DashboardClient() {
             >
 
                 {/* Secondary Filter Bar */}
-                <div className="bg-white rounded-lg flex divide-x divide-slate-100 overflow-hidden sticky top-4 z-30 shadow-sm">
+                <div className="bg-white rounded-none lg:rounded-lg flex divide-x divide-slate-100 overflow-hidden sticky top-0 lg:top-4 z-30 shadow-sm">
                     <button
                         onClick={() => {
                             setIsFilterModalOpen(true);
@@ -1054,7 +1054,7 @@ export default function DashboardClient() {
                 </div>
 
                 {/* Category Selector Card */}
-                <div className="bg-white rounded-lg overflow-hidden">
+                <div className="bg-white rounded-none lg:rounded-lg overflow-hidden">
                     {/* Selector Header Tabs */}
                     <div className="px-5 pt-4 flex items-center justify-between border-b border-slate-50">
                         <div className="flex items-center gap-8">
@@ -1090,13 +1090,13 @@ export default function DashboardClient() {
                     </div>
 
                     {/* Category/Location Bubbles */}
-                    <div className="px-5 pb-5 pt-2 flex items-center gap-2 relative group/bubbles">
+                    <div className="px-2 lg:px-5 pb-5 pt-2 relative group/bubbles flex items-center">
                         {/* Left Scroll Arrow */}
                         <button
                             onClick={scrollLeft}
                             className={
                                 cn(
-                                    "w-9 h-9 rounded-full bg-white shadow-md border border-slate-100 items-center justify-center text-black hover:bg-slate-50 hover:scale-110 active:scale-95 transition-all flex-none z-20",
+                                    "absolute left-4 top-[42px] w-9 h-9 rounded-full bg-white shadow-md border border-slate-100 items-center justify-center text-black hover:bg-slate-50 hover:scale-110 active:scale-95 transition-all z-20",
                                     canScrollLeft ? "flex" : "hidden"
                                 )
                             }
@@ -1106,7 +1106,7 @@ export default function DashboardClient() {
 
                         <div
                             ref={scrollContainerRef}
-                            className="flex items-center gap-4 overflow-x-auto no-scrollbar scroll-smooth flex-1 py-1"
+                            className="flex items-center gap-4 overflow-x-auto no-scrollbar scroll-smooth w-full py-1"
                         >
                             {activeSelectorTab === 'category' ? (
                                 <>
@@ -1275,7 +1275,7 @@ export default function DashboardClient() {
                         <button
                             onClick={scrollRight}
                             className={cn(
-                                "w-9 h-9 rounded-full bg-white shadow-md border border-slate-100 items-center justify-center text-black hover:bg-slate-50 hover:scale-110 active:scale-95 transition-all flex-none z-20",
+                                "absolute right-4 top-[42px] w-9 h-9 rounded-full bg-white shadow-md border border-slate-100 items-center justify-center text-black hover:bg-slate-50 hover:scale-110 active:scale-95 transition-all z-20",
                                 canScrollRight ? "flex" : "hidden"
                             )}
                         >
@@ -1293,7 +1293,7 @@ export default function DashboardClient() {
                         <p className="text-black text-sm">{t('loading_feed')}</p>
                     </div>
                 ) : ads.length === 0 ? (
-                    <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm min-h-[400px] flex flex-col items-center justify-center text-black">
+                    <div className="bg-white rounded-none lg:rounded-2xl p-8 border border-slate-200 shadow-sm min-h-[400px] flex flex-col items-center justify-center text-black">
                         <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4">
                             <Home className="w-8 h-8 text-black" />
                         </div>
@@ -1373,7 +1373,7 @@ export default function DashboardClient() {
 
                         return (
                             <div className="space-y-1">
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-between px-4 lg:px-0">
                                     <div className="text-sm text-black flex items-center gap-1">
                                         <span className="font-medium">
                                             {language === 'bn'
@@ -1422,13 +1422,13 @@ export default function DashboardClient() {
                                                                     }
                                                                 }}
                                                                 className={cn(
-                                                                    "bg-white rounded-xl cursor-pointer group block border shadow-sm",
+                                                                    "bg-white rounded-none lg:rounded-xl cursor-pointer group block border shadow-sm",
                                                                     hasHighlightLabel(block.bigAd)
                                                                         ? "border-orange-500 shadow-[0_12px_30px_rgba(249,115,22,0.25)] ring-1 ring-orange-400/40"
                                                                         : "border-slate-100"
                                                                 )}
                                                             >
-                                                                <div className="relative h-[315px] w-full rounded-t-xl overflow-hidden group">
+                                                                <div className="relative h-[315px] w-full rounded-none lg:rounded-t-xl overflow-hidden group">
                                                                     {getImageUrl(block.bigAd.images?.[0]) && (
                                                                         <>
                                                                             <img
@@ -1499,7 +1499,7 @@ export default function DashboardClient() {
                                                         )}
 
                                                         {block.smallAds.length > 0 && (
-                                                            <div className="flex flex-col gap-2 bg-white rounded-lg pb-2">
+                                                            <div className="flex flex-col gap-2 bg-white rounded-none lg:rounded-lg pb-2">
                                                                 {block.smallAds.map((ad) => (
                                                                     <div
                                                                         key={ad._id}
@@ -1507,13 +1507,13 @@ export default function DashboardClient() {
                                                                             router.push(getAdUrl(ad), { scroll: false });
                                                                         }}
                                                                         className={cn(
-                                                                            "bg-white rounded-lg p-3 pb-0 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50 border",
+                                                                            "bg-white rounded-none lg:rounded-lg p-3 pb-0 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50 border",
                                                                             hasHighlightLabel(ad)
                                                                                 ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-1 ring-orange-400/30"
                                                                                 : "border-transparent"
                                                                         )}
                                                                     >
-                                                                        <div className="w-[200px] h-[130px] rounded-lg overflow-hidden shrink-0 relative group-hover:scale-[1.02] transition-transform">
+                                                                        <div className="w-[200px] h-[130px] rounded-none lg:rounded-lg overflow-hidden shrink-0 relative group-hover:scale-[1.02] transition-transform">
                                                                             {getImageUrl(ad.images?.[0]) && (
                                                                                 <>
                                                                                     <img
