@@ -7,6 +7,11 @@ import RegisterServiceWorker from "@/components/RegisterServiceWorker"
 export const metadata: Metadata = {
   title: "Shadamon",
   description: "The ultimate marketing platform",
+  other: {
+    "developer": "Abtahi Md. Mahib Uddin",
+    "developer-link": "https://abtahi.vercel.app/",
+    "developer-email": "abtahimahib@gmail.com",
+  },
 };
 
 import { SettingsProvider } from "./context/SettingsContext";
@@ -69,7 +74,38 @@ export default function RootLayout({
       </head>
       <body
         className={`antialiased`}
+        data-developer="Abtahi Md. Mahib Uddin"
+        data-developed-by="Abtahi Md. Mahib Uddin"
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              /**
+               * ------------------------------------------------------------------
+               * DEVELOPED BY: Abtahi Md. Mahib Uddin
+               * WEBSITE:      https://abtahi.vercel.app/
+               * EMAIL:        abtahimahib@gmail.com
+               * ------------------------------------------------------------------
+               */
+              console.log(
+                "%c 🛠️ Developed by Abtahi Md. Mahib Uddin ",
+                "background: #1a1a1a; color: #00ff00; font-size: 1.2rem; font-weight: bold; padding: 10px; border-radius: 5px; border: 1px solid #00ff00;"
+              );
+              console.log(
+                "%c WEBSITE:      https://abtahi.vercel.app/ ",
+                "background: #1a1a1a; color: #00ff00; font-size: 1.2rem; font-weight: bold; padding: 10px; border-radius: 5px; border: 1px solid #00ff00;"
+              );
+              console.log(
+                "%c EMAIL:        abtahimahib@gmail.com ",
+                "background: #1a1a1a; color: #00ff00; font-size: 1.2rem; font-weight: bold; padding: 10px; border-radius: 5px; border: 1px solid #00ff00;"
+              );
+              console.log(
+                "%c Professional Web Development & Design Solutions ",
+                "color: #888; font-style: italic; font-size: 0.9rem;"
+              );
+            `,
+          }}
+        />
         <RegisterServiceWorker />
         <div id="fb-root"></div>
         <script async defer crossOrigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
