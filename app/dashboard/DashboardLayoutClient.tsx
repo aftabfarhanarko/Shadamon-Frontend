@@ -28,6 +28,7 @@ import ChatMessageModal from '../../components/ChatMessageModal';
 import InfoModal from '../../components/InfoModal';
 import AdDisplay from '../../components/AdDisplay';
 import AdPopup from '../../components/AdPopup';
+import SearchModal from '../../components/SearchModal';
 import { toast } from 'react-hot-toast';
 
 
@@ -99,6 +100,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     });
 
     const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+    const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     const [unreadCount, setUnreadCount] = useState(0);
@@ -639,17 +641,10 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
                         {/* Search */}
                         <button
-                            onClick={() => {
-                                const newState = !isMobileSearchOpen;
-                                setIsMobileSearchOpen(newState);
-                                if (newState) {
-                                    document.getElementById('main-dashboard-scroller')?.scrollTo({ top: 0, behavior: 'smooth' });
-                                    setTimeout(() => searchInputRef.current?.focus(), 600);
-                                }
-                            }}
+                            onClick={() => setIsSearchModalOpen(true)}
                             className={cn(
                                 "flex flex-col items-center gap-0.5 min-w-[60px] transition-colors",
-                                isMobileSearchOpen ? "text-[#0088cc]" : "text-black"
+                                isSearchModalOpen ? "text-[#0088cc]" : "text-black"
                             )}
                         >
                             <RiSearchLine className="w-7 h-7" />
@@ -1268,6 +1263,17 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 onClose={() => setInfoModal(prev => ({ ...prev, isOpen: false }))}
                 title={infoModal.title}
                 content={infoModal.content}
+            />
+
+            <SearchModal
+                isOpen={isSearchModalOpen}
+                onClose={() => setIsSearchModalOpen(false)}
+                onSearch={(query) => {
+                    window.dispatchEvent(new CustomEvent('show-search-results', { detail: { query } }));
+                }}
+                onSelectAd={(ad) => {
+                    setSelectedAdForDetail(ad);
+                }}
             />
 
 
