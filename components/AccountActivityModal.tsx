@@ -1430,7 +1430,7 @@ I have sent my CV for your review.`;
                                                         className={cn(
                                                             "bg-white rounded shadow-sm overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition-shadow border",
                                                             hasHighlightLabel(ad)
-                                                                ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-1 ring-orange-400/30"
+                                                                ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-2 ring-orange-400/30"
                                                                 : "border-slate-200"
                                                         )}
                                                     >
@@ -1441,7 +1441,7 @@ I have sent my CV for your review.`;
                                                                     <div className="absolute inset-0">
                                                                         <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover blur-md opacity-50 scale-105" loading="lazy" />
                                                                     </div>
-                                                                    <img src={getImageUrl(ad.images[0]) || undefined} className="relative max-w-full max-h-full object-contain z-10" loading="lazy" />
+                                                                    <img src={getImageUrl(ad.images[0]) || undefined} className="relative max-w-full max-h-full object-cover z-10" loading="lazy" />
                                                                 </>
                                                             )}
                                                             {getNonHighlightLabels(ad).length > 0 && (
@@ -1518,7 +1518,7 @@ I have sent my CV for your review.`;
                                                                 <div className="absolute inset-0">
                                                                     <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover blur-md opacity-50 scale-105" loading="lazy" />
                                                                 </div>
-                                                                <img src={getImageUrl(ad.images[0]) || undefined} className="relative max-w-full max-h-full object-contain z-10" loading="lazy" />
+                                                                <img src={getImageUrl(ad.images[0]) || undefined} className="relative max-w-full max-h-full object-cover z-10" loading="lazy" />
                                                             </>
                                                         )}
                                                         {/* {(ad.status === 'pause' || ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) && (
@@ -1603,7 +1603,7 @@ I have sent my CV for your review.`;
                                                                         <div className="absolute inset-0">
                                                                             <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover blur-md opacity-30 scale-105" loading="lazy" />
                                                                         </div>
-                                                                        <img src={getImageUrl(ad.images[0]) || undefined} className="relative max-w-full max-h-full object-contain z-10" loading="lazy" />
+                                                                        <img src={getImageUrl(ad.images[0]) || undefined} className="relative w-full h-full object-cover z-10" loading="lazy" />
                                                                     </>
                                                                 )}
                                                                 {/* {(ad.status === 'pause' || ad.status === 'review' || ad.userUpdated || ad.userNewPhotos) && (
@@ -1695,7 +1695,7 @@ I have sent my CV for your review.`;
                                                 <div className="absolute inset-0">
                                                     <img src={displayUser.photo} className="w-full h-full object-cover blur-sm opacity-30 scale-105" loading="lazy" />
                                                 </div>
-                                                <img src={displayUser.photo} className="relative max-w-full max-h-full object-contain z-10" loading="lazy" />
+                                                <img src={displayUser.photo} className="relative max-w-full max-h-full object-cover z-10" loading="lazy" />
                                             </>
                                         ) : (
                                             <div className="w-full h-full bg-[#1e8e7f]" />
@@ -2164,7 +2164,7 @@ I have sent my CV for your review.`;
                     )}
 
                     {activeTab === 'Post' && (
-                        <div className="px-4 py-4 bg-white space-y-2 pb-20">
+                        <div className="px-1 py-4 bg-white space-y-2 pb-20">
                             <AdDisplay positionId={4} className="mb-2" />
                             {userAds.length > 0 ? (
                                 <div className="space-y-0">
@@ -2173,7 +2173,7 @@ I have sent my CV for your review.`;
                                             <div className={cn(
                                                 "bg-white rounded-lg overflow-hidden transition-all duration-200 mb-2 border",
                                                 hasHighlightLabel(ad) && ad.status !== 'deleted'
-                                                    ? "border-orange-500 shadow-[0_12px_30px_rgba(249,115,22,0.20)] ring-1 ring-orange-400/30"
+                                                    ? "border-orange-500 shadow-[0_12px_30px_rgba(249,115,22,0.20)] ring-2 ring-orange-400/30"
                                                     : "border-slate-200",
                                                 ad.status === 'deleted' && "grayscale opacity-60 bg-slate-50 pointer-events-none"
                                             )}>
@@ -2209,10 +2209,10 @@ I have sent my CV for your review.`;
                                                         </p>
                                                     </div>
                                                 )}
-                                                <div className="p-3 flex gap-3">
+                                                <div className="p-3 flex flex-col md:flex-row gap-3">
                                                     {/* Left: Image (Spans height of details + performance) */}
-                                                    <div className="w-[150px] shrink-0">
-                                                        <div className="h-[120px] bg-slate-100 relative rounded overflow-hidden group mb-2 flex items-center justify-center">
+                                                    <div className="w-full md:w-[150px] flex justify-center md:block shrink-0">
+                                                        <div className="w-[150px] h-[120px] bg-slate-100 relative rounded overflow-hidden group mb-2 flex items-center justify-center">
                                                             {ad.images && ad.images.length > 0 ? (
                                                                 <>
                                                                     <div className="absolute inset-0">
@@ -2220,7 +2220,7 @@ I have sent my CV for your review.`;
                                                                     </div>
                                                                     <img
                                                                         src={getImageUrl(ad.images[0]) || undefined}
-                                                                        className="relative max-w-full max-h-full object-contain z-10"
+                                                                        className="relative max-w-full max-h-full object-cover z-10"
                                                                         alt={ad.headline}
                                                                         loading="lazy"
                                                                     />
@@ -2282,12 +2282,12 @@ I have sent my CV for your review.`;
                                                         </div>
 
                                                         {/* Horizontal Divider */}
-                                                        <div className="h-px bg-slate-500 w-[80%] my-0"></div>
+                                                        <div className="h-px bg-slate-500 w-full md:w-[80%] my-0"></div>
 
                                                         {/* Bottom Subsection: Performance + Actions */}
-                                                        <div className="flex items-start justify-between gap-1">
+                                                        <div className="flex flex-col md:flex-row items-start justify-between gap-1">
                                                             {/* Promote Performance Stats */}
-                                                            <div className="text-[12px] text-black flex-1">
+                                                            <div className="text-[12px] text-black flex-1 order-2 md:order-1">
                                                                 {ad.adType === 'Promoted' ? (
                                                                     <>
                                                                         <div className="mb-0.5 font-bold">Promote Performance</div>
@@ -2312,7 +2312,7 @@ I have sent my CV for your review.`;
                                                             </div>
 
                                                             {/* Actions: Badge & Edit */}
-                                                            <div className="flex flex-col items-end gap-1.5 shrink-0 pt-1">
+                                                            <div className="flex flex-row md:flex-col items-center md:items-end gap-1.5 shrink-0 pt-1 w-full md:w-auto justify-between md:justify-start order-1 md:order-2">
                                                                 <span
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();

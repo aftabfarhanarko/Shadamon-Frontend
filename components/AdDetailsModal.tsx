@@ -70,6 +70,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
     const { settings } = useSettings();
     const popupRef = useRef<HTMLDivElement>(null);
     const optionsButtonRef = useRef<HTMLButtonElement>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [localFollowers, setLocalFollowers] = useState<any[]>(ad?.user?.followers || []);
 
     useEffect(() => {
@@ -118,6 +119,8 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
         // Reset favorited/notifying local states until re-fetched
         setIsFavorited(false);
         setIsNotifying(false);
+        // Scroll to top when ad changes
+        scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     }, [ad?._id]);
 
     // Fetch Ads Effect and Subcategory Info
@@ -303,7 +306,10 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                 </div>
 
                 {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto bg-white pb-32">
+                <div
+                    ref={scrollContainerRef}
+                    className="flex-1 overflow-y-auto bg-white pb-32"
+                >
 
                     {/* 2. Image Gallery */}
                     <div className="relative w-full aspect-[16/9] overflow-hidden group">
@@ -317,13 +323,13 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                 <img
                                     src={getImageUrl(images[currentImageIndex]) || undefined}
                                     alt={ad.headline}
-                                    className="relative z-10 w-full h-full object-contain cursor-pointer"
+                                    className="relative z-10 w-full h-full object-cover cursor-pointer"
                                     onClick={() => setIsExpanded(true)}
                                     loading="lazy"
                                 />
                                 {ad.adType === 'Promoted' && settings.watermarkLogo && (
                                     <div className="absolute bottom-4 right-4 z-20 pointer-events-none opacity-100">
-                                        <img src={getImageUrl(settings.watermarkLogo)} alt="" className="w-30 h-20 object-contain" />
+                                        <img src={getImageUrl(settings.watermarkLogo)} alt="" className="w-30 h-20 object-cover" />
                                     </div>
                                 )}
                             </>
@@ -361,8 +367,13 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
 
                     <div className="p-3">
                         {/* 3. Meta Info Bar */}
-                        <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5 font-medium">
-                            <div className="flex items-center gap-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-slate-500 mb-1.5 font-medium gap-1 sm:gap-0">
+                            <div className="flex items-center gap-1 text-[#0088cc] sm:order-2">
+                                <Eye className="w-3 h-3" />
+                                <span className="mr-1">{ad.deliveryCount || 0} Delivered</span>
+                                <span>{ad.views || 0} Views</span>
+                            </div>
+                            <div className="flex items-center gap-3 sm:order-1">
                                 <div
                                     className="flex items-center gap-1 cursor-pointer hover:text-[#0088cc] transition-colors"
                                     onClick={() => {
@@ -383,11 +394,6 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                     <Grid className="w-3 h-3" />
                                     <span>{typeof ad.category === 'object' ? ad.category?.name : ad.category}</span>
                                 </div>
-                            </div>
-                            <div className="flex items-center gap-1 text-[#0088cc]">
-                                <Eye className="w-3 h-3" />
-                                <span className="mr-1">{ad.deliveryCount || 0} Delivered</span>
-                                <span>{ad.views || 0} Views</span>
                             </div>
                         </div>
 
@@ -584,7 +590,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                             )}
 
                             {/* Action Buttons Row */}
-                            <div className="grid grid-cols-4 gap-2 relative">
+                            <div className="flex flex-row items-stretch gap-1.5 relative">
                                 {(() => {
                                     const otherButtons = actionButtons.filter(b => b !== 'Chat' && b !== 'Message');
 
@@ -594,7 +600,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                             {otherButtons.includes('Call') && !((ad.hidePhone === true || ad.hidePhone === 'true') || !ad.phone || String(ad.phone) === 'undefined') && (
                                                 <button
                                                     onClick={() => window.location.href = `tel:${ad.phone}`}
-                                                    className="col-span-1 bg-[#1A202C] text-white text-xs py-2 rounded-md hover:bg-slate-800 transition-colors"
+                                                    className="flex-1 bg-[#1A202C] text-white text-xs py-2 px-1 rounded-md hover:bg-slate-800 transition-colors"
                                                 >
                                                     Call
                                                 </button>
@@ -602,7 +608,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
 
                                             {/* Chat Button - ALWAYS SHOW */}
                                             <button
-                                                className="col-span-1 bg-[#1A202C] text-white text-xs py-2 rounded-md hover:bg-black transition-colors"
+                                                className="flex-1 bg-[#1A202C] text-white text-xs py-2 px-1 rounded-md hover:bg-black transition-colors"
                                                 onClick={handleChatClick}
                                             >
                                                 Chat
@@ -688,22 +694,22 @@ I have sent my CV for your review.`;
                                                             alert("An error occurred while sending your information.");
                                                         }
                                                     }}
-                                                    className="col-span-1 bg-white border border-slate-500 text-slate-700 text-xs py-2 rounded-md hover:bg-slate-50 transition-colors flex items-center justify-center gap-1"
+                                                    className="flex-1 bg-white border border-slate-500 text-slate-700 text-xs py-2 px-1 rounded-md hover:bg-slate-50 transition-colors flex items-center justify-center gap-1"
                                                 >
                                                     <FileText className="w-3.5 h-3.5" />
-                                                    <span className="truncate">Send CV</span>
+                                                    <span className="whitespace-nowrap">Send CV</span>
                                                 </button>
                                             )}
                                         </>
                                     );
                                 })()}
-                                <div className="col-span-1 relative">
+                                <div className="shrink-0 flex items-center justify-end pl-0.5 relative">
                                     <button
                                         ref={optionsButtonRef}
                                         onClick={() => setShowOptionsPopup(!showOptionsPopup)}
-                                        className="col-span-1 flex items-center justify-center h-full"
+                                        className="w-8 h-full flex items-center justify-center"
                                     >
-                                        <SquareArrowOutUpRight className="w-10 h-10 stroke-[1.5]" color="#64748b" />
+                                        <SquareArrowOutUpRight className="w-7 h-7 stroke-[1.5]" color="#64748b" />
                                     </button>
                                 </div>
                             </div>
@@ -1309,13 +1315,13 @@ I have sent my CV for your review.`;
                                     <img
                                         src={getImageUrl(images[currentImageIndex]) || undefined}
                                         alt="Expanded View"
-                                        className="max-w-full max-h-full object-contain shadow-2xl"
+                                        className="max-w-full max-h-full object-cover shadow-2xl"
                                         loading="lazy"
                                     />
 
                                     {ad.adType === 'Promoted' && settings.watermarkLogo && (
                                         <div className="absolute bottom-10 right-10 z-30 pointer-events-none opacity-50">
-                                            <img src={getImageUrl(settings.watermarkLogo)} alt="" className="w-24 h-24 object-contain" />
+                                            <img src={getImageUrl(settings.watermarkLogo)} alt="" className="w-24 h-24 object-cover" />
                                         </div>
                                     )}
 

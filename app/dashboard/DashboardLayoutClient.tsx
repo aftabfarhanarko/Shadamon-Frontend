@@ -6,7 +6,7 @@ import { useRouter, useSearchParams, useParams, usePathname } from 'next/navigat
 import {
     User, Search, Bell, MessageSquare, Globe,
     Home, Plus, Inbox, LogOut, Settings, Menu, X,
-    Grid, MapPin, ChevronRight, ChevronDown
+    Grid, MapPin, ChevronRight, ChevronDown, Megaphone
 } from 'lucide-react';
 import { RiMailFill, RiMailLine, RiUser3Fill, RiHome5Line, RiSearchLine, RiAddLine, RiUser3Line } from 'react-icons/ri';
 import Cookies from 'js-cookie';
@@ -88,7 +88,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     const [verificationToken, setVerificationToken] = useState<string | undefined>(undefined);
     const [user, setUser] = useState<any>(null);
 
-    const [mobileEntryReason, setMobileEntryReason] = useState<'post_ad' | 'account' | 'message' | 'report'>('post_ad');
+    const [mobileEntryReason, setMobileEntryReason] = useState<'post_ad' | 'account' | 'message' | 'report' | 'promote'>('post_ad');
     const [reportAd, setReportAd] = useState<any>(null);
     const [shouldOpenReportAfterLogin, setShouldOpenReportAfterLogin] = useState(false);
 
@@ -233,6 +233,8 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 if (e.detail.reason === 'report' && e.detail.ad) {
                     setReportAd(e.detail.ad);
                 }
+            } else if (e.detail?.reason === 'promote') {
+                setMobileEntryReason('promote');
             } else {
                 setMobileEntryReason('post_ad');
                 setReportAd(null);
@@ -427,7 +429,16 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         const openUsersProfile = searchParams.get('openUsersProfile');
         const openMessageModal = searchParams.get('openMessageModal');
         const profileId = searchParams.get('profile');
+        const openPromoteTab = searchParams.get('openPromoteTab');
         const token = Cookies.get('token');
+
+        if (openPromoteTab === 'true' && token) {
+            setAccountModalInitialTab('Post');
+            setIsAccountModalOpen(true);
+            const params = new URLSearchParams(window.location.search);
+            params.delete('openPromoteTab');
+            router.replace(`${window.location.pathname}?${params.toString()}`, { scroll: false });
+        }
 
         if (openMessageModal === 'true' && token) {
             setIsMessageModalOpen(true);
@@ -596,6 +607,19 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         }
     };
 
+    const handlePromoteClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        const token = Cookies.get('token');
+        if (!token) {
+            // toast.error(language === 'bn' ? 'প্রথমে লগইন করুন তারপর প্রোমোট ট্যাব খুলুন' : "Please login first then go to promote tab");
+            setMobileEntryReason('promote');
+            setIsMobileEntryModalOpen(true);
+        } else {
+            setAccountModalInitialTab('Post');
+            setIsAccountModalOpen(true);
+        }
+    };
+
     const [headerOffset, setHeaderOffset] = useState(0);
     const [isNavbarVisible, setIsNavbarVisible] = useState(true);
     const [lastScrollTop, setLastScrollTop] = useState(0);
@@ -611,100 +635,89 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     return (
         <div className="h-screen bg-[#F1F5F9] font-sans overflow-hidden flex flex-col relative">
             <AdPopup />
-            {/* Mobile Bottom Navigation */}
             <nav className={cn(
-                "md:hidden fixed bottom-0 inset-x-0 z-[60] h-[70px] transition-transform duration-300 flex justify-center",
-                !isNavbarVisible && "translate-y-[120%]"
+                "md:hidden fixed bottom-0 inset-x-0 z-[60] h-[65px] transition-transform duration-300",
+                !isNavbarVisible && "translate-y-[115%]"
             )}>
-                <div className="relative w-full h-full">
-                    {/* SVG Background with Curve */}
-                    <div className="absolute inset-0 w-full h-full pointer-events-none">
-                        <svg width="100%" height="70" viewBox="0 0 350 70" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" className="w-full h-full">
-                            <path
-                                d="M0 0 H115 C130 0 135 50 175 50 C215 50 220 0 235 0 H350 V70 H0 Z"
-                                fill="white"
-                            />
-                            <path
-                                d="M0 0 H115 C130 0 135 50 175 50 C215 50 220 0 235 0 H350"
-                                stroke="#000000"
-                                strokeWidth="1.2"
-                            />
-                        </svg>
-                    </div>
+                {/* Background bar with rounded top corners and shadow */}
+                <div className="absolute inset-0 bg-white rounded-t-[20px] shadow-[0_-8px_15px_-5px_rgba(0,0,0,0.15)] border-t border-slate-200" />
 
-                    <div className="relative h-full flex items-center justify-around px-2 z-10">
-                        {/* Home */}
-                        <Link href="/dashboard" className="flex flex-col items-center gap-0.5 min-w-[60px]">
-                            <RiHome5Line className="w-7 h-7 text-black" />
-                            <span className="text-[10px] text-black">{t('home')}</span>
-                        </Link>
+                <div className="relative h-full flex items-center justify-around px-2 z-10">
+                    {/* Home */}
+                    <Link href="/dashboard" className="flex flex-col items-center justify-center min-w-[60px] h-full pt-1">
+                        <RiHome5Line className="w-7 h-7 text-black" />
+                        <span className="text-[10px] text-black leading-none mb-0 mt-1">{t('home')}</span>
+                    </Link>
 
-                        {/* Search */}
+                    {/* Search */}
+                    <button
+                        onClick={() => setIsSearchModalOpen(true)}
+                        className={cn(
+                            "flex flex-col items-center justify-center min-w-[60px] h-full pt-1 transition-colors",
+                            isSearchModalOpen ? "text-[#0088cc]" : "text-black"
+                        )}
+                    >
+                        <RiSearchLine className="w-7 h-7" />
+                        <span className="text-[10px] leading-none mb-0 mt-1">{t('search_nav')}</span>
+                    </button>
+
+                    {/* Centered Floating Post Ad Button */}
+                    <div className="relative h-full flex flex-col items-center justify-end">
                         <button
-                            onClick={() => setIsSearchModalOpen(true)}
-                            className={cn(
-                                "flex flex-col items-center gap-0.5 min-w-[60px] transition-colors",
-                                isSearchModalOpen ? "text-[#0088cc]" : "text-black"
-                            )}
+                            onClick={handleAddAdClick}
+                            className="absolute -top-2 w-14 h-14 bg-[#0088cc] rounded-full flex items-center justify-center text-white shadow-xl active:scale-95 transition-transform"
                         >
-                            <RiSearchLine className="w-7 h-7" />
-                            <span className="text-[10px]">{t('search_nav')}</span>
+                            <RiAddLine className="w-9 h-9" />
                         </button>
-
-                        {/* Centered Floating Post Ad Button */}
-                        <div className="relative -top-5 flex flex-col items-center gap-1">
-                            <button
-                                onClick={handleAddAdClick}
-                                className="w-14 h-14 bg-[#003B95] rounded-full flex items-center justify-center text-white"
-                            >
-                                <RiAddLine className="w-8 h-8" />
-                            </button>
+                        {/* Placeholder to maintain spacing and text if needed, or just gap */}
+                        <div className="w-14 flex flex-col items-center">
+                            <span className="text-[10px] text-transparent leading-none mb-0 mt-1">.</span>
                         </div>
-
-                        {/* Inbox */}
-                        <Link
-                            href="/dashboard/inbox"
-                            onClick={handleMessageClick}
-                            className="flex flex-col items-center gap-0.5 min-w-[60px] text-black relative"
-                        >
-                            <div className="relative">
-                                <RiMailLine className="w-7 h-7" />
-                                {unreadCount > 0 && (
-                                    <span className="absolute -top-1.5 -right-2 bg-red-600 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-white">
-                                        {unreadCount > 99 ? '99+' : unreadCount}
-                                    </span>
-                                )}
-                            </div>
-                            <span className="text-[10px] text-black">{t('inbox')}</span>
-                        </Link>
-
-                        {/* Account */}
-                        <Link
-                            href="/dashboard/profile"
-                            onClick={handleAccountClick}
-                            className="flex flex-col items-center gap-0.5 min-w-[60px] text-black transition-all"
-                        >
-                            <div className="w-7 h-7 rounded-full bg-[#EDF2F7] flex items-center justify-center overflow-hidden border border-[#0088cc]">
-                                {user && user.photo ? (
-                                    <img
-                                        src={getImageUrl(user.photo)}
-                                        alt={user.name}
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <RiUser3Line className="w-6 h-6" />
-                                )}
-                            </div>
-                            <span className="text-[10px] text-black">{t('account')}</span>
-                        </Link>
                     </div>
+
+                    {/* Inbox */}
+                    <Link
+                        href="/dashboard/inbox"
+                        onClick={handleMessageClick}
+                        className="flex flex-col items-center justify-center min-w-[60px] h-full pt-1 text-black relative"
+                    >
+                        <div className="relative">
+                            <RiMailLine className="w-7 h-7" />
+                            {unreadCount > 0 && (
+                                <span className="absolute -top-1.5 -right-2 bg-red-600 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-white">
+                                    {unreadCount > 99 ? '99+' : unreadCount}
+                                </span>
+                            )}
+                        </div>
+                        <span className="text-[10px] text-black leading-none mb-0 mt-1">{t('inbox')}</span>
+                    </Link>
+
+                    {/* Account */}
+                    <Link
+                        href="/dashboard/profile"
+                        onClick={handleAccountClick}
+                        className="flex flex-col items-center justify-center min-w-[60px] h-full pt-1 text-black transition-all"
+                    >
+                        <div className="w-7 h-7 rounded-full bg-[#EDF2F7] flex items-center justify-center overflow-hidden border border-[#0088cc]">
+                            {user && user.photo ? (
+                                <img
+                                    src={getImageUrl(user.photo)}
+                                    alt={user.name}
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <RiUser3Line className="w-6 h-6" />
+                            )}
+                        </div>
+                        <span className="text-[10px] text-black leading-none mb-0 mt-1">{t('account')}</span>
+                    </Link>
                 </div>
             </nav>
 
             {/* Main Content Area - Full width scroller to show scrollbar on the far right edge of the screen */}
             <main
                 id="main-dashboard-scroller"
-                className="flex-1 w-full overflow-y-auto"
+                className="flex-1 w-full overflow-y-auto overflow-x-hidden"
                 onScroll={(e) => {
                     const scrollTop = e.currentTarget.scrollTop;
                     const clamped = Math.min(scrollTop, 64);
@@ -713,9 +726,15 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
                     // Mobile Navbar hide/show logic
                     if (scrollTop > lastScrollTop && scrollTop > 100) {
-                        setIsNavbarVisible(false);
+                        if (isNavbarVisible) {
+                            setIsNavbarVisible(false);
+                            window.dispatchEvent(new CustomEvent('nav-visibility', { detail: { visible: false } }));
+                        }
                     } else if (scrollTop < lastScrollTop) {
-                        setIsNavbarVisible(true);
+                        if (!isNavbarVisible) {
+                            setIsNavbarVisible(true);
+                            window.dispatchEvent(new CustomEvent('nav-visibility', { detail: { visible: true } }));
+                        }
                     }
                     setLastScrollTop(scrollTop);
                 }}
@@ -724,7 +743,10 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 <AdDisplay positionId={1} className="bg-white border-b border-slate-100" />
 
                 {/* Header Wrapper */}
-                <div className="z-50">
+                <div className={cn(
+                    "z-50 sticky top-0 transition-transform duration-300",
+                    !isNavbarVisible && "-translate-y-full"
+                )}>
                     {/* Top Navigation Bar */}
                     <header className="bg-white border-b border-slate-200 h-16 w-full">
                         <div className="max-w-[1320px] mx-auto px-4 h-full flex items-center justify-between md:justify-center">
@@ -860,7 +882,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                     </button>
                                     <button
                                         onClick={handleMessageClick}
-                                        className="w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all relative"
+                                        className="w-10 h-10 bg-[#EDF2F7] rounded-full hidden md:flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all relative"
                                     >
                                         <RiMailFill className="w-5 h-5" />
                                         {unreadCount > 0 && (
@@ -868,6 +890,14 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                                 {unreadCount}
                                             </span>
                                         )}
+                                    </button>
+
+                                    {/* Promote Button (Mobile Only) */}
+                                    <button
+                                        onClick={handlePromoteClick}
+                                        className="w-10 h-10 bg-[#EDF2F7] rounded-full flex md:hidden items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all relative"
+                                    >
+                                        <Megaphone className="w-5 h-5" />
                                     </button>
 
                                     <Link

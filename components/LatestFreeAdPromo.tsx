@@ -97,7 +97,7 @@ export default function LatestFreeAdPromo() {
                             />
                             <img
                                 src={mainImage}
-                                className="relative z-10 w-full h-full object-contain"
+                                className="relative z-10 w-full h-full object-cover"
                                 alt="Preview"
                                 loading="lazy"
                             />

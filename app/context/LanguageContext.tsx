@@ -191,8 +191,8 @@ const translations: Record<string, Record<Language, string>> = {
         en: 'Inbox'
     },
     'account': {
-        bn: 'একাউন্ট',
-        en: 'Account'
+        bn: 'প্রোফাইল',
+        en: 'Profile'
     },
     'edit_details': {
         bn: 'তথ্য পরিবর্তন',

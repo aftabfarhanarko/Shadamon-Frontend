@@ -25,6 +25,7 @@ import LatestFreeAdPromo from '../../components/LatestFreeAdPromo';
 import AdDetailsModal from '../../components/AdDetailsModal';
 import FilterModal, { FilterState } from '../../components/FilterModal';
 import Cookies from 'js-cookie';
+import { toast } from 'react-hot-toast';
 import { useSettings } from '../context/SettingsContext';
 
 interface SubItem {
@@ -136,6 +137,15 @@ export default function DashboardClient() {
 
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [filters, setFilters] = useState<FilterState>(() => getFiltersFromSearchParams());
+    const [isNavVisible, setIsNavVisible] = useState(true);
+
+    useEffect(() => {
+        const handleNavVisibility = (e: any) => {
+            setIsNavVisible(e.detail?.visible);
+        };
+        window.addEventListener('nav-visibility', handleNavVisibility as EventListener);
+        return () => window.removeEventListener('nav-visibility', handleNavVisibility as EventListener);
+    }, []);
 
     const [isViewingSavedSearch, setIsViewingSavedSearch] = useState(false);
     const [savedAdsData, setSavedAdsData] = useState<ActiveAd[]>([]);
@@ -937,7 +947,15 @@ export default function DashboardClient() {
                             </button>
                             <span>•</span>
                             <button
-                                onClick={() => window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { activeTab: 'Post' } }))}
+                                onClick={() => {
+                                    const token = Cookies.get('token');
+                                    if (!token) {
+                                        // toast.error(language === 'bn' ? 'প্রথমে লগইন করুন তারপর প্রোমোট ট্যাব খুলুন' : "Please login first then go to promote tab");
+                                        window.dispatchEvent(new CustomEvent('open-mobile-entry-modal', { detail: { reason: 'promote' } }));
+                                    } else {
+                                        window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { activeTab: 'Post' } }));
+                                    }
+                                }}
                                 className="hover:text-black transition-colors"
                             >
                                 {t('promote')}
@@ -993,7 +1011,10 @@ export default function DashboardClient() {
             >
 
                 {/* Secondary Filter Bar */}
-                <div className="bg-white rounded-none lg:rounded-lg flex divide-x divide-slate-100 overflow-hidden sticky top-0 lg:top-4 z-30 shadow-sm">
+                <div className={cn(
+                    "bg-white rounded-none lg:rounded-lg flex divide-x divide-slate-100 overflow-hidden sticky z-[49] shadow-sm transition-all duration-300",
+                    isNavVisible ? "top-16" : "top-0" // Shift to top-0 when header is hidden
+                )}>
                     <button
                         onClick={() => {
                             setIsFilterModalOpen(true);
@@ -1422,9 +1443,9 @@ export default function DashboardClient() {
                                                                     }
                                                                 }}
                                                                 className={cn(
-                                                                    "bg-white rounded-none lg:rounded-xl cursor-pointer group block border shadow-sm",
+                                                                    "bg-white rounded-lg lg:rounded-xl cursor-pointer group block border shadow-sm mx-0.5 lg:mx-0",
                                                                     hasHighlightLabel(block.bigAd)
-                                                                        ? "border-orange-500 shadow-[0_12px_30px_rgba(249,115,22,0.25)] ring-1 ring-orange-400/40"
+                                                                        ? "border-orange-500 shadow-[0_12px_30px_rgba(249,115,22,0.25)] ring-2 ring-orange-400/40"
                                                                         : "border-slate-100"
                                                                 )}
                                                             >
@@ -1439,7 +1460,7 @@ export default function DashboardClient() {
                                                                             <img
                                                                                 src={getImageUrl(block.bigAd.images?.[0]) || undefined}
                                                                                 alt={block.bigAd.headline}
-                                                                                className="relative z-10 w-full h-full object-contain"
+                                                                                className="relative z-10 w-full h-full object-cover"
                                                                                 loading="lazy"
                                                                             />
                                                                         </>
@@ -1499,7 +1520,7 @@ export default function DashboardClient() {
                                                         )}
 
                                                         {block.smallAds.length > 0 && (
-                                                            <div className="flex flex-col gap-2 bg-white rounded-none lg:rounded-lg pb-2">
+                                                            <div className="flex flex-col gap-2 bg-transparent lg:bg-white rounded-lg pb-2">
                                                                 {block.smallAds.map((ad) => (
                                                                     <div
                                                                         key={ad._id}
@@ -1507,13 +1528,13 @@ export default function DashboardClient() {
                                                                             router.push(getAdUrl(ad), { scroll: false });
                                                                         }}
                                                                         className={cn(
-                                                                            "bg-white rounded-none lg:rounded-lg p-3 pb-0 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50 border",
+                                                                            "bg-white rounded-lg lg:rounded-lg p-3 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50 border mx-1 lg:mx-0",
                                                                             hasHighlightLabel(ad)
-                                                                                ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-1 ring-orange-400/30"
+                                                                                ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-2 ring-orange-400/30"
                                                                                 : "border-transparent"
                                                                         )}
                                                                     >
-                                                                        <div className="w-[200px] h-[130px] rounded-none lg:rounded-lg overflow-hidden shrink-0 relative group-hover:scale-[1.02] transition-transform">
+                                                                        <div className="flex-1 lg:flex-none lg:w-[200px] h-[130px] rounded-lg overflow-hidden shrink-0 relative group-hover:scale-[1.02] transition-transform">
                                                                             {getImageUrl(ad.images?.[0]) && (
                                                                                 <>
                                                                                     <img
@@ -1521,7 +1542,7 @@ export default function DashboardClient() {
                                                                                         alt=""
                                                                                         className="absolute inset-0 w-full h-full object-cover blur-lg scale-110 opacity-60"
                                                                                     />
-                                                                                    <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-contain" loading="lazy" />
+                                                                                    <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-cover" loading="lazy" />
                                                                                 </>
                                                                             )}
                                                                             {getNonHighlightLabels(ad).length > 0 && (
@@ -1597,7 +1618,7 @@ export default function DashboardClient() {
                                                                     className={cn(
                                                                         "min-w-[240px] w-[240px] bg-white border rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow",
                                                                         hasHighlightLabel(ad)
-                                                                            ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-1 ring-orange-400/30"
+                                                                            ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-2 ring-orange-400/30"
                                                                             : "border-slate-200"
                                                                     )}
                                                                     onClick={() => {
@@ -1612,7 +1633,7 @@ export default function DashboardClient() {
                                                                                     alt=""
                                                                                     className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-70"
                                                                                 />
-                                                                                <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-contain" loading="lazy" />
+                                                                                <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-cover" loading="lazy" />
                                                                             </>
                                                                         )}
                                                                         {getNonHighlightLabels(ad).length > 0 && (

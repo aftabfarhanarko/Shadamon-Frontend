@@ -620,12 +620,12 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                                         <span className="text-[8px] text-slate-400">Duration</span>
                                         <span className="text-[12px] font-bold text-slate-800">{durationDays} Days</span>
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                        <button onClick={() => handleDurationChange('dec')} className="w-5 h-5 rounded-full border border-slate-500 flex items-center justify-center hover:bg-slate-50">
-                                            <Minus className="w-4 h-4 text-slate-500" />
+                                    <div className="flex items-center gap-2 sm:gap-1">
+                                        <button onClick={() => handleDurationChange('dec')} className="w-7 h-7 sm:w-5 sm:h-5 rounded-full border border-slate-500 flex items-center justify-center hover:bg-slate-50">
+                                            <Minus className="w-5 h-5 sm:w-4 sm:h-4 text-slate-500" />
                                         </button>
-                                        <button onClick={() => handleDurationChange('inc')} className="w-5 h-5 rounded-full border border-slate-500 flex items-center justify-center hover:bg-slate-50">
-                                            <Plus className="w-4 h-4 text-slate-500" />
+                                        <button onClick={() => handleDurationChange('inc')} className="w-7 h-7 sm:w-5 sm:h-5 rounded-full border border-slate-500 flex items-center justify-center hover:bg-slate-50">
+                                            <Plus className="w-5 h-5 sm:w-4 sm:h-4 text-slate-500" />
                                         </button>
                                     </div>
                                 </div>
