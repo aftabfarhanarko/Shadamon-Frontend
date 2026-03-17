@@ -11,6 +11,8 @@ import { getImageUrl } from '../utils/imageUrl';
 import { useSettings } from '../app/context/SettingsContext';
 import { useLanguage } from '../app/context/LanguageContext';
 import { compressImage } from '../utils/imageCompression';
+import InfoModal from './InfoModal';
+
 
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs));
@@ -112,7 +114,9 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [otp, setOtp] = useState(["", "", "", "", "", ""]);
     const [otpTimer, setOtpTimer] = useState(300);
     const [isEditingPhone, setIsEditingPhone] = useState(false);
+    const [showTnC, setShowTnC] = useState(false);
     const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
     const headlineInputRef = useRef<HTMLInputElement>(null);
 
@@ -1410,8 +1414,9 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                 onChange={(e) => setHasReadRules(e.target.checked)}
                                             />
                                             <span className="text-[10px] text-slate-500 font-medium leading-none">
-                                                {t('i_have_read_accept')} <span className="text-cyan-500 underline">{t('terms_and_con')}</span>
+                                                {t('i_have_read_accept')} <span className="text-cyan-500 underline cursor-pointer" onClick={() => setShowTnC(true)}>{t('terms_and_con')}</span>
                                             </span>
+
                                         </label>
                                     </div>
                                 </>
@@ -1491,6 +1496,56 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                     </div>
                 )}
             </div>
+            <InfoModal
+                isOpen={showTnC}
+                onClose={() => setShowTnC(false)}
+                title="Shadamon.com এর টার্ম ও কণ্ডিশন"
+                content={`Shadamon.com ব্যবহার করার মাধ্যমে আপনি আমাদের নীতিমালা ও শর্তাবলী মেনে চলতে সম্মত হচ্ছেন। দয়া করে এটি মনোযোগ দিয়ে পড়ুন।
+
+১. সাধারণ
+ব্যবহারকারী এবং বিজ্ঞাপনদাতারা নিশ্চিত করবেন যে তাদের আপলোড করা সকল কনটেন্ট (লেখা, ছবি, ভিডিও বা গ্রাফিক্স) প্রযোজ্য সকল আইন অনুযায়ী সঠিক। Shadamon.com কোনো আইনি বা তথ্যগত অসঙ্গতির জন্য দায়ভার বহন করে না।
+ব্যবহারকারীরা নিশ্চয়তা দেন যে তাদের কনটেন্ট কপিরাইট বা অন্যান্য আইনি অধিকার লঙ্ঘন করে না এবং Shadamon.com কে কোনো দাবী, ক্ষতি বা দায় থেকে মুক্ত রাখবেন।
+
+২. কপিরাইট
+ব্যবহারকারীরা Shadamon.com-কে তাদের কনটেন্ট ব্যবহার, প্রকাশ, সম্পাদনা, অনুবাদ, ডেরিভেটিভ তৈরি এবং বিতরণের জন্য আজীবন, রায়াল্টি-ফ্রি, অ-বিশেষ অধিকার প্রদান করছেন।
+Shadamon.com-এর সকল কনটেন্ট, সফটওয়্যার এবং সেবাসমূহ আমাদের এবং আমাদের পার্টনারদের সম্পত্তি। লিখিত অনুমতি ছাড়া এগুলো অনুলিপি বা বিতরণ করা যাবে না।
+
+৩. Watermarks ও ছবি
+Shadamon.com-এ থাকা ছবিতে ওয়াটারমার্ক থাকতে পারে যাতে অন্যত্র ব্যবহার না হয়। প্রয়োজন হলে Shadamon.com কনটেন্ট সম্পাদনা বা বাতিল করার অধিকার রাখে।
+
+৪. নিরাপত্তা ও আইনি বিষয়
+যদি কোনো কনটেন্ট আইন লঙ্ঘন করে, Shadamon.com প্রয়োজন হলে কর্তৃপক্ষের সাথে সহযোগিতা করবে। ব্যবহারকারীর পরিচয় যাচাই করা যেতে পারে।
+
+৫. প্রাইভেসি
+Shadamon.com ব্যবহারকারীর তথ্য সংগ্রহ করে সেবা প্রদানের ও উন্নয়নের জন্য। এই তথ্য ব্যবহার, গবেষণা, মার্কেটিং ও প্রোডাক্ট উন্নয়নে ব্যবহারের জন্য আপনি সম্মত হবেন। প্রয়োজনে তথ্য শেয়ার করা হতে পারে।
+
+৬. কুকিজ
+Shadamon.com সঠিকভাবে কাজ করার জন্য কুকিজ ব্যবহার করে। কুকিজ ব্যক্তিগত তথ্য সংগ্রহ করে না।
+
+৭. ইমেল, মোবাইল নং ও ব্যাক্তিগত তথ্যাবলি 
+বিজ্ঞাপন পোস্ট করার জন্য মোবাইল নাম্বার বা ইমেল ঠিকানা আবশ্যক। ইমেল ঠিকানা গোপন রাখা হবে, তবে ব্যবহারকারীরা Shadamon.com-এর মাধ্যমে বার্তা পাঠাতে পারবেন।
+
+৮. সাইট অ্যাভেলিবিলিটি
+Shadamon.com “যেমন আছে” ভিত্তিতে সরবরাহ করা হচ্ছে এবং অনবরত বা নিরাপদ অ্যাক্সেসের নিশ্চয়তা নেই।
+
+৯. তৃতীয় পক্ষের লিঙ্ক
+Shadamon.com-এ তৃতীয় পক্ষের ওয়েবসাইটের লিঙ্ক থাকতে পারে। সেগুলোর জন্য Shadamon.com দায়ী নয়। ব্যবহারকারী নিজ দায়িত্বে এগুলো ব্যবহার করবেন।
+
+১০. পেইড কনটেন্ট ও সার্ভিস
+কিছু সেবা যেমন প্রিমিয়াম মেম্বারশিপ, বিজ্ঞাপন প্রচারণা এবং ডোরস্টেপ ডেলিভারি পেইড হতে পারে। Shadamon.com এইসব কনটেন্ট নিয়ন্ত্রণ করতে পারে এবং শর্ত লঙ্ঘনের ক্ষেত্রে তা বাতিল করার অধিকার রাখে।
+
+১১. দায়মুক্তি
+Shadamon.com কোনো ভুল, ডাউনটাইম, তৃতীয় পক্ষের কনটেন্ট বা ব্যবহার থেকে উদ্ভূত ক্ষতির জন্য দায়ী নয়।
+
+১২. ক্ষতিপূরণ
+ব্যবহারকারীরা Shadamon.com এবং তার স্টাফকে শর্তাবলী লঙ্ঘনের কারণে সৃষ্ট যেকোনো ক্ষতি বা দাবী থেকে মুক্ত রাখবেন।
+
+১৩. সংশোধনী
+Shadamon.com যে কোনো সময় শর্তাবলী পরিবর্তন করতে পারে। প্ল্যাটফর্ম ব্যবহার চালিয়ে যাওয়া মানে সংশোধিত শর্তাবলী মেনে নেওয়া।
+
+১৪. প্রযোজ্য আইন
+Shadamon.com বাংলাদেশের আইন ও নিয়ম অনুযায়ী পরিচালিত হয়।`}
+            />
         </div>
     );
 }

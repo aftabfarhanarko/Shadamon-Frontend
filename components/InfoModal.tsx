@@ -19,7 +19,7 @@ export default function InfoModal({ isOpen, onClose, title, content }: InfoModal
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
             {/* Modal Container */}
-            <div className="relative bg-[#F8F9FA] w-full max-w-[565px] rounded-t-lg rounded-b-none overflow-hidden shadow-2xl flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300 h-[calc(100vh-80px)]">
+            <div className="relative bg-[#F8F9FA] w-full max-w-[565px] rounded-t-lg rounded-b-none overflow-hidden shadow-2xl flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300 h-[calc(100vh-64px)]">
 
                 {/* Header Controls */}
                 <div className="flex items-center justify-between p-2 px-4 border-b border-slate-200 bg-white shrink-0">
