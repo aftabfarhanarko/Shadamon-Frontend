@@ -2521,6 +2521,18 @@ I have sent my CV for your review.`;
                                                 const durationText = durationDays ? `${durationDays} Days` : 'N/A';
                                                 const payBy = tx.payType || tx.mode || 'N/A';
                                                 const total = tx.amount ?? 0;
+                                                const productDoc = (tx.productId && typeof tx.productId === 'object') ? tx.productId : null;
+                                                const promoteEndFromActive = productDoc?.promoteEndDate ? new Date(productDoc.promoteEndDate) : null;
+                                                const promoteEndFromHistory = Array.isArray(productDoc?.promotionHistory)
+                                                    ? productDoc.promotionHistory.reduce((latest: Date | null, hist: any) => {
+                                                        const end = hist?.endDate ? new Date(hist.endDate) : null;
+                                                        if (!end || end.toString() === 'Invalid Date') return latest;
+                                                        if (!latest || end > latest) return end;
+                                                        return latest;
+                                                    }, null)
+                                                    : null;
+                                                const promoteEndDate = promoteEndFromActive || promoteEndFromHistory;
+                                                const isPromotionEnded = !!(promoteEndDate && promoteEndDate.getTime() < Date.now());
 
                                                 return (
                                                     <div key={tx._id} className="bg-white p-2 rounded border border-slate-200 shadow-sm text-xs">
@@ -2529,8 +2541,13 @@ I have sent my CV for your review.`;
                                                         <div className="text-[10px] text-slate-600">Profile/Product ID: {String(profileOrProductId)}</div>
                                                         <div className="text-[10px] text-slate-600">Transaction ID: {tx.tnxId || 'N/A'}</div>
                                                         <div className="text-[10px] text-slate-600">
-                                                            Product: {tx.item || 'N/A'}, Duration: {durationText}
+                                                            Product: {tx.item || 'N/A'}{!isPromotionEnded ? `, Duration: ${durationText}` : ''}
                                                         </div>
+                                                        {isPromotionEnded && (
+                                                            <div className="text-[10px] text-slate-600">
+                                                                Promote ended: {formatInvoiceDate(promoteEndDate)}
+                                                            </div>
+                                                        )}
                                                         <div className="text-[10px] text-slate-600">
                                                             Total: {total}, Payment by {payBy}
                                                         </div>
