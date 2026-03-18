@@ -2294,7 +2294,7 @@ I have sent my CV for your review.`;
                                                                         <div className="text-black leading-tight space-y-0.5">
                                                                             <div className="flex flex-wrap gap-x-2">
                                                                                 <span>Budget : <span className="text-black">{ad.promoteBudget || 0}</span></span>
-                                                                                <span>From : <span className="text-black">{ad.createdAt ? new Date(ad.createdAt).toLocaleDateString('en-GB').replace(/\//g, '.') : 'N/A'}</span> to <span className="text-black">{ad.promoteEndDate ? new Date(ad.promoteEndDate).toLocaleDateString('en-GB').replace(/\//g, '.') : 'N/A'}</span></span>
+                                                                                <span>From : <span className="text-black">{ad.promoteStartDate ? new Date(ad.promoteStartDate).toLocaleDateString('en-GB').replace(/\//g, '.') : 'N/A'}</span> to <span className="text-black">{ad.promoteEndDate ? new Date(ad.promoteEndDate).toLocaleDateString('en-GB').replace(/\//g, '.') : 'N/A'}</span></span>
                                                                             </div>
                                                                             <div className="flex gap-x-2">
                                                                                 <span>View : <span className="text-black">{ad.promotedViews || 0}</span></span>
