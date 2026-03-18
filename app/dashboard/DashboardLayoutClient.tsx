@@ -925,7 +925,7 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
                                             />
                                         </div>
                                     ) : (
-                                        <span className="text-3xl font-bold text-[#1A202C] tracking-tighter uppercase whitespace-nowrap">shadamon</span>
+                                        <span className="text-3xl font-bold text-[#1A202C] tracking-tighter uppercase whitespace-nowrap"></span>
                                     )}
                                 </Link>
                             </div>

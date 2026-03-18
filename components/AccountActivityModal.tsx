@@ -1048,7 +1048,7 @@ I have sent my CV for your review.`;
             // Compress image based on type
             const maxWidth = type === 'banner' ? 1200 : 800;
             const quality = 0.8;
-            
+
             const compressed = await compressImage(file, maxWidth, quality);
             if (compressed) {
                 processedFile = compressed;
@@ -1478,23 +1478,23 @@ I have sent my CV for your review.`;
                                                                 {ad.headline}
                                                             </div>
                                                             <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        if (isProcessingPromotion(ad)) {
-                                                                            toast("This promotion is processing and is currently under review.");
-                                                                            return;
-                                                                        }
-                                                                        handlePromoteClick(ad);
-                                                                    }}
-                                                                    className={cn(
-                                                                        "mt-auto w-full text-white text-[10px] font-bold py-2.5 rounded transition-colors",
-                                                                        isProcessingPromotion(ad)
-                                                                            ? "bg-[#0088cc] hover:bg-[#0077b5]"
-                                                                            : "bg-[#0088cc] hover:bg-[#0077b5]"
-                                                                    )}
-                                                                >
-                                                                    {getPostButtonLabel(ad)}
-                                                                </button>
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    if (isProcessingPromotion(ad)) {
+                                                                        toast("This promotion is processing and is currently under review.");
+                                                                        return;
+                                                                    }
+                                                                    handlePromoteClick(ad);
+                                                                }}
+                                                                className={cn(
+                                                                    "mt-auto w-full text-white text-[10px] font-bold py-2.5 rounded transition-colors",
+                                                                    isProcessingPromotion(ad)
+                                                                        ? "bg-[#0088cc] hover:bg-[#0077b5]"
+                                                                        : "bg-[#0088cc] hover:bg-[#0077b5]"
+                                                                )}
+                                                            >
+                                                                {getPostButtonLabel(ad)}
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 ))}

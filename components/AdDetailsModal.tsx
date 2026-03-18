@@ -1354,32 +1354,39 @@ I have sent my CV for your review.`;
             <InfoModal
                 isOpen={showShippingModal}
                 onClose={() => setShowShippingModal(false)}
-                title="Shipping & Safety"
-                content={
-                    <div className="space-y-4 pt-4">
-                        <div className="flex items-start gap-4">
-                            <Truck className="w-5 h-5 text-slate-500 mt-0.5 shrink-0" />
-                            <div>
-                                <h4 className="text-[15px] font-bold text-slate-900 mb-1">Shipping Policy</h4>
-                                <p className="text-sm text-slate-600">This merchant can ship to all locations in Bangladesh (BD).</p>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-4">
-                            <Undo2 className="w-5 h-5 text-slate-500 mt-0.5 shrink-0" />
-                            <div>
-                                <h4 className="text-[15px] font-bold text-slate-900 mb-1">Return Policy</h4>
-                                <p className="text-sm text-slate-600">You can return new and unused items within 30 days of delivery.</p>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-4">
-                            <Timer className="w-5 h-5 text-slate-500 mt-0.5 shrink-0" />
-                            <div>
-                                <h4 className="text-[15px] font-bold text-slate-900 mb-1">Cancellation Policy</h4>
-                                <p className="text-sm text-slate-600">You can cancel your order within 30 minutes after purchase.</p>
-                            </div>
-                        </div>
-                    </div>
-                }
+                title="সেফটি টিপস (Safety Tips)"
+                content={`Shadamon.com-এ আপনার নিরাপত্তা আমাদের প্রথম অগ্রাধিকার। প্ল্যাটফর্ম ব্যবহার করার সময় নিরাপদ থাকার জন্য কিছু পরামর্শ:
+
+পণ্য সরাসরি যাচাই করুন: পেমেন্ট করার আগে বিক্রেতার সাথে দেখা করুন এবং পণ্যটি ভালোভাবে পরীক্ষা করুন।
+চাকরির জন্য আবেদন: নিয়োগকর্তা এবং চাকরির তথ্য যাচাই করুন। ব্যক্তিগত তথ্য শেয়ার করবেন না। দূরের বা অজানা স্থানে সাক্ষাৎ এড়িয়ে চলুন।
+
+পণ্য ও পেমেন্ট একসাথে করুন:
+• ক্রেতারা: পণ্য পাওয়ার আগে অর্থ প্রদান করবেন না।
+• বিক্রেতারা: পেমেন্ট পাওয়ার আগে পণ্য পাঠাবেন না।
+
+• সাধারণ বুদ্ধি ব্যবহার করুন: খুবই সস্তা অফার বা দ্রুত টাকা আয়ের প্রতিশ্রুতি এড়িয়ে চলুন।
+• ব্যাংক বা আর্থিক তথ্য কখনও দেবেন না।
+
+সতর্কতা (Scams)
+• ভুয়া পেমেন্ট সার্ভিস: Shadamon.com কোনো পেমেন্ট সেবা বা প্রোটেকশন দেয় না। নিশ্চিত না হলে তৃতীয় পক্ষের পেমেন্ট ব্যবহার করবেন না।
+• ভুয়া তথ্যের অনুরোধ: Shadamon.com কখনও ব্যক্তিগত তথ্য ইমেলে চায় না। সন্দেহজনক লিঙ্ক এড়িয়ে চলুন। রিপোর্ট করে ইমেল মুছে দিন।
+• অতিরিক্ত ফি দাবি: সাধারণ সেবার জন্য অতিরিক্ত ফি দাবি করা হয় না।
+• মানি ট্রান্সফার সার্ভিস (Western Union / MoneyGram): অচেনা ব্যক্তির সাথে ব্যবহার করবেন না।
+• ভুয়া ডেলিভারি দাবী: Shadamon.com সরাসরি ডেলিভারি দেয় না। ভুয়া দাবী রিপোর্ট করুন।
+
+Shadamon.com-এর নিরাপত্তা ব্যবস্থা
+• ইমেল ঠিকানা লুকানো থাকে।
+• ফোন নম্বর লুকানোর অপশন আছে।
+• প্রযুক্তি উন্নতি চালু থাকে সন্দেহজনক কার্যকলাপ রোধের জন্য।
+• পুনরাবৃত্ত অপরাধী ব্লক করা হয়।
+
+নিরাপত্তা সমস্যা রিপোর্ট
+প্রতারণার শিকার হলে দ্রুত রিপোর্ট করুন। প্রয়োজনে স্থানীয় পুলিশ বা আইন প্রয়োগকারীর সঙ্গে যোগাযোগ করুন।
+
+সাবধানী নির্দেশনা: 
+• Shadamon.com সর্বোচ্চ চেষ্টা করে নিরাপদ লেনদেন নিশ্চিত করতে, কিন্তু ব্যবহারকারীর কার্যকলাপের জন্য দায়ী নয়।
+• ব্যবহারকারীরা সতর্ক থাকবেন এবং ব্যক্তিগত/আর্থিক তথ্য শেয়ার করার আগে যাচাই করবেন।
+• ব্যবহারকারীর গোপনীয়তা রক্ষা করা হয়, তবে প্রতারণা বা অপরাধমূলক কার্যক্রমের ক্ষেত্রে আমরা আইন প্রয়োগকারীর সঙ্গে সহযোগিতা করি।`}
             />
 
             <ReportModal

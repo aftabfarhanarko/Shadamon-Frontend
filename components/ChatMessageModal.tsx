@@ -326,12 +326,12 @@ export default function ChatMessageModal({ isOpen, onClose, onBack, ad, otherUse
     const isVerified = fetchedOtherUser?.mVerified || otherUserProp?.mVerified || ad?.user?.mVerified;
 
     return (
-        <div className="fixed inset-0 z-[1100] flex items-start justify-center pt-16 font-sans">
+        <div className="fixed inset-0 z-[1100] flex items-end sm:items-start justify-center sm:pt-16 font-sans">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
             {/* Modal Container */}
-            <div className="relative bg-white w-full max-w-[565px] rounded-t-lg rounded-b-none overflow-hidden flex flex-col animate-in slide-in-from-bottom-full duration-300 shadow-2xl h-[calc(100vh-64px)]">
+            <div className="relative bg-white w-full max-w-[565px] rounded-t-2xl sm:rounded-t-lg rounded-b-none overflow-hidden flex flex-col animate-in slide-in-from-bottom-full duration-300 shadow-2xl h-[90dvh] sm:h-[calc(100vh-64px)]">
 
                 {/* Header */}
                 <div className="bg-white border-b border-slate-300 shrink-0">
@@ -495,7 +495,7 @@ export default function ChatMessageModal({ isOpen, onClose, onBack, ad, otherUse
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 pt-1 pb-6 bg-white border-t border-slate-100 shrink-0 relative">
+                <div className="p-4 pt-1 pb-4 sm:pb-6 bg-white border-t border-slate-100 shrink-0 relative">
                     {/* Blocked Status Overlay */}
                     {isBlockedByMe && (
                         <div className="absolute inset-0 bg-white/90 z-20 flex items-center justify-center">
