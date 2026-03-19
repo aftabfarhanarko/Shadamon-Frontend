@@ -1,8 +1,6 @@
 import { Suspense } from 'react';
 import DashboardClient from '../DashboardClient';
 
-export const dynamic = 'force-dynamic';
-
 export default function PostAdPage() {
     return (
         <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div></div>}>
