@@ -109,7 +109,6 @@ export default function RootLayout({
         <RegisterServiceWorker />
         <div id="fb-root"></div>
         <script async defer crossOrigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
-{/* 
         <script dangerouslySetInnerHTML={{
           __html: `
             window.fbAsyncInit = function() {
@@ -136,7 +135,7 @@ export default function RootLayout({
               });
             }
           `
-        }} /> */}
+        }} />
         <script src="https://accounts.google.com/gsi/client" async defer></script>
 
         <SettingsProvider>
