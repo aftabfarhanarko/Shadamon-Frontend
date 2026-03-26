@@ -259,7 +259,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
 
                     {/* Site Logo */}
                     <div className="mt-4 flex flex-col items-center mb-4">
-                        <div className="relative w-[80px] h-[40px] mb-2 flex items-center justify-center">
+                        <div className="relative w-[150px] h-[60px] mb-0 flex items-center justify-center">
                             {settings.siteLogo ? (
                                 <img
                                     src={getImageUrl(settings.siteLogo)}

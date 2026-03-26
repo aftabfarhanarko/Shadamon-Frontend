@@ -615,6 +615,31 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
             setIsAccountModalOpen(true);
         }
 
+        const adParam = searchParams.get('ad');
+        if (adParam) {
+            const idMatch = adParam.match(/--([a-f\d]{24})$/i);
+            const adId = idMatch ? idMatch[1] : adParam;
+            fetch(`${API_BASE_URL}/api/ads/public/${adId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const ad = data.data;
+                        if (ad.promoteType === 'traffic' && ad.trafficLink) {
+                            const directLink = ad.trafficLink.startsWith('http') ? ad.trafficLink : `https://${ad.trafficLink}`;
+                            window.open(directLink, '_blank');
+                            // Clear param
+                            const params = new URLSearchParams(searchParams.toString());
+                            params.delete('ad');
+                            router.replace(params.toString() ? `${pathname}?${params.toString()}` : pathname, { scroll: false });
+                        }
+                        setSelectedAdForDetail(ad);
+                    }
+                })
+                .catch(err => console.error("Error fetching ad from URL:", err));
+        } else {
+            setSelectedAdForDetail(null);
+        }
+
         // Handle direct /dashboard/post-ad route
         if (pathname === '/dashboard/post-ad') {
             const token = Cookies.get('token');
@@ -851,7 +876,7 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
                                 <img
                                     src={getImageUrl(user.photo)}
                                     alt={user.name}
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-contain"
                                 />
                             ) : (
                                 <RiUser3Line className="w-6 h-6" />
@@ -981,6 +1006,9 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
                                                                         window.open(directLink, '_blank');
                                                                     }
                                                                     setSelectedAdForDetail(fullAd);
+                                                                    const params = new URLSearchParams(window.location.search);
+                                                                    params.set('ad', fullAd._id);
+                                                                    router.push(`${pathname}?${params.toString()}`, { scroll: false });
                                                                     return;
                                                                 }
                                                             } catch (err) {
@@ -1002,7 +1030,7 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
                                                                 <img
                                                                     src={getImageUrl(ad.images[0])}
                                                                     alt=""
-                                                                    className="w-full h-full object-cover"
+                                                                    className="w-full h-full object-contain"
                                                                     onError={(e) => (e.currentTarget.src = "/placeholder.png")}
                                                                 />
                                                             </div>
@@ -1060,7 +1088,7 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
                                             <img
                                                 src={getImageUrl(user.photo)}
                                                 alt={user.name}
-                                                className="w-full h-full object-cover"
+                                                className="w-full h-full object-contain"
                                             />
                                         ) : (
                                             <RiUser3Fill className="w-5 h-5" />
@@ -1145,7 +1173,7 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
                                                             {sub.image && (
                                                                 <img
                                                                     src={getImageUrl(sub.image)}
-                                                                    className="w-4 h-4 object-cover rounded shrink-0"
+                                                                    className="w-4 h-4 object-contain rounded shrink-0"
                                                                     alt=""
                                                                 />
                                                             )}
@@ -1190,7 +1218,7 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
                                                             {sub.image && (
                                                                 <img
                                                                     src={getImageUrl(sub.image)}
-                                                                    className="w-4 h-4 object-cover rounded shrink-0"
+                                                                    className="w-4 h-4 object-contain rounded shrink-0"
                                                                     alt=""
                                                                 />
                                                             )}
@@ -1406,6 +1434,10 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
                 onClose={() => {
                     setSelectedAdForDetail(null);
                     setShouldOpenReportAfterLogin(false);
+                    const params = new URLSearchParams(window.location.search);
+                    params.delete('ad');
+                    const queryString = params.toString();
+                    router.push(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
                 }}
                 initialReportOpen={shouldOpenReportAfterLogin}
             />
@@ -1451,6 +1483,11 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
                 }}
                 onSelectAd={(ad) => {
                     setSelectedAdForDetail(ad);
+                    if (ad?._id) {
+                        const params = new URLSearchParams(window.location.search);
+                        params.set('ad', ad._id);
+                        router.push(`${pathname}?${params.toString()}`, { scroll: false });
+                    }
                 }}
             />
 

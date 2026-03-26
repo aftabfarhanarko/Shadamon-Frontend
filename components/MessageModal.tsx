@@ -472,7 +472,7 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
                                                 <img
                                                     src={getImageUrl(item.ad?.images?.[0])}
                                                     alt=""
-                                                    className="w-full h-full object-cover"
+                                                    className="w-full h-full object-contain"
                                                     onError={(e) => (e.currentTarget.src = "/placeholder.png")}
                                                 />
                                             </div>
@@ -599,7 +599,7 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
                                             <img
                                                 src={getImageUrl(otherUser?.photo || otherUser?.storeLogo || conv.ad?.images?.[0])}
                                                 alt=""
-                                                className="w-full h-full object-cover"
+                                                className="w-full h-full object-contain"
                                                 onError={(e) => (e.currentTarget.src = "/placeholder.png")}
                                             />
                                         </div>

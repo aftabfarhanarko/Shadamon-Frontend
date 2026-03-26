@@ -93,11 +93,11 @@ export default function LatestFreeAdPromo() {
                             <img
                                 src={mainImage}
                                 alt=""
-                                className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-60"
+                                className="absolute inset-0 w-full h-full object-contain blur-xl scale-110 opacity-60"
                             />
                             <img
                                 src={mainImage}
-                                className="relative z-10 w-full h-full object-cover"
+                                className="relative z-10 w-full h-full object-contain"
                                 alt="Preview"
                                 loading="lazy"
                             />

@@ -108,6 +108,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [additionalPhones, setAdditionalPhones] = useState<{ number: string, types: string[] }[]>([]);
     const [featureValues, setFeatureValues] = useState<Record<string, any>>({});
     const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+    const [showDescriptionHelp, setShowDescriptionHelp] = useState(true);
 
     // OTP State
     const [showOtpVerification, setShowOtpVerification] = useState(false);
@@ -115,6 +116,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [otpTimer, setOtpTimer] = useState(300);
     const [isEditingPhone, setIsEditingPhone] = useState(false);
     const [showTnC, setShowTnC] = useState(false);
+    const [showPrivacy, setShowPrivacy] = useState(false);
     const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -165,6 +167,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             fetchPostAdSettings();
             fetchData();
             checkUser();
+            setShowDescriptionHelp(true);
             if (editAd) {
                 fillFormData(editAd);
                 fetchAdData(editAd._id);
@@ -832,7 +835,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                             <div className="flex items-center gap-3">
                                                 {sub.image && (
                                                     <div className="w-6 h-6 shrink-0 rounded overflow-hidden">
-                                                        <img src={getImageUrl(sub.image) || ''} alt="" className="w-full h-full object-cover" loading="lazy" />
+                                                        <img src={getImageUrl(sub.image) || ''} alt="" className="w-full h-full object-contain" loading="lazy" />
                                                     </div>
                                                 )}
                                                 <span className="text-sm text-slate-700 font-medium group-hover:text-black transition-colors">{sub.name}</span>
@@ -1066,7 +1069,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                         <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
                                             {existingImages.map((imgUrl, i) => (
                                                 <div key={imgUrl} className="relative min-w-[80px] h-[80px] rounded-xl overflow-hidden bg-slate-50 border border-slate-100 group">
-                                                    <img src={getImageUrl(imgUrl) || ''} alt="" className="w-full h-full object-cover" loading="lazy" />
+                                                    <img src={getImageUrl(imgUrl) || ''} alt="" className="w-full h-full object-contain" loading="lazy" />
                                                     <button onClick={() => removeExistingImage(imgUrl)} className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full opacity-0 group-hover:opacity-100">
                                                         <X className="w-3 h-3" />
                                                     </button>
@@ -1074,7 +1077,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                             ))}
                                             {images.map((file, i) => (
                                                 <div key={i} className="relative min-w-[80px] h-[80px] rounded-xl overflow-hidden bg-slate-50 border border-slate-100 group">
-                                                    <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" loading="lazy" />
+                                                    <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-contain" loading="lazy" />
                                                     <button onClick={() => removeImage(i)} className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full opacity-0 group-hover:opacity-100">
                                                         <X className="w-3 h-3" />
                                                     </button>
@@ -1151,9 +1154,13 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                         toast.error(`Description contains restricted word: ${found}`);
                                                     }
                                                 }}
+                                                onFocus={() => setShowDescriptionHelp(false)}
+                                                onClick={() => setShowDescriptionHelp(false)}
                                                 className="w-full text-sm text-black placeholder:text-slate-400 focus:outline-none px-1 bg-white resize-y min-h-[100px] block"
                                             />
-                                            <p className="text-[10px] text-black mt-2 px-1 leading-tight">{t('description_help_text')}</p>
+                                            {showDescriptionHelp && (
+                                                <p className="text-[10px] text-black mt-2 px-1 leading-tight">{t('description_help_text')}</p>
+                                            )}
                                         </div>
                                     </div>
 
@@ -1414,7 +1421,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                 onChange={(e) => setHasReadRules(e.target.checked)}
                                             />
                                             <span className="text-[10px] text-slate-500 font-medium leading-none">
-                                                {t('i_have_read_accept')} <span className="text-cyan-500 underline cursor-pointer" onClick={() => setShowTnC(true)}>{t('terms_and_con')}</span>
+                                                {t('i_have_read_accept')} <span className="text-cyan-500 underline cursor-pointer" onClick={() => setShowTnC(true)}>{t('terms_and_con')}</span> & <span className="text-cyan-500 underline cursor-pointer" onClick={() => setShowPrivacy(true)}>{t('privacy_policy')}</span>
                                             </span>
 
                                         </label>
@@ -1545,6 +1552,57 @@ Shadamon.com যে কোনো সময় শর্তাবলী পরি
 
 ১৪. প্রযোজ্য আইন
 Shadamon.com বাংলাদেশের আইন ও নিয়ম অনুযায়ী পরিচালিত হয়।`}
+            />
+            <InfoModal
+                isOpen={showPrivacy}
+                onClose={() => setShowPrivacy(false)}
+                title="Shadamon.com প্রাইভেসি পলিসি"
+                content={`Shadamon.com-এ আপনার গোপনীয়তা এবং নিরাপত্তা আমাদের জন্য গুরুত্বপূর্ণ। নিরাপদ এবং কার্যকর সেবা প্রদানের জন্য আমরা কিছু ব্যক্তিগত তথ্য সংগ্রহ, ব্যবহার এবং পরিচালনা করি।
+
+১. তথ্য সংগ্রহ
+আমরা নিম্নলিখিত তথ্য সংগ্রহ করতে পারি:
+• ইমেল, ফোন নম্বর এবং ব্যাক্তিগত ও প্রয়োজন অনুযায়ী আর্থিক তথ্য।
+• ডিভাইস ও ব্রাউজার ডেটা, পেজ ভিউ ও ট্রাফিক স্ট্যাটিস্টিক।
+• অন্যান্য প্রযুক্তিগত তথ্য, যেমন IP ঠিকানা ও স্ট্যান্ডার্ড ওয়েব লগ।
+তথ্য সরবরাহ করলে আপনি Shadamon.com সার্ভারে এর সংরক্ষণ ও ব্যবহারে সম্মত হবেন।
+
+২. তথ্য ব্যবহার
+আমরা তথ্য ব্যবহার করি:
+• সেবা প্রদানে ও উন্নতিতে।
+• সমস্যার সমাধান, ফি সংগ্রহ এবং টেকনিকাল সহায়তায়।
+• নিরাপদ লেনদেন নিশ্চিত করতে এবং নীতি বাস্তবায়নে।
+• ব্যবহারকারীর অভিজ্ঞতা কাস্টমাইজ করতে ও সেবায় আগ্রহ মাপতে।
+• আপডেট, অফার ও প্রচারণা জানাতে।
+
+৩. কুকিজ
+কুকিজ কী?
+কুকিজ হলো ছোট তথ্য ফাইল যা আপনার ডিভাইসে সংরক্ষিত হয়। এগুলো Shadamon.com-কে আপনার ডিভাইস চিনতে এবং ব্যবহারকারীর অভিজ্ঞতা উন্নত করতে সাহায্য করে।
+
+ব্যব্যবহৃত কুকিজের ধরন:
+• সেশন কুকিজ: সেবা চলমান রাখতে।
+• প্রেফারেন্স কুকিজ: সেটিংস মনে রাখার জন্য।
+• সিকিউরিটি কুকিজ: নিরাপত্তা রক্ষা করতে।
+আপনি আপনার ব্রাউজার সেটিংস থেকে কুকিজ নিয়ন্ত্রণ করতে বা প্রত্যাখ্যান করতে পারেন। তবে কিছু ফিচার কাজ নাও করতে পারে।
+
+৪. তথ্য শেয়ারিং ও প্রকাশ
+Shadamon.com ব্যবহারকারীর অনুমতি ছাড়া তথ্য বিক্রি বা ভাড়া দেয় না। তথ্য শেয়ার করা হতে পারে:
+• সেই বিক্রেতাদের সঙ্গে যাদের সাথে আপনি যোগাযোগ করেছেন বা আগ্রহ দেখিয়েছেন।
+• আইনি প্রয়োজন অনুযায়ী Authorities-এর সাথে।
+• পার্টনারদের সঙ্গে সেবা পরিচালনা, বিশ্লেষণ, মার্কেটিং ও উন্নয়নের জন্য।
+
+৫. যোগাযোগ ও ইমেল
+আপনি Shadamon.com ব্যবহার করলে বিজ্ঞাপন বা অফার সম্পর্কিত মেসেজ পেতে পারেন। 
+ব্যবহারকারীরা আমাদের টুল ব্যবহার করে স্প্যাম পাঠাতে পারবেন না। Shadamon.com মেসেজ মনিটর করে যেকোনো ক্ষতিকর কনটেন্ট প্রতিরোধ করে।
+
+৬. নিরাপত্তা
+• আমরা এনক্রিপশন, পাসওয়ার্ড ও অন্যান্য পদ্ধতি ব্যবহার করে ব্যক্তিগত তথ্য রক্ষা করি।
+• ব্যক্তিগত তথ্য গোপন রাখা হয় যতক্ষণ না আপনি নিজে শেয়ার করেন। অন্যদের যোগাযোগ তথ্য প্রকাশ করা নিষিদ্ধ।
+
+৭. আনসাবস্ক্রাইব ও তথ্য অপসারণ
+আপনি যেকোনো সময় আপনার ব্যক্তিগত তথ্য পর্যালোচনা বা মুছে ফেলার জন্য আমাদের সাথে যোগাযোগ করতে পারেন।
+
+৮. বিজ্ঞাপন ও রিমার্কেটিং
+Shadamon.com প্রদর্শনী বিজ্ঞাপন এবং রিমার্কেটিং ব্যবহার করে।`}
             />
         </div>
     );
