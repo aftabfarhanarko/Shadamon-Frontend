@@ -166,7 +166,7 @@ export default function SearchModal({
                                             <img
                                                 src={getImageUrl(ad.images[0])}
                                                 alt=""
-                                                className="w-full h-full object-cover"
+                                                className="w-full h-full object-contain"
                                                 onError={(e) => (e.currentTarget.src = "/placeholder.png")}
                                             />
                                         </div>

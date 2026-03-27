@@ -217,7 +217,7 @@ export default function MobileEntryModal({ isOpen, onClose, onUserExists, onUser
                 <div className="flex-1 overflow-y-auto px-6 pb-32">
                     {/* Site Logo */}
                     <div className="mt-4 flex flex-col items-center mb-4">
-                        <div className="relative w-[80px] h-[40px] mb-2 flex items-center justify-center">
+                        <div className="relative w-[150px] h-[60px] mb-0 flex items-center justify-center">
                             {settings.siteLogo ? (
                                 <img
                                     src={getImageUrl(settings.siteLogo)}

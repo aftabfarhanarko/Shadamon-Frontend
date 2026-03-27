@@ -22,13 +22,14 @@ interface PromoteModalProps {
     isOpen: boolean;
     onClose: () => void;
     ad: any;
+    user?: any;
 }
 
 const DIVISIONS = [
     "Dhaka", "Chattogram", "Rajshahi", "Khulna", "Barishal", "Sylhet", "Rangpur", "Mymensingh"
 ];
 
-export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps) {
+export default function PromoteModal({ isOpen, onClose, ad, user }: PromoteModalProps) {
     const { t } = useLanguage();
 
     // Form States
@@ -303,7 +304,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                 body: JSON.stringify({
                     adId: ad._id,
                     totalAmount,
-                    userName: ad.userName || "Customer",
+                    userName: user?.name || ad?.userName || "Customer",
                     userMobile: ad.phone || "01700000000",
                     description: `Promotion for Ad: ${ad.headline}`,
                     promotionDetails
@@ -396,7 +397,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                     {/* <div className="bg-white rounded-lg p-2 shadow-sm border border-slate-400">
                         <div className="flex gap-3 mb-2">
                             <div className="w-20 h-16 rounded overflow-hidden shrink-0 relative">
-                                <img src={mainImage} className="w-full h-full object-cover" alt="ad" />
+                                <img src={mainImage} className="w-full h-full object-contain" alt="ad" />
                                 <div className="absolute top-1 left-1 bg-white px-1 py-0.5 rounded text-[8px] text-black shadow-sm">See Live</div>
                             </div>
                             <div className="flex-1 min-w-0">
@@ -429,7 +430,7 @@ export default function PromoteModal({ isOpen, onClose, ad }: PromoteModalProps)
                     <div className="bg-white rounded-lg p-0">
                         <div className="flex gap-3 mb-3 items-stretch">
                             <div className="w-[110px] rounded overflow-hidden shrink-0 relative">
-                                <img src={mainImage} className="w-full h-full object-cover absolute inset-0" alt="ad" loading="lazy" />
+                                <img src={mainImage} className="w-full h-full object-contain absolute inset-0" alt="ad" loading="lazy" />
                                 <button
                                     onClick={() => setSelectedDetailAd(ad)}
                                     className="absolute top-1 left-1 bg-white/90 text-[8px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm text-slate-700 hover:bg-white z-10"

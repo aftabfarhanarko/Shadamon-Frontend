@@ -9,7 +9,7 @@ const withPWA = require("next-pwa")({
 
 const nextConfig: NextConfig = {
   /* config options here */
-  output: 'export',
+  // output: 'export',
 };
 
 export default withPWA(nextConfig);

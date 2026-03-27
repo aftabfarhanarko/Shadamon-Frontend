@@ -22,7 +22,7 @@ import { getImageUrl } from '../../utils/imageUrl';
 import { getNonHighlightLabels, hasHighlightLabel } from '../../utils/labels';
 import Image from 'next/image';
 import LatestFreeAdPromo from '../../components/LatestFreeAdPromo';
-import AdDetailsModal from '../../components/AdDetailsModal';
+
 import FilterModal, { FilterState } from '../../components/FilterModal';
 import Cookies from 'js-cookie';
 import { toast } from 'react-hot-toast';
@@ -132,7 +132,6 @@ export default function DashboardClient() {
     const [expandedLocation, setExpandedLocation] = useState<string | null>(null);
     const [activeSelectorTab, setActiveSelectorTab] = useState<'category' | 'location'>('category');
     const [showLocationFilter, setShowLocationFilter] = useState(false);
-    const [selectedAd, setSelectedAd] = useState<ActiveAd | null>(null);
     const [headerOffset, setHeaderOffset] = useState(0);
 
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -310,64 +309,7 @@ export default function DashboardClient() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filters, router]);
 
-    // Effect to handle URL-based modal opening
-    useEffect(() => {
-        const adParam = searchParams.get('ad');
-        if (adParam) {
-            // Extract ID from slug--ID format if present
-            const idMatch = adParam.match(/--([a-f\d]{24})$/i);
-            const adId = idMatch ? idMatch[1] : adParam;
 
-            // Always fetch to increment views and get fresh data
-            fetch(`${API_BASE_URL}/api/ads/public/${adId}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        const ad = data.data;
-                        if (ad.promoteType === 'traffic' && ad.trafficLink) {
-                            const directLink = ad.trafficLink.startsWith('http') ? ad.trafficLink : `https://${ad.trafficLink}`;
-                            window.open(directLink, '_blank');
-                            // Clear the param and stay on dashboard
-                            const params = new URLSearchParams(searchParams.toString());
-                            params.delete('ad');
-                            router.replace(params.toString() ? `/dashboard?${params.toString()}` : '/dashboard', { scroll: false });
-                            // Don't return, so setSelectedAd(ad) is also called
-                        }
-                        setSelectedAd(ad);
-                    } else {
-                        // Fallback to local data if fetch fails
-                        const foundAd = ads.find(a => a._id === adId);
-                        if (foundAd) {
-                            if (foundAd.promoteType === 'traffic' && foundAd.trafficLink) {
-                                const directLink = foundAd.trafficLink.startsWith('http') ? foundAd.trafficLink : `https://${foundAd.trafficLink}`;
-                                window.open(directLink, '_blank');
-                                // Clear the param and stay on dashboard
-                                const params = new URLSearchParams(searchParams.toString());
-                                params.delete('ad');
-                                router.replace(params.toString() ? `/dashboard?${params.toString()}` : '/dashboard', { scroll: false });
-                                // Don't return, so setSelectedAd(foundAd) is also called
-                            }
-                            setSelectedAd(foundAd);
-                        }
-                    }
-                })
-                .catch(err => {
-                    console.error("Error fetching specific ad:", err);
-                    const foundAd = ads.find(a => a._id === adId);
-                    if (foundAd) {
-                        if (foundAd.promoteType === 'traffic' && foundAd.trafficLink) {
-                            const directLink = foundAd.trafficLink.startsWith('http') ? foundAd.trafficLink : `https://${foundAd.trafficLink}`;
-                            window.open(directLink, '_blank');
-                            setSelectedAd(foundAd);
-                            return;
-                        }
-                        setSelectedAd(foundAd);
-                    }
-                });
-        } else {
-            setSelectedAd(null);
-        }
-    }, [searchParams, ads, router]);
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -761,7 +703,7 @@ export default function DashboardClient() {
                                                                 {cat.icon && getImageUrl(cat.icon) ? (
                                                                     <img
                                                                         src={getImageUrl(cat.icon) || undefined}
-                                                                        className="w-4 h-4 object-cover shrink-0"
+                                                                        className="w-4 h-4 object-contain shrink-0"
                                                                         alt=""
                                                                         loading="lazy"
                                                                     />
@@ -795,7 +737,7 @@ export default function DashboardClient() {
                                                                             {sub.image && getImageUrl(sub.image) ? (
                                                                                 <img
                                                                                     src={getImageUrl(sub.image) || undefined}
-                                                                                    className="w-4 h-4 object-cover shrink-0"
+                                                                                    className="w-4 h-4 object-contain shrink-0"
                                                                                     alt=""
                                                                                     loading="lazy"
                                                                                 />
@@ -878,7 +820,7 @@ export default function DashboardClient() {
                                                                     {sub.image && getImageUrl(sub.image) ? (
                                                                         <img
                                                                             src={getImageUrl(sub.image) || undefined}
-                                                                            className="w-4 h-4 object-cover shrink-0"
+                                                                            className="w-4 h-4 object-contain shrink-0"
                                                                             alt=""
                                                                             loading="lazy"
                                                                         />
@@ -1188,14 +1130,14 @@ export default function DashboardClient() {
                                                             <img
                                                                 src={getImageUrl(cat.icon) || undefined}
                                                                 alt={cat.name}
-                                                                className="w-full h-full object-cover"
+                                                                className="w-full h-full object-contain"
                                                                 loading="lazy"
                                                             />
                                                         ) : (
                                                             <img
                                                                 src={`https://placehold.co/100x100?text=${cat.name.charAt(0)}`}
                                                                 alt={cat.name}
-                                                                className="w-full h-full object-cover opacity-50"
+                                                                className="w-full h-full object-contain opacity-50"
                                                                 loading="lazy"
                                                             />
                                                         )}
@@ -1268,14 +1210,14 @@ export default function DashboardClient() {
                                                             <img
                                                                 src={getImageUrl(loc.image) || undefined}
                                                                 alt={loc.name}
-                                                                className="w-full h-full object-cover"
+                                                                className="w-full h-full object-contain"
                                                                 loading="lazy"
                                                             />
                                                         ) : (
                                                             <img
                                                                 src={`https://placehold.co/100x100?text=${loc.name.charAt(0)}`}
                                                                 alt={loc.name}
-                                                                className="w-full h-full object-cover opacity-50"
+                                                                className="w-full h-full object-contain opacity-50"
                                                                 loading="lazy"
                                                             />
                                                         )}
@@ -1455,12 +1397,12 @@ export default function DashboardClient() {
                                                                             <img
                                                                                 src={getImageUrl(block.bigAd.images?.[0]) || undefined}
                                                                                 alt=""
-                                                                                className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-70"
+                                                                                className="absolute inset-0 w-full h-full object-contain blur-xl scale-110 opacity-70"
                                                                             />
                                                                             <img
                                                                                 src={getImageUrl(block.bigAd.images?.[0]) || undefined}
                                                                                 alt={block.bigAd.headline}
-                                                                                className="relative z-10 w-full h-full object-cover"
+                                                                                className="relative z-10 w-full h-full object-contain"
                                                                                 loading="lazy"
                                                                             />
                                                                         </>
@@ -1540,9 +1482,9 @@ export default function DashboardClient() {
                                                                                     <img
                                                                                         src={getImageUrl(ad.images?.[0]) || undefined}
                                                                                         alt=""
-                                                                                        className="absolute inset-0 w-full h-full object-cover blur-lg scale-110 opacity-60"
+                                                                                        className="absolute inset-0 w-full h-full object-contain blur-lg scale-110 opacity-60"
                                                                                     />
-                                                                                    <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-cover" loading="lazy" />
+                                                                                    <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-contain" loading="lazy" />
                                                                                 </>
                                                                             )}
                                                                             {getNonHighlightLabels(ad).length > 0 && (
@@ -1631,9 +1573,9 @@ export default function DashboardClient() {
                                                                                 <img
                                                                                     src={getImageUrl(ad.images?.[0]) || undefined}
                                                                                     alt=""
-                                                                                    className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-70"
+                                                                                    className="absolute inset-0 w-full h-full object-contain blur-xl scale-110 opacity-70"
                                                                                 />
-                                                                                <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-cover" loading="lazy" />
+                                                                                <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-contain" loading="lazy" />
                                                                             </>
                                                                         )}
                                                                         {getNonHighlightLabels(ad).length > 0 && (
@@ -1698,7 +1640,7 @@ export default function DashboardClient() {
                                                                         <img
                                                                             src={getImageUrl(user.photo) || undefined}
                                                                             alt={user.storeName || user.name}
-                                                                            className="w-full h-full object-cover"
+                                                                            className="w-full h-full object-contain"
                                                                             loading="lazy"
                                                                         />
                                                                     ) : (
@@ -1746,17 +1688,7 @@ export default function DashboardClient() {
                     })()
                 )}
 
-                <AdDetailsModal
-                    isOpen={!!selectedAd}
-                    onClose={() => {
-                        setSelectedAd(null);
-                        const params = new URLSearchParams(searchParams.toString());
-                        params.delete('ad');
-                        const queryString = params.toString();
-                        router.push(queryString ? `/dashboard?${queryString}` : '/dashboard', { scroll: false });
-                    }}
-                    ad={selectedAd}
-                />
+
 
                 <FilterModal
                     isOpen={isFilterModalOpen}
@@ -1814,7 +1746,7 @@ export default function DashboardClient() {
                                                 <img
                                                     src={getImageUrl(user.photo) || undefined}
                                                     alt={user.storeName || user.name}
-                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                                                    className="w-full h-full object-contain group-hover:scale-110 transition-transform"
                                                     loading="lazy"
                                                 />
                                             ) : (

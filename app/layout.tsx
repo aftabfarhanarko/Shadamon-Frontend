@@ -109,7 +109,6 @@ export default function RootLayout({
         <RegisterServiceWorker />
         <div id="fb-root"></div>
         <script async defer crossOrigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
-{/* 
         <script dangerouslySetInnerHTML={{
           __html: `
             window.fbAsyncInit = function() {
@@ -120,23 +119,9 @@ export default function RootLayout({
                 version    : 'v18.0'
               });
             };
-
-            if ('serviceWorker' in navigator) {
-              window.addEventListener('load', function() {
-                if (window.workbox) {
-                  window.workbox.register();
-                  return;
-                }
-
-                navigator.serviceWorker.register('/sw.js').then(function(registration) {
-                  console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                }, function(err) {
-                  console.log('ServiceWorker registration failed: ', err);
-                });
-              });
-            }
           `
-        }} /> */}
+        }} />
+
         <script src="https://accounts.google.com/gsi/client" async defer></script>
 
         <SettingsProvider>

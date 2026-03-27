@@ -318,18 +318,18 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                 <img
                                     src={getImageUrl(images[currentImageIndex]) || undefined}
                                     alt=""
-                                    className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60"
+                                    className="absolute inset-0 w-full h-full object-contain blur-2xl scale-110 opacity-60"
                                 />
                                 <img
                                     src={getImageUrl(images[currentImageIndex]) || undefined}
                                     alt={ad.headline}
-                                    className="relative z-10 w-full h-full object-cover cursor-pointer"
+                                    className="relative z-10 w-full h-full object-contain cursor-pointer"
                                     onClick={() => setIsExpanded(true)}
                                     loading="lazy"
                                 />
                                 {ad.adType === 'Promoted' && settings.watermarkLogo && (
                                     <div className="absolute bottom-4 right-4 z-20 pointer-events-none opacity-100">
-                                        <img src={getImageUrl(settings.watermarkLogo)} alt="" className="w-30 h-20 object-cover" />
+                                        <img src={getImageUrl(settings.watermarkLogo)} alt="" className="w-30 h-20 object-contain" />
                                     </div>
                                 )}
                             </>
@@ -865,7 +865,7 @@ I have sent my CV for your review.`;
                                                 <img
                                                     src={getImageUrl(pad.images?.[0] || '')}
                                                     alt={pad.headline}
-                                                    className="w-full h-full object-cover"
+                                                    className="w-full h-full object-contain"
                                                     loading="lazy"
                                                 />
                                                 {/* Top Left Badge */}
@@ -933,7 +933,7 @@ I have sent my CV for your review.`;
                                         <img
                                             src={getImageUrl((ad as any).user?.storeLogo)}
                                             alt="Seller"
-                                            className="w-full h-full object-cover"
+                                            className="w-full h-full object-contain"
                                             loading="lazy"
                                         />
                                     ) : (
@@ -1017,7 +1017,7 @@ I have sent my CV for your review.`;
                                                     <img
                                                         src={getImageUrl(sad.images?.[0]) || ''}
                                                         alt={sad.headline}
-                                                        className="w-full h-full object-cover"
+                                                        className="w-full h-full object-contain"
                                                         loading="lazy"
                                                     />
                                                 )}
@@ -1303,7 +1303,7 @@ I have sent my CV for your review.`;
                                 <img
                                     src={getImageUrl(images[currentImageIndex]) || undefined}
                                     alt=""
-                                    className="absolute inset-0 w-full h-full object-cover blur-3xl scale-110 opacity-50"
+                                    className="absolute inset-0 w-full h-full object-contain blur-3xl scale-110 opacity-50"
                                 />
                                 <div className="relative z-10 w-full h-full flex items-center justify-center p-4">
                                     {images.length > 1 && (
@@ -1315,13 +1315,13 @@ I have sent my CV for your review.`;
                                     <img
                                         src={getImageUrl(images[currentImageIndex]) || undefined}
                                         alt="Expanded View"
-                                        className="max-w-full max-h-full object-cover shadow-2xl"
+                                        className="max-w-full max-h-full object-contain shadow-2xl"
                                         loading="lazy"
                                     />
 
                                     {ad.adType === 'Promoted' && settings.watermarkLogo && (
                                         <div className="absolute bottom-10 right-10 z-30 pointer-events-none opacity-50">
-                                            <img src={getImageUrl(settings.watermarkLogo)} alt="" className="w-24 h-24 object-cover" />
+                                            <img src={getImageUrl(settings.watermarkLogo)} alt="" className="w-24 h-24 object-contain" />
                                         </div>
                                     )}
 
@@ -1344,7 +1344,7 @@ I have sent my CV for your review.`;
                                 className={`w-12 h-12 rounded overflow-hidden flex-shrink-0 border-2 transition-all ${currentImageIndex === idx ? 'border-white opacity-100' : 'border-transparent opacity-50 hover:opacity-100'
                                     }`}
                             >
-                                <img src={getImageUrl(img) || undefined} className="w-full h-full object-cover" loading="lazy" />
+                                <img src={getImageUrl(img) || undefined} className="w-full h-full object-contain" loading="lazy" />
                             </button>
                         ))}
                     </div>

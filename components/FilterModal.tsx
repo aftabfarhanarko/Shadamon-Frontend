@@ -225,41 +225,6 @@ export default function FilterModal({
                                         <span className="text-sm text-black">{translate('All', 'সব')}</span>
                                     </label>
 
-                                    {/* Profile Verify Badge */}
-                                    <label key="Verified" className="flex items-center gap-2.5 cursor-pointer group">
-                                        <div className={cn(
-                                            "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
-                                            filters.promoteTag === 'Verified' ? "border-[#0088cc] bg-white" : "border-slate-300 group-hover:border-slate-400"
-                                        )}>
-                                            {filters.promoteTag === 'Verified' && <div className="w-2.5 h-2.5 rounded-full bg-[#0088cc]" />}
-                                        </div>
-                                        <input
-                                            type="radio"
-                                            className="hidden"
-                                            checked={filters.promoteTag === 'Verified'}
-                                            onChange={() => setFilters({ ...filters, promoteTag: 'Verified' })}
-                                        />
-                                        <span className="text-sm text-black">{translate('Profile Verify Badge', 'প্রোফাইল ভেরিফাই ব্যাজ')}</span>
-                                    </label>
-
-                                    {/* Highlight Post */}
-                                    <label key="Highlights" className="flex items-center gap-2.5 cursor-pointer group">
-                                        <div className={cn(
-                                            "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
-                                            filters.promoteTag === 'Highlights' ? "border-[#0088cc] bg-white" : "border-slate-300 group-hover:border-slate-400"
-                                        )}>
-                                            {filters.promoteTag === 'Highlights' && <div className="w-2.5 h-2.5 rounded-full bg-[#0088cc]" />}
-                                        </div>
-                                        <input
-                                            type="radio"
-                                            className="hidden"
-                                            checked={filters.promoteTag === 'Highlights'}
-                                            onChange={() => setFilters({ ...filters, promoteTag: 'Highlights' })}
-                                        />
-                                        <div className="bg-[#ff4d4d] text-white px-2 py-0.5 rounded text-[11px]">
-                                            {translate("Highlights", "হাইলাইটস")}
-                                        </div>
-                                    </label>
 
                                     {/* Dynamic Labels from Premier Opportunity */}
                                     {premierData?.labels?.map((label: any) => (

@@ -360,7 +360,7 @@ export default function ChatMessageModal({ isOpen, onClose, onBack, ad, otherUse
                     <div className="flex gap-3">
                         <div className="w-16 h-16 bg-slate-100 rounded-full overflow-hidden shrink-0 border border-slate-50">
                             {ad?.images?.[0] ? (
-                                <img src={getImageUrl(ad.images[0])} alt="" className="w-full h-full object-cover" />
+                                <img src={getImageUrl(ad.images[0])} alt="" className="w-full h-full object-contain" />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-400"></div>
                             )}
@@ -432,7 +432,7 @@ export default function ChatMessageModal({ isOpen, onClose, onBack, ad, otherUse
                                         {!isMe && (
                                             <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden shrink-0 mt-1">
                                                 {ad.images?.[0] ? (
-                                                    <img src={getImageUrl(ad.images[0])} alt="" className="w-full h-full object-cover" />
+                                                    <img src={getImageUrl(ad.images[0])} alt="" className="w-full h-full object-contain" />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-400 font-bold"></div>
                                                 )}
@@ -478,7 +478,7 @@ export default function ChatMessageModal({ isOpen, onClose, onBack, ad, otherUse
                                                     <div className="flex items-center">
                                                         {msg.status === 'seen' ? (
                                                             <div className="w-3.5 h-3.5 rounded-full overflow-hidden border border-white/50 shadow-sm">
-                                                                <img src={getImageUrl(otherUserPhoto || ad.images?.[0])} alt="" className="w-full h-full object-cover" />
+                                                                <img src={getImageUrl(otherUserPhoto || ad.images?.[0])} alt="" className="w-full h-full object-contain" />
                                                             </div>
                                                         ) : (
                                                             <span className="text-[10px] text-slate-400 font-bold italic">Delivery</span>
@@ -509,7 +509,7 @@ export default function ChatMessageModal({ isOpen, onClose, onBack, ad, otherUse
                     {imagePreview && (
                         <div className="absolute left-6 -top-24 bg-white p-1 rounded-lg shadow-xl border border-slate-200 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div className="relative w-20 h-20 rounded-md overflow-hidden bg-slate-50">
-                                <img src={imagePreview} alt="upload preview" className="w-full h-full object-cover" />
+                                <img src={imagePreview} alt="upload preview" className="w-full h-full object-contain" />
                                 <button
                                     onClick={() => { setSelectedImage(null); setImagePreview(null); }}
                                     className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5"
