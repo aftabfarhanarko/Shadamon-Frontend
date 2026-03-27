@@ -312,13 +312,13 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                 >
 
                     {/* 2. Image Gallery */}
-                    <div className="relative w-full aspect-[16/9] overflow-hidden group">
+                    <div className="relative w-full aspect-[16/9] overflow-hidden group bg-slate-50">
                         {hasImages ? (
                             <>
                                 <img
                                     src={getImageUrl(images[currentImageIndex]) || undefined}
                                     alt=""
-                                    className="absolute inset-0 w-full h-full object-contain blur-2xl scale-110 opacity-60"
+                                    className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60"
                                 />
                                 <img
                                     src={getImageUrl(images[currentImageIndex]) || undefined}
@@ -1303,7 +1303,7 @@ I have sent my CV for your review.`;
                                 <img
                                     src={getImageUrl(images[currentImageIndex]) || undefined}
                                     alt=""
-                                    className="absolute inset-0 w-full h-full object-contain blur-3xl scale-110 opacity-50"
+                                    className="absolute inset-0 w-full h-full object-cover blur-3xl scale-110 opacity-50"
                                 />
                                 <div className="relative z-10 w-full h-full flex items-center justify-center p-4">
                                     {images.length > 1 && (

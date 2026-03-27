@@ -1397,7 +1397,7 @@ export default function DashboardClient() {
                                                                             <img
                                                                                 src={getImageUrl(block.bigAd.images?.[0]) || undefined}
                                                                                 alt=""
-                                                                                className="absolute inset-0 w-full h-full object-contain blur-xl scale-110 opacity-70"
+                                                                                className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-70"
                                                                             />
                                                                             <img
                                                                                 src={getImageUrl(block.bigAd.images?.[0]) || undefined}
@@ -1482,7 +1482,7 @@ export default function DashboardClient() {
                                                                                     <img
                                                                                         src={getImageUrl(ad.images?.[0]) || undefined}
                                                                                         alt=""
-                                                                                        className="absolute inset-0 w-full h-full object-contain blur-lg scale-110 opacity-60"
+                                                                                        className="absolute inset-0 w-full h-full object-cover blur-lg scale-110 opacity-60"
                                                                                     />
                                                                                     <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-contain" loading="lazy" />
                                                                                 </>
@@ -1573,7 +1573,7 @@ export default function DashboardClient() {
                                                                                 <img
                                                                                     src={getImageUrl(ad.images?.[0]) || undefined}
                                                                                     alt=""
-                                                                                    className="absolute inset-0 w-full h-full object-contain blur-xl scale-110 opacity-70"
+                                                                                    className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-70"
                                                                                 />
                                                                                 <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-contain" loading="lazy" />
                                                                             </>
