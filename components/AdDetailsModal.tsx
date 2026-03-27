@@ -861,11 +861,16 @@ I have sent my CV for your review.`;
                                                 }
                                             }}
                                         >
-                                            <div className="relative h-40 bg-slate-100">
+                                            <div className="relative h-40 bg-slate-100 overflow-hidden">
+                                                <img
+                                                    src={getImageUrl(pad.images?.[0] || '')}
+                                                    alt=""
+                                                    className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60"
+                                                />
                                                 <img
                                                     src={getImageUrl(pad.images?.[0] || '')}
                                                     alt={pad.headline}
-                                                    className="w-full h-full object-contain"
+                                                    className="relative z-10 w-full h-full object-contain"
                                                     loading="lazy"
                                                 />
                                                 {/* Top Left Badge */}
@@ -1012,14 +1017,21 @@ I have sent my CV for your review.`;
                                                 }
                                             }}
                                         >
-                                            <div className="w-24 h-20 bg-slate-100 rounded bg-cover bg-center shrink-0 relative overflow-hidden">
+                                            <div className="w-24 h-20 bg-slate-100 rounded shrink-0 relative overflow-hidden">
                                                 {getImageUrl(sad.images?.[0]) && (
-                                                    <img
-                                                        src={getImageUrl(sad.images?.[0]) || ''}
-                                                        alt={sad.headline}
-                                                        className="w-full h-full object-contain"
-                                                        loading="lazy"
-                                                    />
+                                                    <>
+                                                        <img
+                                                            src={getImageUrl(sad.images?.[0]) || ''}
+                                                            alt=""
+                                                            className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60"
+                                                        />
+                                                        <img
+                                                            src={getImageUrl(sad.images?.[0]) || ''}
+                                                            alt={sad.headline}
+                                                            className="relative z-10 w-full h-full object-contain"
+                                                            loading="lazy"
+                                                        />
+                                                    </>
                                                 )}
                                                 {getNonHighlightLabels(sad).length > 0 && (
                                                     <div className="absolute top-1 left-1 z-20 flex flex-col gap-0.5">

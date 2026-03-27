@@ -80,6 +80,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [hidePhone, setHidePhone] = useState(false);
     const [price, setPrice] = useState("");
     const [priceType, setPriceType] = useState("Negotiable");
+    const [email, setEmail] = useState("");
     const [hasReadRules, setHasReadRules] = useState(true);
     const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
     const [userData, setUserData] = useState<any>(null);
@@ -201,9 +202,16 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 setMobileCheckResult(null);
 
                 if (initialMobile) {
-                    setPhone(initialMobile);
+                    if (initialMobile.includes('@')) {
+                        setEmail(initialMobile);
+                        setPhone("");
+                    } else {
+                        setPhone(initialMobile);
+                        setEmail("");
+                    }
                 } else {
                     setPhone("");
+                    setEmail("");
                 }
                 setSubmissionStatus(null);
                 // View reset handled in checkUser
@@ -453,15 +461,18 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     // Actual submission logic moved here
     const submitAd = async (authToken?: string, wasOtpVerified: boolean = false) => {
         let token = authToken || Cookies.get('token');
+        let finalPhone = phone.trim();
 
         // Auto-Auth if needed
         if (!token && !isUserLoggedIn) {
             try {
-                const currentMobileCheck = mobileCheckResult || await checkMobileStatus(phone);
+                const currentMobileCheck = email ? { exists: true } : (mobileCheckResult || await checkMobileStatus(phone));
                 const trimmedPhone = phone.trim();
-                const loginPayload = /^\d{11}$/.test(trimmedPhone)
-                    ? { mobile: trimmedPhone, password }
-                    : { email: trimmedPhone, password };
+                const loginPayload = email 
+                    ? { email: email.trim(), password }
+                    : /^\d{11}$/.test(trimmedPhone)
+                        ? { mobile: trimmedPhone, password }
+                        : { email: trimmedPhone, password };
 
                 let res;
                 let data;
@@ -493,9 +504,15 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                         return;
                     }
                 }
-
                 token = data.token;
                 Cookies.set('token', token as string, { expires: 7 }); // Save token
+                
+                // If we logged in with email, we should also check if the user we just logged in as
+                // already has a mobile number. If so, update the phone state.
+                if (data.user?.mobile) {
+                    finalPhone = data.user.mobile;
+                    setPhone(data.user.mobile);
+                }
             } catch (err) {
                 toast.error("Authentication Error");
                 setLoading(false);
@@ -512,7 +529,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             formData.append('subCategory', selectedSubCategory);
             formData.append('location', selectedLocation);
             formData.append('subLocation', selectedSubLocation);
-            formData.append('phone', phone);
+            formData.append('phone', finalPhone);
             formData.append('name', name);
             formData.append('hidePhone', String(hidePhone));
             formData.append('additionalPhones', JSON.stringify(additionalPhones));
@@ -1283,15 +1300,15 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                             <input
                                                 type="tel"
                                                 value={phone}
-                                                readOnly={!!(userData?.mobile || initialMobile || editAd?.phone)}
+                                                readOnly={!!(userData?.mobile || (initialMobile && !initialMobile.includes('@')) || editAd?.phone)}
                                                 onChange={(e) => setPhone(e.target.value)}
                                                 placeholder={t('phone_number_placeholder')}
                                                 className={cn(
                                                     "flex-1 text-[14px] text-black tracking-wide focus:outline-none bg-transparent",
-                                                    (userData?.mobile || initialMobile || editAd?.phone) ? "cursor-not-allowed" : "cursor-text"
+                                                    (userData?.mobile || (initialMobile && !initialMobile.includes('@')) || editAd?.phone) ? "cursor-not-allowed" : "cursor-text"
                                                 )}
                                             />
-                                            {!(userData?.mobile || initialMobile || editAd?.phone) && (
+                                            {!(userData?.mobile || (initialMobile && !initialMobile.includes('@')) || editAd?.phone) && (
                                                 <button
                                                     onClick={() => {
                                                         if (additionalPhones.length > 0) {
