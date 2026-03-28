@@ -943,7 +943,7 @@ I have sent my CV for your review.`;
                                         />
                                     ) : (
                                         <div className="w-full h-full bg-red-600 flex items-center justify-center text-white text-xl font-bold">
-                                            {(ad as any).user?.storeName?.charAt(0) || 'S'}
+                                            {(ad as any).user?.storeName?.charAt(0) || (ad as any).user?.name?.charAt(0) || 'S'}
                                         </div>
                                     )}
                                 </div>
@@ -960,7 +960,7 @@ I have sent my CV for your review.`;
                                                 window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: (ad as any).user?._id } }));
                                             }}
                                         >
-                                            {(ad as any).user?.storeName || 'Store Name'}
+                                            {(ad as any).user?.storeName || (ad as any).user?.name || 'Store Name'}
                                         </h4>
                                         {(ad as any).user?.mVerified && (
                                             <VerifiedBadge className="-mt-0.5 ml-1" iconClassName="w-5 h-5" tooltipWidthClassName="w-[240px]" />
