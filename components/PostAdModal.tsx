@@ -115,7 +115,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [showOtpVerification, setShowOtpVerification] = useState(false);
     const [otp, setOtp] = useState(["", "", "", "", "", ""]);
     const [otpTimer, setOtpTimer] = useState(300);
-    const [isEditingPhone, setIsEditingPhone] = useState(false);
+
     const [showTnC, setShowTnC] = useState(false);
     const [showPrivacy, setShowPrivacy] = useState(false);
     const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -198,7 +198,6 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 setShowOtpVerification(false);
                 setOtp(["", "", "", "", "", ""]);
                 setOtpTimer(300);
-                setIsEditingPhone(false);
                 setMobileCheckResult(null);
 
                 if (initialMobile) {
@@ -460,11 +459,6 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         }
     };
 
-    const handlePhoneEditSubmit = () => {
-        setIsEditingPhone(false);
-        setOtp(["", "", "", "", "", ""]);
-        sendMobileOtp();
-    };
 
     // Actual submission logic moved here
     const submitAd = async (otpValue?: string, wasOtpVerified: boolean = false) => {
@@ -1094,35 +1088,19 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                 <div className="bg-white rounded-lg p-5 border border-slate-100 min-h-[300px] flex flex-col items-center justify-center font-sans animate-in fade-in slide-in-from-right duration-300">
                                     <div className="w-full max-w-xs space-y-4">
                                         <h3 className="text-[17px] font-bold text-slate-800 text-left">{t('enter_the_otp')}</h3>
-                                        {isEditingPhone ? (
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="tel"
-                                                    value={phone}
-                                                    onChange={(e) => setPhone(e.target.value)}
-                                                    className="flex-1 border border-slate-300 rounded px-2 py-1 text-sm text-slate-700 font-bold focus:outline-none focus:border-black"
-                                                    autoFocus
-                                                />
+                                        <p className="text-[14px] text-slate-500 text-left">
+                                            {t('enter_otp_sent_to')} <span className="font-bold text-slate-700">{phone}</span>
+                                            {!(userData?.mobile || (initialMobile && !initialMobile.includes('@')) || editAd?.phone) && (
                                                 <button
-                                                    onClick={handlePhoneEditSubmit}
-                                                    className="bg-black text-white text-[11px] px-3 py-1.5 rounded font-bold hover:bg-slate-800 transition-colors whitespace-nowrap"
+                                                    onClick={() => {
+                                                        setShowOtpVerification(false);
+                                                    }}
+                                                    className="text-[#0088cc] hover:underline cursor-pointer font-medium ml-1"
                                                 >
-                                                    {t('resend_otp')}
+                                                    {t('edit_btn')}
                                                 </button>
-                                            </div>
-                                        ) : (
-                                            <p className="text-[14px] text-slate-500 text-left">
-                                                {t('enter_otp_sent_to')} <span className="font-bold text-slate-700">{phone}</span>
-                                                {!(userData?.mobile || initialMobile || editAd?.phone) && (
-                                                    <button
-                                                        onClick={() => setIsEditingPhone(true)}
-                                                        className="text-[#0088cc] hover:underline cursor-pointer font-medium ml-1"
-                                                    >
-                                                        {t('edit_btn')}
-                                                    </button>
-                                                )}
-                                            </p>
-                                        )}
+                                            )}
+                                        </p>
                                         <div className="flex gap-2 justify-between pt-2">
                                             {otp.map((digit, index) => (
                                                 <input
