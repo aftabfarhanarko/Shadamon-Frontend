@@ -698,13 +698,13 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         setLoading(true);
 
         try {
-            const currentMobileCheck = mobileCheckResult || await checkMobileStatus(trimmedPhone);
+            const currentMobileCheck: any = mobileCheckResult || await checkMobileStatus(trimmedPhone);
 
-            // CASE 1: USER EXISTS (either not logged in OR logged in but entering a different existing mobile)
+            // CASE 1: USER EXISTS (either phone exists OR email already has another phone)
             if (currentMobileCheck?.exists) {
-                // If it exists but doesn't match the current email (mismatch)
+                // If it exists but doesn't match the current email/phone pairing
                 if (currentMobileCheck.matchesEmail === false) {
-                    toast.error("This mobile number is already registered with a different account. Please use a different number.");
+                    toast.error("Account mismatch! This email is already registered with a different mobile number, or this mobile belongs to another account.");
                     setLoading(false);
                     return;
                 }
@@ -719,8 +719,8 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                     return;
                 }
 
-                // Otherwise, it belongs to this email account but phone-only login needed
-                // We MUST verify password first as requested
+                // Otherwise, it belongs to this email account but phone/pass login needed
+                // We MUST verify password first for any existing account (by email or mobile)
                 const loginPayload: any = { mobile: trimmedPhone, password };
                 if (email) {
                     loginPayload.email = email;
@@ -733,12 +733,12 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 const loginData = await loginRes.json();
 
                 if (!loginRes.ok || !loginData.token) {
-                    toast.error(loginData.message || "Invalid password for this mobile number");
+                    toast.error(loginData.message || "Invalid password for this account");
                     setLoading(false);
                     return;
                 }
 
-                // Login/Verify success
+                // Login success
                 const token = loginData.token;
                 const user = loginData.user;
                 Cookies.set('token', token, { expires: 7 });
@@ -751,8 +751,32 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 } else {
                     sendMobileOtp();
                 }
+            } else if (currentMobileCheck?.emailExists) {
+                // CASE 2: EMAIL EXISTS BUT HAS NO MOBILE
+                // We MUST verify password first to prove ownership of the email account
+                const loginPayload: any = { email, password };
+                const loginRes = await fetch(`${API_BASE_URL}/api/user/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(loginPayload)
+                });
+                const loginData = await loginRes.json();
+
+                if (!loginRes.ok || !loginData.token) {
+                    toast.error(loginData.message || "Invalid password for your account");
+                    setLoading(false);
+                    return;
+                }
+
+                // Ownership verified, now proceed to OTP for the NEW number
+                const token = loginData.token;
+                Cookies.set('token', token, { expires: 7 });
+                setIsUserLoggedIn(true);
+                setUserData(loginData.user);
+                
+                sendMobileOtp();
             } else {
-                // CASE 2: NEW USER / NEW MOBILE
+                // CASE 3: NEW USER / NEW MOBILE / NEW EMAIL
                 // Send OTP, then register and post in handleVerifyOtp -> submitAd
                 sendMobileOtp();
             }
