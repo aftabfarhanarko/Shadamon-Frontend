@@ -1079,7 +1079,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                         <div className="p-4 border-t border-slate-200 bg-slate-50">
                             <button
                                 onClick={() => setView('form')}
-                                className="w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-slate-800 transition-colors"
+                                className="w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-slate-800 transition-colors mb-4"
                             >
                                 {t('continue_btn')}
                             </button>
