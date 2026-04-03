@@ -1439,7 +1439,7 @@ I have sent my CV for your review.`;
                                                             {ad.images && ad.images.length > 0 && (
                                                                 <>
                                                                     <div className="absolute inset-0">
-                                                                        <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-contain blur-md opacity-50 scale-105" loading="lazy" />
+                                                                        <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover blur-xl opacity-50 scale-105" loading="lazy" />
                                                                     </div>
                                                                     <img src={getImageUrl(ad.images[0]) || undefined} className="relative max-w-full max-h-full object-contain z-10" loading="lazy" />
                                                                 </>
@@ -1516,7 +1516,7 @@ I have sent my CV for your review.`;
                                                         {ad.images && ad.images.length > 0 && (
                                                             <>
                                                                 <div className="absolute inset-0">
-                                                                    <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-contain blur-md opacity-50 scale-105" loading="lazy" />
+                                                                    <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover blur-xl opacity-50 scale-105" loading="lazy" />
                                                                 </div>
                                                                 <img src={getImageUrl(ad.images[0]) || undefined} className="relative max-w-full max-h-full object-contain z-10" loading="lazy" />
                                                             </>
@@ -1601,7 +1601,7 @@ I have sent my CV for your review.`;
                                                                 {ad.images && ad.images.length > 0 && (
                                                                     <>
                                                                         <div className="absolute inset-0">
-                                                                            <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-contain blur-md opacity-30 scale-105" loading="lazy" />
+                                                                            <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover blur-xl opacity-30 scale-105" loading="lazy" />
                                                                         </div>
                                                                         <img src={getImageUrl(ad.images[0]) || undefined} className="relative w-full h-full object-contain z-10" loading="lazy" />
                                                                     </>
@@ -1693,7 +1693,7 @@ I have sent my CV for your review.`;
                                         {displayUser.photo ? (
                                             <>
                                                 <div className="absolute inset-0">
-                                                    <img src={displayUser.photo} className="w-full h-full object-contain blur-sm opacity-30 scale-105" loading="lazy" />
+                                                    <img src={displayUser.photo} className="w-full h-full object-cover blur-xl opacity-30 scale-105" loading="lazy" />
                                                 </div>
                                                 <img src={displayUser.photo} className="relative max-w-full max-h-full object-contain z-10" loading="lazy" />
                                             </>
@@ -2216,7 +2216,7 @@ I have sent my CV for your review.`;
                                                             {ad.images && ad.images.length > 0 ? (
                                                                 <>
                                                                     <div className="absolute inset-0">
-                                                                        <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-contain blur-md opacity-30 scale-105" loading="lazy" />
+                                                                        <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover blur-xl opacity-30 scale-105" loading="lazy" />
                                                                     </div>
                                                                     <img
                                                                         src={getImageUrl(ad.images[0]) || undefined}
