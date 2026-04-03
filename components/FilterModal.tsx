@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { X, ArrowLeft, ChevronRight, Loader2, Search, Check, Plus } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { X, ArrowLeft, ChevronRight, Loader2, Search, Check } from 'lucide-react';
+import Select, { type SingleValue } from 'react-select';
 import { useLanguage } from '../app/context/LanguageContext';
 import { API_BASE_URL } from '../utils/apiConfig';
 import { twMerge } from 'tailwind-merge';
@@ -16,8 +17,8 @@ interface FilterModalProps {
     onClose: () => void;
     onApply: (filters: FilterState) => void;
     initialFilters: FilterState;
-    categories: any[];
-    locations: any[];
+    categories: CategoryItem[];
+    locations: LocationItem[];
 }
 
 export interface FilterState {
@@ -28,6 +29,49 @@ export interface FilterState {
     promoteTag: string;
     sort: string;
     search?: string;
+}
+
+interface SubLocationOption {
+    value: string;
+    label: string;
+}
+
+interface SubLocationItem {
+    _id: string;
+    name: string;
+    order?: number;
+    priority?: number;
+}
+
+interface LocationItem {
+    _id: string;
+    name: string;
+    subLocations?: SubLocationItem[];
+}
+
+interface SubCategoryItem {
+    _id: string;
+    name: string;
+}
+
+interface CategoryItem {
+    _id: string;
+    name: string;
+    subcategories?: SubCategoryItem[];
+}
+
+interface AdItem {
+    location?: string;
+    subLocation?: string;
+    category?: string;
+    subCategory?: string;
+}
+
+interface PremierData {
+    labels?: Array<{
+        _id: string;
+        name: string;
+    }>;
 }
 
 export default function FilterModal({
@@ -47,9 +91,10 @@ export default function FilterModal({
     const [searchQuery, setSearchQuery] = useState("");
     const [tempLocation, setTempLocation] = useState<string>("");
     const [tempCategory, setTempCategory] = useState<string>("");
+    const [selectedSubLocationOption, setSelectedSubLocationOption] = useState<SubLocationOption | null>(null);
 
-    const [allAds, setAllAds] = useState<any[]>([]);
-    const [premierData, setPremierData] = useState<any>(null);
+    const [allAds, setAllAds] = useState<AdItem[]>([]);
+    const [premierData, setPremierData] = useState<PremierData | null>(null);
 
     useEffect(() => {
         const fetchPremier = async () => {
@@ -83,9 +128,10 @@ export default function FilterModal({
 
     // Effect to handle direct view opening from external events
     useEffect(() => {
-        const handleOpenView = (e: any) => {
-            if (isOpen && e.detail?.view) {
-                setView(e.detail.view);
+        const handleOpenView = (e: Event) => {
+            const customEvent = e as CustomEvent<{ view?: 'main' | 'location' | 'location-sub' | 'category' | 'category-sub' }>;
+            if (isOpen && customEvent.detail?.view) {
+                setView(customEvent.detail.view);
             }
         };
         window.addEventListener('open-filter-view', handleOpenView);
@@ -140,9 +186,91 @@ export default function FilterModal({
         setFilters(resetFilters);
     };
 
-    if (!isOpen) return null;
-
     const translate = (en: string, bn: string) => language === 'bn' ? bn : en;
+
+    const hasBanglaChars = useCallback((value: string) => /[\u0980-\u09FF]/.test(value), []);
+
+    const getLocalizedAreaName = useCallback((rawName: string) => {
+        const name = String(rawName || '').trim();
+        if (!name) return '';
+
+        const match = name.match(/^(.+?)\s*\((.+)\)\s*$/);
+        if (!match) return name;
+
+        const first = match[1].trim();
+        const second = match[2].trim();
+
+        const firstIsBn = hasBanglaChars(first);
+        const secondIsBn = hasBanglaChars(second);
+
+        if (language === 'bn') {
+            if (firstIsBn && !secondIsBn) return first;
+            if (secondIsBn && !firstIsBn) return second;
+            return firstIsBn ? first : second;
+        }
+
+        if (!firstIsBn && secondIsBn) return first;
+        if (!secondIsBn && firstIsBn) return second;
+        return firstIsBn ? second : first;
+    }, [hasBanglaChars, language]);
+
+    const getPriorityValue = (item: SubLocationItem) => {
+        const priority = Number(item?.priority);
+        return Number.isFinite(priority) ? priority : Number.MAX_SAFE_INTEGER;
+    };
+
+    const getOrderValue = (item: SubLocationItem) => {
+        const order = Number(item?.order);
+        return Number.isFinite(order) ? order : Number.MAX_SAFE_INTEGER;
+    };
+
+    const selectedLocationSubLocations = useMemo(() => {
+        const subLocations = locations.find((l) => l.name === tempLocation)?.subLocations || [];
+        return [...subLocations].sort((a, b) => {
+            const priorityDiff = getPriorityValue(a) - getPriorityValue(b);
+            if (priorityDiff !== 0) return priorityDiff;
+
+            const orderDiff = getOrderValue(a) - getOrderValue(b);
+            if (orderDiff !== 0) return orderDiff;
+
+            return String(a?.name || '').localeCompare(String(b?.name || ''));
+        });
+    }, [locations, tempLocation]);
+
+    const subLocationCountMap = useMemo(() => {
+        const countMap = new Map<string, number>();
+        allAds.forEach((ad) => {
+            if (ad.location === tempLocation && ad.subLocation) {
+                const current = countMap.get(ad.subLocation) || 0;
+                countMap.set(ad.subLocation, current + 1);
+            }
+        });
+        return countMap;
+    }, [allAds, tempLocation]);
+
+    const topPrioritySubLocations = selectedLocationSubLocations.slice(0, 5);
+
+    const subLocationOptions = useMemo(
+        () => selectedLocationSubLocations.map((sub) => {
+            const count = subLocationCountMap.get(sub.name) || 0;
+            return {
+                value: sub.name,
+                label: `${getLocalizedAreaName(sub.name)} (${count.toLocaleString()})`
+            };
+        }),
+        [selectedLocationSubLocations, subLocationCountMap, getLocalizedAreaName]
+    );
+
+    const handleSelectSubLocation = (subLocationName: string) => {
+        setFilters(prev => ({ ...prev, location: tempLocation, subLocation: subLocationName }));
+        setSelectedSubLocationOption(null);
+        setView('main');
+    };
+
+    const selectedLocationLabel = filters.location ? getLocalizedAreaName(filters.location) : "";
+    const selectedSubLocationLabel = filters.subLocation ? getLocalizedAreaName(filters.subLocation) : "";
+
+    if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-[1000] flex items-start justify-center pt-20">
@@ -186,7 +314,7 @@ export default function FilterModal({
                             >
                                 <div className="space-y-0.5">
                                     <span className="text-[15px] text-[#0088cc] font-medium group-hover:underline">
-                                        {filters.location ? `${filters.location}${filters.subLocation ? `, ${filters.subLocation}` : ''}` : translate("Select Location", "লোকেশন নির্বাচন করুন")}
+                                        {filters.location ? `${selectedLocationLabel}${filters.subLocation ? `, ${selectedSubLocationLabel}` : ''}` : translate("Select Location", "লোকেশন নির্বাচন করুন")}
                                     </span>
                                 </div>
                                 <ChevronRight className="w-5 h-5 text-black stroke-[3]" />
@@ -227,7 +355,7 @@ export default function FilterModal({
 
 
                                     {/* Dynamic Labels from Premier Opportunity */}
-                                    {premierData?.labels?.map((label: any) => (
+                                    {premierData?.labels?.map((label) => (
                                         <label key={label._id} className="flex items-center gap-2.5 cursor-pointer group">
                                             <div className={cn(
                                                 "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
@@ -321,12 +449,13 @@ export default function FilterModal({
                                             onClick={() => {
                                                 setTempLocation(loc.name);
                                                 setSearchQuery("");
+                                                setSelectedSubLocationOption(null);
                                                 setView('location-sub');
                                             }}
                                             className="w-full flex items-center justify-between py-1.5 px-4 hover:bg-slate-50 transition-colors text-left"
                                         >
                                             <div className="flex items-center gap-2">
-                                                <span className="text-[15px] font-medium text-slate-800">{loc.name}</span>
+                                                <span className="text-[15px] font-medium text-slate-800">{getLocalizedAreaName(loc.name)}</span>
                                                 <span className="text-[12px] text-slate-500 font-normal">({count.toLocaleString()})</span>
                                             </div>
                                             <div className="flex items-center gap-1">
@@ -343,7 +472,7 @@ export default function FilterModal({
                     {view === 'location-sub' && (
                         <div className="p-0">
                             <div className="bg-slate-50 p-2.5 border-b border-slate-100 flex items-center justify-between">
-                                <h3 className="text-sm font-bold text-slate-800">{tempLocation}</h3>
+                                <h3 className="text-sm font-bold text-slate-800">{getLocalizedAreaName(tempLocation)}</h3>
                                 <button
                                     onClick={() => { setFilters({ ...filters, location: tempLocation, subLocation: "" }); setView('main'); }}
                                     className="text-xs text-[#0088cc] font-bold"
@@ -351,27 +480,67 @@ export default function FilterModal({
                                     {translate("Select this city", "পুরো শহর")}
                                 </button>
                             </div>
-                            <div className="divide-y divide-slate-100">
-                                {locations.find(l => l.name === tempLocation)?.subLocations?.map((sub: any) => {
-                                    const count = allAds.filter(ad => ad.location === tempLocation && ad.subLocation === sub.name).length;
-                                    return (
-                                        <button
-                                            key={sub._id}
-                                            onClick={() => {
-                                                setFilters({ ...filters, location: tempLocation, subLocation: sub.name });
-                                                setView('main');
-                                            }}
-                                            className="w-full flex items-center justify-between py-1.5 px-4 hover:bg-slate-50 transition-colors text-left"
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-[15px] text-slate-700">{sub.name}</span>
-                                                <span className="text-[12px] text-slate-500 font-normal">({count.toLocaleString()})</span>
-                                            </div>
-                                            {filters.location === tempLocation && filters.subLocation === sub.name && <Check className="w-5 h-5 text-[#0088cc]" />}
-                                        </button>
-                                    );
-                                })}
+                            <div className="p-3 border-b border-slate-100 bg-white">
+                                <p className="text-xs font-semibold text-slate-500 mb-2">
+                                    {translate("Top Areas", "শীর্ষ এলাকা")}
+                                </p>
+                                <div className="divide-y divide-slate-100 rounded-lg border border-slate-100 overflow-hidden">
+                                    {topPrioritySubLocations.map((sub) => {
+                                        const count = subLocationCountMap.get(sub.name) || 0;
+                                        return (
+                                            <button
+                                                key={sub._id}
+                                                onClick={() => handleSelectSubLocation(sub.name)}
+                                                className="w-full flex items-center justify-between py-2 px-3 hover:bg-slate-50 transition-colors text-left"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[14px] text-slate-700">{getLocalizedAreaName(sub.name)}</span>
+                                                    <span className="text-[12px] text-slate-500 font-normal">({count.toLocaleString()})</span>
+                                                </div>
+                                                {filters.location === tempLocation && filters.subLocation === sub.name && <Check className="w-5 h-5 text-[#0088cc]" />}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
+
+                            {selectedLocationSubLocations.length > 5 && (
+                                <div className="p-3 border-b border-slate-100 bg-slate-50">
+                                    <p className="text-xs font-semibold text-slate-500 mb-2">
+                                        {translate("Select filter options", "সিলেক্ট ফিল্টার অপশন")}
+                                    </p>
+                                    <Select
+                                        options={subLocationOptions}
+                                        value={selectedSubLocationOption}
+                                        onChange={(option: SingleValue<SubLocationOption>) => {
+                                            if (!option) return;
+                                            setSelectedSubLocationOption(option);
+                                            handleSelectSubLocation(option.value);
+                                        }}
+                                        placeholder={translate("Search and select area", "এলাকা খুঁজে নির্বাচন করুন")}
+                                        isClearable
+                                        className="text-sm"
+                                        noOptionsMessage={() => translate("No area found", "কোন এলাকা পাওয়া যায়নি")}
+                                        styles={{
+                                            control: (base, state) => ({
+                                                ...base,
+                                                minHeight: '40px',
+                                                borderColor: state.isFocused ? '#38bdf8' : '#cbd5e1',
+                                                boxShadow: state.isFocused ? '0 0 0 1px #38bdf8' : 'none',
+                                                '&:hover': { borderColor: '#94a3b8' }
+                                            }),
+                                            menu: base => ({ ...base, zIndex: 60 }),
+                                            option: (base, state) => ({
+                                                ...base,
+                                                fontSize: '14px',
+                                                backgroundColor: state.isFocused ? '#f8fafc' : '#fff',
+                                                color: '#334155'
+                                            })
+                                        }}
+                                    />
+                                </div>
+                            )}
+
                         </div>
                     )}
 
@@ -436,7 +605,7 @@ export default function FilterModal({
                                 </button>
                             </div>
                             <div className="divide-y divide-slate-100">
-                                {categories.find(c => c.name === tempCategory)?.subcategories?.map((sub: any) => {
+                                {categories.find(c => c.name === tempCategory)?.subcategories?.map((sub) => {
                                     const count = allAds.filter(ad => ad.category === tempCategory && ad.subCategory === sub.name).length;
                                     return (
                                         <button

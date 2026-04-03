@@ -20,6 +20,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { timeAgo } from '../../utils/timeAgo';
 import { getImageUrl } from '../../utils/imageUrl';
 import { getNonHighlightLabels, hasHighlightLabel } from '../../utils/labels';
+import { INFO_PAGE_ROUTES } from '../../utils/infoContent';
 import Image from 'next/image';
 import LatestFreeAdPromo from '../../components/LatestFreeAdPromo';
 
@@ -178,10 +179,6 @@ export default function DashboardClient() {
             };
         }
     }, [categories, locations, activeSelectorTab, checkScroll]);
-
-    const openInfoModal = (type: 'about' | 'terms' | 'privacy' | 'contact' | 'safety') => {
-        window.dispatchEvent(new CustomEvent('open-info-modal', { detail: { type } }));
-    };
 
     useEffect(() => {
         const saved = localStorage.getItem('saved_search_ads');
@@ -876,17 +873,17 @@ export default function DashboardClient() {
                     {/* 3. Footer Links & Apps Card */}
                     <div className="bg-white rounded-lg p-3 space-y-4 mt-auto shadow-sm border border-slate-50">
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-black font-medium">
-                            <button onClick={() => openInfoModal('about')} className="hover:text-black transition-colors">{t('about_us')}</button>
+                            <Link href={INFO_PAGE_ROUTES.about} className="hover:text-black transition-colors">{t('about_us')}</Link>
                             <span>•</span>
-                            <button onClick={() => openInfoModal('terms')} className="hover:text-black transition-colors">{t('terms_and_con')}</button>
+                            <Link href={INFO_PAGE_ROUTES.terms} className="hover:text-black transition-colors">{t('terms_and_con')}</Link>
                             <span>•</span>
-                            <button onClick={() => openInfoModal('privacy')} className="hover:text-black transition-colors">{t('privacy_policy')}</button>
+                            <Link href={INFO_PAGE_ROUTES.privacy} className="hover:text-black transition-colors">{t('privacy_policy')}</Link>
                             <span>•</span>
-                            <button onClick={() => openInfoModal('contact')} className="hover:text-black transition-colors">{t('contact_us')}</button>
+                            <Link href={INFO_PAGE_ROUTES.contact} className="hover:text-black transition-colors">{t('contact_us')}</Link>
                             <span>•</span>
-                            <button onClick={() => openInfoModal('safety')} className="hover:text-black transition-colors">
+                            <Link href={INFO_PAGE_ROUTES.safety} className="hover:text-black transition-colors">
                                 {language === 'bn' ? 'নিরাপদ থাকুন' : 'Safety Tips'}
-                            </button>
+                            </Link>
                             <span>•</span>
                             <button
                                 onClick={() => {

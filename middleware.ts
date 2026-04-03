@@ -7,6 +7,7 @@ export function middleware(request: NextRequest) {
 
     const authRoutes = ['/login', '/register'];
     const publicRoutes = ['/', '/dashboard', '/dashboard/post-ad'];
+    const isInfoRoute = pathname === '/info' || pathname.startsWith('/info/');
 
     // If user is logged in and tries to access auth routes (login/register), redirect to dashboard
     if (token && authRoutes.includes(pathname)) {
@@ -15,7 +16,7 @@ export function middleware(request: NextRequest) {
 
     // If user is NOT logged in and tries to access a protected route
     // Protected routes are any route that is NOT an auth route AND NOT a public route
-    if (!token && !authRoutes.includes(pathname) && !publicRoutes.includes(pathname)) {
+    if (!token && !authRoutes.includes(pathname) && !publicRoutes.includes(pathname) && !isInfoRoute) {
         return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
