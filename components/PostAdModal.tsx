@@ -121,6 +121,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const cameraInputRef = useRef<HTMLInputElement>(null);
     const headlineInputRef = useRef<HTMLInputElement>(null);
 
     const fillFormData = (ad: any) => {
@@ -367,7 +368,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         if (e.target.files) {
             const newFiles = Array.from(e.target.files);
             const limit = settings.productPhotoLimit || 10;
-            
+
             if (images.length + existingImages.length + newFiles.length > limit) {
                 toast.error(`Maximum ${limit} images allowed`);
                 return;
@@ -385,6 +386,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 setImages([...images, ...newFiles]);
             } finally {
                 setCompressing(false);
+                e.target.value = '';
             }
         }
     };
@@ -470,7 +472,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             try {
                 const trimmedPhone = phone.trim();
                 const currentMobileCheck = mobileCheckResult || await checkMobileStatus(trimmedPhone);
-                
+
                 const authPayload: any = {
                     mobile: trimmedPhone,
                     password,
@@ -514,7 +516,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 }
                 setIsUserLoggedIn(true);
                 setUserData(authData.user);
-                
+
                 if (authData.user?.mobile) {
                     finalPhone = authData.user.mobile;
                     setPhone(authData.user.mobile);
@@ -524,7 +526,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 if (currentMobileCheck?.exists && otpValue) {
                     await fetch(`${API_BASE_URL}/api/user/otp/mobile/verify`, {
                         method: 'POST',
-                        headers: { 
+                        headers: {
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${token}`
                         },
@@ -773,7 +775,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 Cookies.set('token', token, { expires: 7 });
                 setIsUserLoggedIn(true);
                 setUserData(loginData.user);
-                
+
                 sendMobileOtp();
             } else {
                 // CASE 3: NEW USER / NEW MOBILE / NEW EMAIL
@@ -1164,54 +1166,99 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                         "bg-white rounded-lg p-3 border",
                                         attemptedSubmit && images.length === 0 && existingImages.length === 0 ? "border-red-500" : "border-slate-100"
                                     )}>
-                                        {attemptedSubmit && images.length === 0 && existingImages.length === 0 && (
-                                            <p className="text-[10px] text-red-500 font-bold mb-1 uppercase tracking-tight">{t('field_required')}</p>
-                                        )}
-                                        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
-                                            {existingImages.map((imgUrl, i) => (
-                                                <div key={imgUrl} className="relative min-w-[80px] h-[80px] rounded-xl overflow-hidden bg-slate-50 border border-slate-100 group">
-                                                    <img src={getImageUrl(imgUrl) || ''} alt="" className="w-full h-full object-contain" loading="lazy" />
-                                                    <button onClick={() => removeExistingImage(imgUrl)} className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full opacity-0 group-hover:opacity-100">
-                                                        <X className="w-3 h-3" />
-                                                    </button>
-                                                </div>
-                                            ))}
-                                            {images.map((file, i) => (
-                                                <div key={i} className="relative min-w-[80px] h-[80px] rounded-xl overflow-hidden bg-slate-50 border border-slate-100 group">
-                                                    <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-contain" loading="lazy" />
-                                                    <button onClick={() => removeImage(i)} className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full opacity-0 group-hover:opacity-100">
-                                                        <X className="w-3 h-3" />
-                                                    </button>
-                                                </div>
-                                            ))}
-                                            {images.length + existingImages.length < 10 && (
-                                                <button
-                                                    onClick={() => !compressing && fileInputRef.current?.click()}
-                                                    disabled={compressing}
-                                                    className={cn(
-                                                        "min-w-[80px] h-[80px] rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all",
-                                                        compressing 
-                                                            ? "border-slate-200 bg-slate-50 cursor-not-allowed text-slate-300" 
-                                                            : "border-slate-200 flex flex-col items-center justify-center gap-1 text-slate-400 bg-slate-50/50 hover:bg-slate-100/80 active:scale-95"
+                                        {(() => {
+                                            const imageLimit = settings.productPhotoLimit || 10;
+                                            const reachedLimit = images.length + existingImages.length >= imageLimit;
+
+                                            return (
+                                                <>
+                                                    <div className="mb-2">
+                                                        <span className="text-[11px] font-bold uppercase text-slate-600 tracking-tight">
+                                                            {t('add_photos_btn')}
+                                                        </span>
+                                                    </div>
+
+                                                    {attemptedSubmit && images.length === 0 && existingImages.length === 0 && (
+                                                        <p className="text-[10px] text-red-500 font-bold mb-1 uppercase tracking-tight">{t('field_required')}</p>
                                                     )}
-                                                >
-                                                    <div className={cn("p-1.5 rounded-lg shadow-sm", compressing ? "bg-slate-100" : "bg-slate-200")}>
-                                                        {compressing ? (
-                                                            <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
-                                                        ) : (
-                                                            <Camera className="w-4 h-4 text-slate-600" />
+                                                    <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
+                                                        {existingImages.map((imgUrl, i) => (
+                                                            <div key={imgUrl} className="relative min-w-[80px] h-[80px] rounded-xl overflow-hidden bg-slate-50 border border-slate-100 group">
+                                                                <img src={getImageUrl(imgUrl) || ''} alt="" className="w-full h-full object-contain" loading="lazy" />
+                                                                <button onClick={() => removeExistingImage(imgUrl)} className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full opacity-0 group-hover:opacity-100">
+                                                                    <X className="w-3 h-3" />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                        {images.map((file, i) => (
+                                                            <div key={i} className="relative min-w-[80px] h-[80px] rounded-xl overflow-hidden bg-slate-50 border border-slate-100 group">
+                                                                <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-contain" loading="lazy" />
+                                                                <button onClick={() => removeImage(i)} className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full opacity-0 group-hover:opacity-100">
+                                                                    <X className="w-3 h-3" />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                        {images.length + existingImages.length < imageLimit && (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => !compressing && fileInputRef.current?.click()}
+                                                                    disabled={compressing}
+                                                                    className={cn(
+                                                                        "min-w-[80px] h-[80px] rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all",
+                                                                        compressing
+                                                                            ? "border-slate-200 bg-slate-50 cursor-not-allowed text-slate-300"
+                                                                            : "border-slate-200 flex flex-col items-center justify-center gap-1 text-slate-400 bg-slate-50/50 hover:bg-slate-100/80 active:scale-95"
+                                                                    )}
+                                                                >
+                                                                    <div className={cn("p-1.5 rounded-lg shadow-sm", compressing ? "bg-slate-100" : "bg-slate-200")}>
+                                                                        {compressing ? (
+                                                                            <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
+                                                                        ) : (
+                                                                            <Camera className="w-4 h-4 text-slate-600" />
+                                                                        )}
+                                                                    </div>
+                                                                    <span className="text-[10px] font-bold leading-none">
+                                                                        {compressing ? "..." : t('add_photos_btn')}
+                                                                    </span>
+                                                                    <span className="text-[8px] font-medium opacity-70 text-center">
+                                                                        {compressing ? t('processing') : t('drag_and_drop')}
+                                                                    </span>
+                                                                </button>
+
+                                                                <button
+                                                                    onClick={() => !compressing && !reachedLimit && cameraInputRef.current?.click()}
+                                                                    disabled={compressing || reachedLimit}
+                                                                    className={cn(
+                                                                        "min-w-[80px] h-[80px] rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all",
+                                                                        compressing || reachedLimit
+                                                                            ? "border-slate-200 bg-slate-50 cursor-not-allowed text-slate-300"
+                                                                            : "border-slate-200 flex flex-col items-center justify-center gap-1 text-slate-400 bg-slate-50/50 hover:bg-slate-100/80 active:scale-95"
+                                                                    )}
+                                                                    aria-label="Capture from camera"
+                                                                    title="Capture from camera"
+                                                                >
+                                                                    <div className={cn("p-1.5 rounded-lg shadow-sm", compressing ? "bg-slate-100" : "bg-slate-200")}>
+                                                                        {compressing ? (
+                                                                            <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
+                                                                        ) : (
+                                                                            <Camera className="w-4 h-4 text-slate-600" />
+                                                                        )}
+                                                                    </div>
+                                                                    <span className="text-[10px] font-bold leading-none">
+                                                                        {compressing ? "..." : "Capture camera"}
+                                                                    </span>
+                                                                    <span className="text-[8px] font-medium opacity-70 text-center">
+                                                                        {compressing ? t('processing') : "Capture from camera"}
+                                                                    </span>
+                                                                </button>
+                                                            </>
                                                         )}
                                                     </div>
-                                                    <span className="text-[10px] font-bold leading-none">
-                                                        {compressing ? "..." : t('add_photos_btn')}
-                                                    </span>
-                                                    <span className="text-[8px] font-medium opacity-70 text-center">
-                                                        {compressing ? t('processing') : t('drag_and_drop')}
-                                                    </span>
-                                                </button>
-                                            )}
-                                        </div>
+                                                </>
+                                            );
+                                        })()}
                                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*" multiple onChange={handleImageUpload} />
+                                        <input type="file" ref={cameraInputRef} className="hidden" accept="image/*" capture="environment" onChange={handleImageUpload} />
                                     </div>
 
                                     <div className="space-y-2 font-sans bg-slate-100">

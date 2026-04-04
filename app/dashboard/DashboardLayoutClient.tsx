@@ -29,6 +29,7 @@ import InfoModal from '../../components/InfoModal';
 import AdDisplay from '../../components/AdDisplay';
 import AdPopup from '../../components/AdPopup';
 import SearchModal from '../../components/SearchModal';
+import FilterModal, { FilterState } from '../../components/FilterModal';
 import { toast } from 'react-hot-toast';
 
 
@@ -170,7 +171,63 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [selectedAdForDetail, setSelectedAdForDetail] = useState<any | null>(null);
 
+    const getFiltersFromSearchParams = (): FilterState => {
+        const urlCategory = searchParams.get('category');
+        const urlSubCategory = searchParams.get('subCategory');
+        const urlLocation = searchParams.get('location');
+        const urlSubLocation = searchParams.get('subLocation');
+        const urlSearch = searchParams.get('search');
+
+        return {
+            category: urlCategory || "",
+            subCategory: urlSubCategory || "",
+            location: urlLocation || "",
+            subLocation: urlSubLocation || "",
+            search: urlSearch || "",
+            promoteTag: searchParams.get('promoteTag') || "All",
+            sort: searchParams.get('sort') || "newest"
+        };
+    };
+
+    const [isGlobalFilterModalOpen, setIsGlobalFilterModalOpen] = useState(false);
+    const [globalFilters, setGlobalFilters] = useState<FilterState>(() => getFiltersFromSearchParams());
+
     const searchRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setGlobalFilters(getFiltersFromSearchParams());
+    }, [searchParams]);
+
+    const openGlobalFilterFromSearch = (view: 'main' | 'category' | 'location') => {
+        setIsSearchModalOpen(false);
+        setGlobalFilters(getFiltersFromSearchParams());
+        setIsGlobalFilterModalOpen(true);
+
+        if (view !== 'main') {
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('open-filter-view', { detail: { view } }));
+            }, 50);
+        }
+    };
+
+    const applyGlobalFilters = (newFilters: FilterState) => {
+        setGlobalFilters(newFilters);
+        setIsGlobalFilterModalOpen(false);
+
+        const params = new URLSearchParams(searchParams.toString());
+        const nextSearch = (newFilters.search ?? searchParams.get('search') ?? '').trim();
+
+        if (newFilters.category) params.set('category', newFilters.category); else params.delete('category');
+        if (newFilters.subCategory) params.set('subCategory', newFilters.subCategory); else params.delete('subCategory');
+        if (newFilters.location) params.set('location', newFilters.location); else params.delete('location');
+        if (newFilters.subLocation) params.set('subLocation', newFilters.subLocation); else params.delete('subLocation');
+        if (newFilters.promoteTag && newFilters.promoteTag !== 'All') params.set('promoteTag', newFilters.promoteTag); else params.delete('promoteTag');
+        if (newFilters.sort && newFilters.sort !== 'newest') params.set('sort', newFilters.sort); else params.delete('sort');
+        if (nextSearch) params.set('search', nextSearch); else params.delete('search');
+
+        const queryString = params.toString();
+        router.push(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
+    };
 
     // Event Listener for opening account modal from children
     useEffect(() => {
@@ -1304,6 +1361,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 onSearch={(query) => {
                     window.dispatchEvent(new CustomEvent('show-search-results', { detail: { query } }));
                 }}
+                onOpenFilter={openGlobalFilterFromSearch}
                 onSelectAd={(ad) => {
                     setSelectedAdForDetail(ad);
                     if (ad?._id) {
@@ -1312,6 +1370,15 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                         router.push(`${pathname}?${params.toString()}`, { scroll: false });
                     }
                 }}
+            />
+
+            <FilterModal
+                isOpen={isGlobalFilterModalOpen}
+                onClose={() => setIsGlobalFilterModalOpen(false)}
+                categories={categories}
+                locations={locations}
+                initialFilters={globalFilters}
+                onApply={applyGlobalFilters}
             />
 
 

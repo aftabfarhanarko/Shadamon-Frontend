@@ -977,6 +977,25 @@ I have sent my CV for your review.`;
         }
     };
 
+    const getSellerProfileLink = useCallback(() => {
+        const username = String(profileForm.sellerPageUrl || '').trim();
+        if (!username) return '';
+        return `https://www.shadamon.com/${encodeURIComponent(username)}`;
+    }, [profileForm.sellerPageUrl]);
+
+    const handleCopySellerProfileLink = async () => {
+        const fullLink = getSellerProfileLink();
+        if (!fullLink) return;
+
+        try {
+            await navigator.clipboard.writeText(fullLink);
+            toast.success("Profile link copied to clipboard");
+        } catch (error) {
+            console.error("Failed to copy profile link:", error);
+            toast.error("Failed to copy profile link");
+        }
+    };
+
     const handleChangePassword = async () => {
         if (!passwordData.currentPassword || !passwordData.newPassword) {
             toast.error("Both current and new passwords are required");
@@ -2014,20 +2033,29 @@ I have sent my CV for your review.`;
                                     <div className="col-span-2">
                                         <label className="block text-xs text-slate-500 mb-0.5">Seller Page User Name</label>
                                         <div className="flex rounded border border-slate-200 overflow-hidden bg-slate-50/50 focus-within:border-blue-500">
-                                            <span className="px-2 py-1 text-slate-400 text-sm border-r border-slate-200 bg-slate-100">www.shadamon.com/</span>
+                                            <span className="px-2 py-1 text-slate-400 text-sm border-r border-slate-200 bg-slate-100 shrink-0">www.shadamon.com/</span>
                                             <input
                                                 type="text"
                                                 readOnly={!isOwnAccount}
                                                 value={profileForm.sellerPageUrl}
                                                 onChange={(e) => handleProfileChange('sellerPageUrl', e.target.value)}
-                                                className="flex-1 px-2 py-1 text-sm text-black outline-none bg-transparent font-bold"
+                                                className="flex-1 min-w-0 px-2 py-1 text-sm text-black outline-none bg-transparent font-bold"
                                             />
+                                            {profileForm.sellerPageUrl.trim() && (
+                                                <button
+                                                    onClick={handleCopySellerProfileLink}
+                                                    className="px-2 py-1 text-slate-500 hover:text-[#0088cc] hover:bg-blue-50 transition-colors border-l border-slate-200 shrink-0"
+                                                    title="Copy profile link"
+                                                >
+                                                    <Copy className="w-3.5 h-3.5" />
+                                                </button>
+                                            )}
                                             {profileForm.sellerPageUrl && isOwnAccount && (
                                                 <button
                                                     onClick={handleCheckUrl}
                                                     disabled={isUrlChecking}
                                                     className={cn(
-                                                        "px-3 py-1 text-xs transition-colors",
+                                                        "px-3 py-1 text-xs transition-colors border-l border-slate-200 shrink-0",
                                                         urlStatus === 'available' ? "bg-green-100 text-green-700 hover:bg-green-200" :
                                                             urlStatus === 'taken' ? "bg-red-100 text-red-700 hover:bg-red-200" :
                                                                 "bg-slate-200 text-slate-600 hover:bg-slate-300"
