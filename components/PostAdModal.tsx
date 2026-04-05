@@ -1217,10 +1217,10 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                                             <Camera className="w-4 h-4 text-slate-600" />
                                                                         )}
                                                                     </div>
-                                                                    <span className="text-[10px] font-bold leading-none">
+                                                                    <span className="mt-1 text-[8px] font-medium leading-none">
                                                                         {compressing ? "..." : t('add_photos_btn')}
                                                                     </span>
-                                                                    <span className="text-[8px] font-medium opacity-70 text-center">
+                                                                    <span className="text-[10px] font-bold  text-center">
                                                                         {compressing ? t('processing') : t('drag_and_drop')}
                                                                     </span>
                                                                 </button>
@@ -1244,11 +1244,11 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                                             <Camera className="w-4 h-4 text-slate-600" />
                                                                         )}
                                                                     </div>
-                                                                    <span className="text-[10px] font-bold leading-none">
-                                                                        {compressing ? "..." : "Capture camera"}
+                                                                    <span className="mt-1 text-[8px] font-medium leading-none">
+                                                                        {compressing ? "..." : t('add_cameras_btn')}
                                                                     </span>
-                                                                    <span className="text-[8px] font-medium opacity-70 text-center">
-                                                                        {compressing ? t('processing') : "Capture from camera"}
+                                                                    <span className="text-[10px] font-bold  text-center">
+                                                                        {compressing ? t('processing') : t('drag_and_drop')}
                                                                     </span>
                                                                 </button>
                                                             </>

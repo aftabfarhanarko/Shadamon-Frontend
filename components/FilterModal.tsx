@@ -631,16 +631,16 @@ export default function FilterModal({
 
                 {/* Footer Buttons */}
                 {view === 'main' && (
-                    <div className="p-4 border-t border-slate-100 bg-white shadow-[0_-4px_10px_rgba(0,0,0,0.03)] flex items-center justify-between shrink-0">
+                    <div className="p-3 sm:p-4 border-t border-slate-100 bg-white shadow-[0_-4px_10px_rgba(0,0,0,0.03)] flex flex-col min-[420px]:flex-row items-stretch min-[420px]:items-center gap-2.5 min-[420px]:justify-between shrink-0">
                         <button
                             onClick={handleReset}
-                            className="border border-[#00A278] text-[#00A278] px-8 py-2.5 rounded-lg text-sm hover:bg-emerald-50 transition-colors"
+                            className="w-full min-[420px]:w-auto border border-[#00A278] text-[#00A278] px-4 min-[420px]:px-8 py-2.5 rounded-lg text-sm hover:bg-emerald-50 transition-colors"
                         >
                             {translate("Reset all", "রিসেট করুন")}
                         </button>
                         <button
                             onClick={() => onApply(filters)}
-                            className="bg-[#1A202C] text-white px-14 py-2.5 rounded-lg text-sm hover:bg-black transition-colors flex items-center justify-center gap-2 min-w-[180px]"
+                            className="w-full min-[420px]:w-auto bg-[#1A202C] text-white px-4 min-[420px]:px-14 py-2.5 rounded-lg text-sm hover:bg-black transition-colors flex items-center justify-center gap-2 min-w-0 min-[420px]:min-w-[180px]"
                         >
                             {loadingCount ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />

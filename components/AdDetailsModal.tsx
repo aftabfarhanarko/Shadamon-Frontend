@@ -281,6 +281,52 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
     };
 
     const adLink = typeof window !== 'undefined' ? `${window.location.origin}/dashboard?ad=${ad?._id}` : '';
+    const primaryPhone = ad?.phone && String(ad.phone) !== 'undefined' ? String(ad.phone).trim() : '';
+    const mobileContactRows = (() => {
+        const map = new Map<string, Set<string>>();
+
+        if (primaryPhone) {
+            map.set(primaryPhone, new Set(['mobile']));
+        }
+
+        if (Array.isArray(ad?.additionalPhones)) {
+            ad.additionalPhones.forEach((ap: any) => {
+                let apObj: any = ap;
+                if (typeof ap === 'string') {
+                    try {
+                        apObj = JSON.parse(ap);
+                    } catch {
+                        apObj = null;
+                    }
+                }
+
+                const number = String(apObj?.number || '').trim();
+                if (!number || number === 'undefined') return;
+
+                const types = Array.isArray(apObj?.types) && apObj.types.length > 0
+                    ? apObj.types.map((t: string) => String(t).trim().toLowerCase())
+                    : ['mobile'];
+
+                if (!map.has(number)) {
+                    map.set(number, new Set());
+                }
+
+                const rowTypes = map.get(number);
+                if (rowTypes) {
+                    types.forEach((t: string) => rowTypes.add(t));
+                }
+            });
+        }
+
+        return Array.from(map.entries()).map(([number, typeSet]) => ({
+            number,
+            types: Array.from(typeSet)
+        }));
+    })();
+    const toIntlPhone = (num: string) => {
+        const clean = String(num || '').trim();
+        return clean.startsWith('+') ? clean : `+88${clean}`;
+    };
 
     if (!isOpen || !ad) return null;
 
@@ -367,9 +413,9 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
 
                     <div className="p-3">
                         {/* 3. Meta Info Bar */}
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-slate-500 mb-1.5 font-medium gap-1 sm:gap-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-[10px] sm:text-xs text-slate-500 mb-1.5 font-medium gap-1 sm:gap-0">
                             <div className="flex items-center gap-1 text-[#0088cc] sm:order-2">
-                                <Eye className="w-3 h-3" />
+                                <Eye className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                                 <span className="mr-1">{ad.deliveryCount || 0} Delivered</span>
                                 <span>{ad.views || 0} Views</span>
                             </div>
@@ -422,8 +468,90 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                         <div className="bg-slate-200 rounded-lg mt-2 mb-2 p-3 border border-slate-100">
                             {!(ad.hidePhone === true || ad.hidePhone === 'true') && (
                                 <>
+                                    {/* Mobile Phone Rows */}
+                                    <div className="md:hidden mb-3 space-y-2">
+                                        <div className="flex items-center justify-between gap-2 rounded-md bg-white border border-slate-300 px-2.5 py-2">
+                                            <span className="text-[12px] text-slate-800 font-medium truncate">
+                                                {showPhone ? (primaryPhone || 'N/A') : '017 XXXXXXXX'}
+                                            </span>
+                                            <button
+                                                onClick={() => {
+                                                    if (!showPhone) {
+                                                        setShowPhone(true);
+                                                        return;
+                                                    }
+                                                    if (primaryPhone) {
+                                                        window.location.href = `tel:${primaryPhone}`;
+                                                    }
+                                                }}
+                                                className="w-7 h-7 rounded-full bg-[#1A202C] text-white flex items-center justify-center shrink-0"
+                                            >
+                                                <Phone className="w-3.5 h-3.5 fill-white" />
+                                            </button>
+                                        </div>
+
+                                        {!showPhone && primaryPhone && (
+                                            <button
+                                                onClick={() => setShowPhone(true)}
+                                                className="text-[10px] text-slate-500 hover:text-blue-600 hover:underline text-left"
+                                            >
+                                                Click to show number
+                                            </button>
+                                        )}
+
+                                        {showPhone && mobileContactRows.slice(primaryPhone ? 1 : 0).map((row, rowIdx) => (
+                                            <div
+                                                key={`${row.number}-${rowIdx}`}
+                                                className="flex items-center justify-between gap-2 rounded-md bg-white border border-slate-300 px-2.5 py-2"
+                                            >
+                                                <span className="text-[12px] text-slate-800 font-medium truncate">{row.number}</span>
+                                                <div className="flex items-center gap-1.5 shrink-0">
+                                                    {(row.types.length > 0 ? row.types : ['mobile']).map((type, typeIdx) => {
+                                                        if (type === 'whatsapp') {
+                                                            return (
+                                                                <button
+                                                                    key={`${row.number}-wa-${typeIdx}`}
+                                                                    onClick={() => window.open(`https://wa.me/${toIntlPhone(row.number)}`, '_blank')}
+                                                                    className="w-7 h-7 rounded-full bg-[#25D366] text-white flex items-center justify-center"
+                                                                    title={`WhatsApp: ${row.number}`}
+                                                                >
+                                                                    <FaWhatsapp className="w-4 h-4" />
+                                                                </button>
+                                                            );
+                                                        }
+                                                        if (type === 'telegram') {
+                                                            return (
+                                                                <button
+                                                                    key={`${row.number}-tg-${typeIdx}`}
+                                                                    onClick={() => window.open(`https://t.me/${toIntlPhone(row.number)}`, '_blank')}
+                                                                    className="w-7 h-7 rounded-full bg-[#0088cc] text-white flex items-center justify-center"
+                                                                    title={`Telegram: ${row.number}`}
+                                                                >
+                                                                    <FaTelegramPlane className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            );
+                                                        }
+
+                                                        return (
+                                                            <button
+                                                                key={`${row.number}-ph-${typeIdx}`}
+                                                                onClick={() => {
+                                                                    window.location.href = `tel:${row.number}`;
+                                                                }}
+                                                                className="w-7 h-7 rounded-full bg-slate-700 text-white flex items-center justify-center"
+                                                                title={`Call: ${row.number}`}
+                                                            >
+                                                                <Phone className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
                                     {/* Phone & Socials */}
-                                    <div className="flex items-center gap-2 mb-4">
+                                    <div className="hidden md:flex items-center gap-2 mb-4">
                                         {/* Phone Section */}
                                         <div className="flex items-center gap-2 shrink-0">
                                             <div className="w-8 h-8 rounded-full bg-[#1A202C] flex items-center justify-center text-white shrink-0">
@@ -542,7 +670,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
 
                                     {/* Plain text display of all numbers */}
                                     {showPhone && ad.additionalPhones && ad.additionalPhones.length > 0 && (
-                                        <div className="mt-3 px-1 space-y-2 border-t border-slate-300 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <div className="hidden md:block mt-3 px-1 space-y-2 border-t border-slate-300 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
                                             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Other Numbers:</p>
                                             <div className="flex flex-col gap-2">
                                                 {(() => {
@@ -694,9 +822,9 @@ I have sent my CV for your review.`;
                                                             alert("An error occurred while sending your information.");
                                                         }
                                                     }}
-                                                    className="flex-1 bg-white border border-slate-500 text-slate-700 text-xs py-2 px-1 rounded-md hover:bg-slate-50 transition-colors flex items-center justify-center gap-1"
+                                                    className="flex-1 bg-black md:bg-white border border-black md:border-slate-500 text-white md:text-slate-700 text-xs py-2 px-1 rounded-md hover:bg-slate-900 md:hover:bg-slate-50 transition-colors flex items-center justify-center gap-1"
                                                 >
-                                                    <FileText className="w-3.5 h-3.5" />
+                                                    <FileText className="hidden md:block w-3.5 h-3.5" />
                                                     <span className="whitespace-nowrap">Send CV</span>
                                                 </button>
                                             )}
@@ -954,7 +1082,7 @@ I have sent my CV for your review.`;
 
                                     <div className="flex items-center gap-1.5 mb-0.5">
                                         <h4
-                                            className="font-bold text-slate-900 text-sm leading-tight cursor-pointer hover:text-blue-600 hover:underline"
+                                            className="font-bold text-slate-900 text-sm leading-tight cursor-pointer hover:text-blue-600 hover:underline max-w-[170px] sm:max-w-none truncate"
                                             onClick={() => {
                                                 onClose();
                                                 window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: (ad as any).user?._id } }));
@@ -1002,7 +1130,7 @@ I have sent my CV for your review.`;
                                         <div
                                             key={sad._id}
                                             className={cn(
-                                                "flex gap-3 bg-white border rounded-lg overflow-hidden shadow-sm p-2 pt-0 cursor-pointer",
+                                                "flex gap-2 bg-white border rounded-lg overflow-hidden shadow-sm p-2 cursor-pointer",
                                                 hasHighlightLabel(sad)
                                                     ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-1 ring-orange-400/30"
                                                     : "border-slate-100"
@@ -1023,7 +1151,7 @@ I have sent my CV for your review.`;
                                                         <img
                                                             src={getImageUrl(sad.images?.[0]) || ''}
                                                             alt=""
-                                                            className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60"
+                                                            className="absolute inset-0 w-full h-full object-contain blur-2xl scale-110 opacity-60"
                                                         />
                                                         <img
                                                             src={getImageUrl(sad.images?.[0]) || ''}
@@ -1047,18 +1175,8 @@ I have sent my CV for your review.`;
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                                <h4 className="text-xs text-slate-800 line-clamp-2 mb-1">{sad.headline}</h4>
-                                                <div className="flex items-center gap-3 text-[10px] text-slate-500 mb-1">
-                                                    <div className="flex items-center gap-1 min-w-0">
-                                                        <MapPin className="w-2.5 h-2.5 shrink-0" />
-                                                        <span className="truncate max-w-[80px]">{sad.location}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-1 min-w-0">
-                                                        <Grid className="w-2.5 h-2.5 shrink-0" />
-                                                        <span className="truncate max-w-[80px]">{sad.category}</span>
-                                                    </div>
-                                                </div>
-                                                <div className="text-sm text-slate-900 flex items-center justify-between gap-1.5 flex-wrap">
+                                                <h4 className="text-[11px] md:text-xs text-slate-800 line-clamp-1 md:line-clamp-2 mb-0.5">{sad.headline}</h4>
+                                                <div className="text-[13px] md:text-sm text-slate-900 flex items-center justify-between gap-1.5 flex-wrap mb-0.5">
                                                     <div className="flex items-center gap-1.5 flex-wrap">
                                                         <span>{sad.price ? `৳ ${sad.price.toLocaleString()}` : t('price_on_ask')}</span>
                                                         {sad.price && (
@@ -1066,6 +1184,16 @@ I have sent my CV for your review.`;
                                                                 ({sad.priceType === 'Negotiable' ? t('price_negotiable') : t('price_fixed')})
                                                             </span>
                                                         )}
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                                                    <div className="flex items-center gap-1 min-w-0">
+                                                        <MapPin className="w-2.5 h-2.5 shrink-0" />
+                                                        <span className="truncate max-w-[82px]">{sad.location}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1 min-w-0">
+                                                        <Grid className="w-2.5 h-2.5 shrink-0" />
+                                                        <span className="truncate max-w-[82px]">{sad.category}</span>
                                                     </div>
                                                 </div>
                                             </div>

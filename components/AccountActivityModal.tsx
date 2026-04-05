@@ -73,13 +73,20 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
     const normalizeText = (value: unknown) => String(value ?? '').trim().toLowerCase();
     const getAdTypeLower = (ad: any) => normalizeText(ad?.adType);
     const getAdStatusLower = (ad: any) => normalizeText(ad?.status);
+    const isProcessingType = (ad: any) => getAdTypeLower(ad) === 'processing';
     const isPromotionLive = (ad: any) => getAdStatusLower(ad) === 'active' && getAdTypeLower(ad) === 'promoted';
-    const isProcessingPromotion = (ad: any) => getAdStatusLower(ad) === 'review' && getAdTypeLower(ad) === 'processing';
+    const isProcessingPromotion = (ad: any) => getAdStatusLower(ad) === 'review' && isProcessingType(ad);
     const getPostButtonLabel = (ad: any) => {
-        if (isPromotionLive(ad)) return 'Promotion Live';
-        if (isProcessingPromotion(ad)) return 'Processing';
+        if (isProcessingType(ad)) return 'Procesing';
+        if (getAdTypeLower(ad) === 'promoted') return 'Promotion Live';
         if (getAdTypeLower(ad) === 'free') return 'Promote';
         return 'Promote';
+    };
+    const getPostButtonColorClass = (ad: any) => {
+        if (isProcessingType(ad)) return 'bg-[#a3bae3] hover:bg-[#a3bae3]';
+        if (getAdTypeLower(ad) === 'promoted') return 'bg-[#3B82F6] hover:bg-blue-600';
+        if (getAdTypeLower(ad) === 'free') return 'bg-black hover:bg-slate-900';
+        return 'bg-[#3B82F6] hover:bg-blue-600';
     };
 
     useEffect(() => {
@@ -1507,9 +1514,7 @@ I have sent my CV for your review.`;
                                                                 }}
                                                                 className={cn(
                                                                     "mt-auto w-full text-white text-[10px] font-bold py-2.5 rounded transition-colors",
-                                                                    isProcessingPromotion(ad)
-                                                                        ? "bg-[#0088cc] hover:bg-[#0077b5]"
-                                                                        : "bg-[#0088cc] hover:bg-[#0077b5]"
+                                                                    getPostButtonColorClass(ad)
                                                                 )}
                                                             >
                                                                 {getPostButtonLabel(ad)}
@@ -1580,9 +1585,7 @@ I have sent my CV for your review.`;
                                                         </div>
                                                         <div className={cn(
                                                             "flex items-center gap-2 rounded px-1 py-1.5",
-                                                            ad.adType === 'Promoted' && (ad.status === 'review' || ad.userUpdated || ad.userNewPhotos)
-                                                                ? "bg-amber-500"
-                                                                : "bg-[#0088cc]"
+                                                            getPostButtonColorClass(ad)
                                                         )}>
                                                             <button
                                                                 onClick={(e) => {
@@ -1674,9 +1677,7 @@ I have sent my CV for your review.`;
                                                                     }}
                                                                     className={cn(
                                                                         "mt-auto w-full text-white text-[10px] font-bold py-2.5 rounded transition-colors",
-                                                                        isProcessingPromotion(ad)
-                                                                            ? "bg-[#0088cc] hover:bg-[#0077b5]"
-                                                                            : "bg-[#0088cc] hover:bg-[#0077b5]"
+                                                                        getPostButtonColorClass(ad)
                                                                     )}
                                                                 >
                                                                     {getPostButtonLabel(ad)}
@@ -2227,7 +2228,7 @@ I have sent my CV for your review.`;
                                                         </div>
                                                     </div>
                                                 )}
-                                                {(ad.status === 'review') && (
+                                                {(ad.status === 'review' && !isProcessingType(ad)) && (
                                                     <div className="bg-[#EEF2FF] p-2 px-3 flex items-center gap-2 border-b border-[#E0E7FF]">
                                                         <div className="w-6 h-6 rounded-full bg-[#3B82F6] flex items-center justify-center shrink-0">
                                                             <Search className="w-3.5 h-3.5 text-white stroke-[3]" />
@@ -2237,14 +2238,14 @@ I have sent my CV for your review.`;
                                                         </p>
                                                     </div>
                                                 )}
-                                                <div className="p-3 flex flex-col md:flex-row gap-3">
+                                                <div className="p-3 flex flex-row md:flex-row gap-2.5 md:gap-3 items-stretch">
                                                     {/* Left: Image (Spans height of details + performance) */}
-                                                    <div className="w-full md:w-[150px] flex justify-center md:block shrink-0">
-                                                        <div className="w-[150px] h-[120px] bg-slate-100 relative rounded overflow-hidden group mb-2 flex items-center justify-center">
+                                                    <div className="w-[138px] md:w-[150px] flex justify-center md:block shrink-0">
+                                                        <div className="w-full h-[190px] md:h-[130px] bg-slate-100 relative rounded overflow-hidden group mb-2 md:mb-0 flex items-center justify-center">
                                                             {ad.images && ad.images.length > 0 ? (
                                                                 <>
                                                                     <div className="absolute inset-0">
-                                                                        <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover blur-xl opacity-30 scale-105" loading="lazy" />
+                                                                        <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-contain blur-xl opacity-30 scale-105" loading="lazy" />
                                                                     </div>
                                                                     <img
                                                                         src={getImageUrl(ad.images[0]) || undefined}
@@ -2281,18 +2282,18 @@ I have sent my CV for your review.`;
                                                     </div>
 
                                                     {/* Right: Info & Performance */}
-                                                    <div className="flex-1 min-w-0 flex flex-col gap-1">
+                                                    <div className="flex-1 min-w-0 flex flex-col gap-1 justify-center md:justify-start">
                                                         {/* Top Details */}
                                                         <div className="flex items-start justify-between gap-2">
                                                             <div className="flex flex-col gap-0 min-w-0">
-                                                                <h3 className="text-sm text-black line-clamp-1" title={ad.headline}>
+                                                                <h3 className="text-[13px] md:text-sm text-black line-clamp-2 md:line-clamp-1" title={ad.headline}>
                                                                     {ad.headline}
                                                                 </h3>
-                                                                <div className="text-[12px] text-black truncate">
+                                                                <div className="text-[11px] md:text-[12px] text-black truncate">
                                                                     {ad.category || 'Category'}, {ad.location || 'Location'}
                                                                 </div>
-                                                                <div className="text-[12px] text-black">
-                                                                    Publish {ad.createdAt ? new Date(ad.createdAt).toLocaleDateString('en-GB').replace(/\//g, '.') : 'N/A'}
+                                                                <div className="text-[11px] md:text-[12px] text-black">
+                                                                    Publish {ad.createdAt ? new Date(ad.createdAt).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '') : 'N/A'}
                                                                 </div>
                                                             </div>
                                                             {getNonHighlightLabels(ad).length > 0 && (
@@ -2306,6 +2307,49 @@ I have sent my CV for your review.`;
                                                                         </span>
                                                                     ))}
                                                                 </div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Mobile: inline small action row */}
+                                                        <div className="md:hidden flex items-center gap-1 flex-wrap">
+                                                            {!isProcessingType(ad) && (
+                                                                <span
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        if (ad.adType === 'Promoted') {
+                                                                            handleToggleStatus(ad._id, ad.status);
+                                                                        }
+                                                                    }}
+                                                                    className={cn(
+                                                                        "text-[9px] font-bold py-0.5 px-2 rounded-full inline-flex items-center justify-center transition-all duration-200",
+                                                                        ad.adType === 'Promoted' && ad.status !== 'deleted' && "cursor-pointer hover:opacity-80 active:scale-95",
+                                                                        ad.status === 'pause' ? "bg-amber-100 text-amber-700 ring-1 ring-amber-200" :
+                                                                            ad.status === 'review' ? "bg-amber-100 text-amber-700 ring-1 ring-amber-200" :
+                                                                                ad.status === 'deleted' ? "bg-red-100 text-red-600" : "bg-[#0088cc] text-white shadow-sm"
+                                                                    )}
+                                                                >
+                                                                    {ad.status === 'review' ? (ad.adType === 'Promoted' ? 'In Review' : 'In Review') :
+                                                                        ad.status === 'deleted' ? 'Deleted' : ad.status === 'pause' ? 'Free Ad' : (ad.adType === 'Promoted' ? 'AD On' : 'Free Ad')}
+                                                                </span>
+                                                            )}
+
+                                                            {selectedAdForDeletion === ad._id && isOwnAccount && ad.status !== 'deleted' && (
+                                                                <button
+                                                                    onClick={() => handleDeleteAd(ad._id)}
+                                                                    disabled={isDeleting}
+                                                                    className="text-[9px] text-white bg-red-500 font-bold border border-red-500 px-2 py-0.5 rounded-full hover:bg-red-600 disabled:opacity-50 transition-colors"
+                                                                >
+                                                                    {isDeleting ? 'Deleting...' : 'Delete'}
+                                                                </button>
+                                                            )}
+
+                                                            {ad.status !== 'deleted' && (
+                                                                <button
+                                                                    onClick={() => onEditAd?.(ad)}
+                                                                    className="text-[9px] text-slate-500 font-bold border border-slate-300 px-2 py-0.5 rounded-full hover:bg-slate-50 inline-flex items-center justify-center"
+                                                                >
+                                                                    Edit
+                                                                </button>
                                                             )}
                                                         </div>
 
@@ -2341,25 +2385,27 @@ I have sent my CV for your review.`;
                                                             </div>
 
                                                             {/* Actions: Badge & Edit */}
-                                                            <div className="flex flex-row md:flex-col items-center md:items-end gap-1.5 shrink-0 pt-1 w-full md:w-auto justify-between md:justify-start order-1 md:order-2">
-                                                                <span
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        if (ad.adType === 'Promoted') {
-                                                                            handleToggleStatus(ad._id, ad.status);
-                                                                        }
-                                                                    }}
-                                                                    className={cn(
-                                                                        "text-[10px] font-bold py-0.5 rounded-full w-[65px] inline-flex items-center justify-center transition-all duration-200",
-                                                                        ad.adType === 'Promoted' && ad.status !== 'deleted' && "cursor-pointer hover:opacity-80 active:scale-95",
-                                                                        ad.status === 'pause' ? "bg-amber-100 text-amber-700 ring-1 ring-amber-200" :
-                                                                            ad.status === 'review' ? "bg-amber-100 text-amber-700 ring-1 ring-amber-200" :
-                                                                                ad.status === 'deleted' ? "bg-red-100 text-red-600" : "bg-[#0088cc] text-white shadow-sm"
-                                                                    )}
-                                                                >
-                                                                    {ad.status === 'review' ? (ad.adType === 'Promoted' ? 'In Review' : 'In Review') :
-                                                                        ad.status === 'deleted' ? 'Deleted' : ad.status === 'pause' ? 'Free Ad' : (ad.adType === 'Promoted' ? 'AD On' : 'Free Ad')}
-                                                                </span>
+                                                            <div className="hidden md:flex flex-row md:flex-col items-center md:items-end gap-1.5 shrink-0 pt-1 w-full md:w-auto justify-between md:justify-start order-1 md:order-2">
+                                                                {!isProcessingType(ad) && (
+                                                                    <span
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            if (ad.adType === 'Promoted') {
+                                                                                handleToggleStatus(ad._id, ad.status);
+                                                                            }
+                                                                        }}
+                                                                        className={cn(
+                                                                            "text-[10px] font-bold py-0.5 rounded-full w-[65px] inline-flex items-center justify-center transition-all duration-200",
+                                                                            ad.adType === 'Promoted' && ad.status !== 'deleted' && "cursor-pointer hover:opacity-80 active:scale-95",
+                                                                            ad.status === 'pause' ? "bg-amber-100 text-amber-700 ring-1 ring-amber-200" :
+                                                                                ad.status === 'review' ? "bg-amber-100 text-amber-700 ring-1 ring-amber-200" :
+                                                                                    ad.status === 'deleted' ? "bg-red-100 text-red-600" : "bg-[#0088cc] text-white shadow-sm"
+                                                                        )}
+                                                                    >
+                                                                        {ad.status === 'review' ? (ad.adType === 'Promoted' ? 'In Review' : 'In Review') :
+                                                                            ad.status === 'deleted' ? 'Deleted' : ad.status === 'pause' ? 'Free Ad' : (ad.adType === 'Promoted' ? 'AD On' : 'Free Ad')}
+                                                                    </span>
+                                                                )}
                                                                 <div className="flex items-center gap-1.5">
                                                                     {selectedAdForDeletion === ad._id && isOwnAccount && ad.status !== 'deleted' && (
                                                                         <button
@@ -2397,7 +2443,7 @@ I have sent my CV for your review.`;
                                                         disabled={ad.status === 'deleted'}
                                                         className={cn(
                                                             "w-full text-white text-[13px] font-medium py-1.5 rounded-md text-center transition-colors shadow-sm",
-                                                            ad.status === 'deleted' ? "bg-slate-400 cursor-not-allowed" : "bg-[#3B82F6] hover:bg-blue-600"
+                                                            ad.status === 'deleted' ? "bg-slate-400 cursor-not-allowed" : getPostButtonColorClass(ad)
                                                         )}
                                                     >
                                                         {ad.status === 'deleted' ? 'Post Deleted' : getPostButtonLabel(ad)}
