@@ -39,6 +39,7 @@ interface SubLocationOption {
 interface SubLocationItem {
     _id: string;
     name: string;
+    subLocationNameBn?: string;
     order?: number;
     priority?: number;
 }
@@ -46,17 +47,20 @@ interface SubLocationItem {
 interface LocationItem {
     _id: string;
     name: string;
+    locationNameBn?: string;
     subLocations?: SubLocationItem[];
 }
 
 interface SubCategoryItem {
     _id: string;
     name: string;
+    subCategoryNameBn?: string;
 }
 
 interface CategoryItem {
     _id: string;
     name: string;
+    categoryNameBn?: string;
     subcategories?: SubCategoryItem[];
 }
 
@@ -190,7 +194,12 @@ export default function FilterModal({
 
     const hasBanglaChars = useCallback((value: string) => /[\u0980-\u09FF]/.test(value), []);
 
-    const getLocalizedAreaName = useCallback((rawName: string) => {
+    const getLocalizedAreaName = useCallback((rawName: string, rawNameBn?: string) => {
+        const providedBn = String(rawNameBn || '').trim();
+        if (language === 'bn' && providedBn) {
+            return providedBn;
+        }
+
         const name = String(rawName || '').trim();
         if (!name) return '';
 
@@ -255,7 +264,7 @@ export default function FilterModal({
             const count = subLocationCountMap.get(sub.name) || 0;
             return {
                 value: sub.name,
-                label: `${getLocalizedAreaName(sub.name)} (${count.toLocaleString()})`
+                label: `${getLocalizedAreaName(sub.name, sub.subLocationNameBn)} (${count.toLocaleString()})`
             };
         }),
         [selectedLocationSubLocations, subLocationCountMap, getLocalizedAreaName]
@@ -267,8 +276,49 @@ export default function FilterModal({
         setView('main');
     };
 
-    const selectedLocationLabel = filters.location ? getLocalizedAreaName(filters.location) : "";
-    const selectedSubLocationLabel = filters.subLocation ? getLocalizedAreaName(filters.subLocation) : "";
+    const selectedLocationMeta = useMemo(
+        () => locations.find((l) => l.name === filters.location),
+        [locations, filters.location]
+    );
+
+    const selectedSubLocationMeta = useMemo(
+        () => selectedLocationMeta?.subLocations?.find((s) => s.name === filters.subLocation),
+        [selectedLocationMeta, filters.subLocation]
+    );
+
+    const tempLocationMeta = useMemo(
+        () => locations.find((l) => l.name === tempLocation),
+        [locations, tempLocation]
+    );
+
+    const selectedCategoryMeta = useMemo(
+        () => categories.find((c) => c.name === filters.category),
+        [categories, filters.category]
+    );
+
+    const selectedSubCategoryMeta = useMemo(
+        () => selectedCategoryMeta?.subcategories?.find((s) => s.name === filters.subCategory),
+        [selectedCategoryMeta, filters.subCategory]
+    );
+
+    const tempCategoryMeta = useMemo(
+        () => categories.find((c) => c.name === tempCategory),
+        [categories, tempCategory]
+    );
+
+    const selectedLocationLabel = filters.location
+        ? getLocalizedAreaName(filters.location, selectedLocationMeta?.locationNameBn)
+        : "";
+    const selectedSubLocationLabel = filters.subLocation
+        ? getLocalizedAreaName(filters.subLocation, selectedSubLocationMeta?.subLocationNameBn)
+        : "";
+
+    const selectedCategoryLabel = filters.category
+        ? getLocalizedAreaName(filters.category, selectedCategoryMeta?.categoryNameBn)
+        : "";
+    const selectedSubCategoryLabel = filters.subCategory
+        ? getLocalizedAreaName(filters.subCategory, selectedSubCategoryMeta?.subCategoryNameBn)
+        : "";
 
     if (!isOpen) return null;
 
@@ -327,7 +377,7 @@ export default function FilterModal({
                             >
                                 <div className="space-y-0.5">
                                     <span className="text-[15px] text-[#0088cc] font-medium group-hover:underline">
-                                        {filters.category ? `${filters.category}${filters.subCategory ? `, ${filters.subCategory}` : ''}` : translate("Select Category", "ক্যাটাগরি নির্বাচন করুন")}
+                                        {filters.category ? `${selectedCategoryLabel}${filters.subCategory ? `, ${selectedSubCategoryLabel}` : ''}` : translate("Select Category", "ক্যাটাগরি নির্বাচন করুন")}
                                     </span>
                                 </div>
                                 <ChevronRight className="w-5 h-5 text-black stroke-[3]" />
@@ -441,7 +491,16 @@ export default function FilterModal({
                                     <span className="text-[15px] font-medium text-[#0088cc]">{translate("All Bangladesh", "পুরো বাংলাদেশ")}</span>
                                     {!filters.location && <Check className="w-5 h-5 text-[#0088cc]" />}
                                 </button>
-                                {locations.filter(l => l.name.toLowerCase().includes(searchQuery.toLowerCase())).map(loc => {
+                                {locations.filter((l) => {
+                                    const query = searchQuery.toLowerCase();
+                                    if (!query) return true;
+
+                                    return (
+                                        l.name.toLowerCase().includes(query) ||
+                                        (l.locationNameBn || '').toLowerCase().includes(query) ||
+                                        getLocalizedAreaName(l.name, l.locationNameBn).toLowerCase().includes(query)
+                                    );
+                                }).map(loc => {
                                     const count = allAds.filter(ad => ad.location === loc.name).length;
                                     return (
                                         <button
@@ -455,7 +514,7 @@ export default function FilterModal({
                                             className="w-full flex items-center justify-between py-1.5 px-4 hover:bg-slate-50 transition-colors text-left"
                                         >
                                             <div className="flex items-center gap-2">
-                                                <span className="text-[15px] font-medium text-slate-800">{getLocalizedAreaName(loc.name)}</span>
+                                                <span className="text-[15px] font-medium text-slate-800">{getLocalizedAreaName(loc.name, loc.locationNameBn)}</span>
                                                 <span className="text-[12px] text-slate-500 font-normal">({count.toLocaleString()})</span>
                                             </div>
                                             <div className="flex items-center gap-1">
@@ -472,7 +531,7 @@ export default function FilterModal({
                     {view === 'location-sub' && (
                         <div className="p-0">
                             <div className="bg-slate-50 p-2.5 border-b border-slate-100 flex items-center justify-between">
-                                <h3 className="text-sm font-bold text-slate-800">{getLocalizedAreaName(tempLocation)}</h3>
+                                <h3 className="text-sm font-bold text-slate-800">{getLocalizedAreaName(tempLocation, tempLocationMeta?.locationNameBn)}</h3>
                                 <button
                                     onClick={() => { setFilters({ ...filters, location: tempLocation, subLocation: "" }); setView('main'); }}
                                     className="text-xs text-[#0088cc] font-bold"
@@ -494,7 +553,7 @@ export default function FilterModal({
                                                 className="w-full flex items-center justify-between py-2 px-3 hover:bg-slate-50 transition-colors text-left"
                                             >
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-[14px] text-slate-700">{getLocalizedAreaName(sub.name)}</span>
+                                                    <span className="text-[14px] text-slate-700">{getLocalizedAreaName(sub.name, sub.subLocationNameBn)}</span>
                                                     <span className="text-[12px] text-slate-500 font-normal">({count.toLocaleString()})</span>
                                                 </div>
                                                 {filters.location === tempLocation && filters.subLocation === sub.name && <Check className="w-5 h-5 text-[#0088cc]" />}
@@ -566,7 +625,16 @@ export default function FilterModal({
                                     <span className="text-[15px] font-medium text-[#0088cc]">{translate("All Categories", "সব ক্যাটাগরি")}</span>
                                     {!filters.category && <Check className="w-5 h-5 text-[#0088cc]" />}
                                 </button>
-                                {categories.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())).map(cat => {
+                                {categories.filter((c) => {
+                                    const query = searchQuery.toLowerCase();
+                                    if (!query) return true;
+
+                                    return (
+                                        c.name.toLowerCase().includes(query) ||
+                                        (c.categoryNameBn || '').toLowerCase().includes(query) ||
+                                        getLocalizedAreaName(c.name, c.categoryNameBn).toLowerCase().includes(query)
+                                    );
+                                }).map(cat => {
                                     const count = allAds.filter(ad => ad.category === cat.name).length;
                                     return (
                                         <button
@@ -579,7 +647,7 @@ export default function FilterModal({
                                             className="w-full flex items-center justify-between py-1.5 px-4 hover:bg-slate-50 transition-colors text-left"
                                         >
                                             <div className="flex items-center gap-2">
-                                                <span className="text-[15px] font-medium text-slate-800">{cat.name}</span>
+                                                <span className="text-[15px] font-medium text-slate-800">{getLocalizedAreaName(cat.name, cat.categoryNameBn)}</span>
                                                 <span className="text-[12px] text-slate-500 font-normal">({count.toLocaleString()})</span>
                                             </div>
                                             <div className="flex items-center gap-1">
@@ -596,7 +664,7 @@ export default function FilterModal({
                     {view === 'category-sub' && (
                         <div className="p-0">
                             <div className="bg-slate-50 p-2.5 border-b border-slate-100 flex items-center justify-between">
-                                <h3 className="text-sm font-bold text-slate-800">{tempCategory}</h3>
+                                <h3 className="text-sm font-bold text-slate-800">{getLocalizedAreaName(tempCategory, tempCategoryMeta?.categoryNameBn)}</h3>
                                 <button
                                     onClick={() => { setFilters({ ...filters, category: tempCategory, subCategory: "" }); setView('main'); }}
                                     className="text-xs text-[#0088cc] font-bold"
@@ -605,7 +673,7 @@ export default function FilterModal({
                                 </button>
                             </div>
                             <div className="divide-y divide-slate-100">
-                                {categories.find(c => c.name === tempCategory)?.subcategories?.map((sub) => {
+                                {tempCategoryMeta?.subcategories?.map((sub) => {
                                     const count = allAds.filter(ad => ad.category === tempCategory && ad.subCategory === sub.name).length;
                                     return (
                                         <button
@@ -617,7 +685,7 @@ export default function FilterModal({
                                             className="w-full flex items-center justify-between py-1.5 px-4 hover:bg-slate-50 transition-colors text-left"
                                         >
                                             <div className="flex items-center gap-2">
-                                                <span className="text-[15px] text-slate-700">{sub.name}</span>
+                                                <span className="text-[15px] text-slate-700">{getLocalizedAreaName(sub.name, sub.subCategoryNameBn)}</span>
                                                 <span className="text-[12px] text-slate-500 font-normal">({count.toLocaleString()})</span>
                                             </div>
                                             {filters.category === tempCategory && filters.subCategory === sub.name && <Check className="w-5 h-5 text-[#0088cc]" />}

@@ -32,6 +32,7 @@ import { useSettings } from '../context/SettingsContext';
 interface SubItem {
     _id: string;
     name: string;
+    subCategoryNameBn?: string;
     slug: string;
     image?: string;
 }
@@ -39,6 +40,7 @@ interface SubItem {
 interface Category {
     _id: string;
     name: string;
+    categoryNameBn?: string;
     icon?: string; // Changed from photo
     subcategories: SubItem[];
 }
@@ -220,6 +222,35 @@ export default function DashboardClient() {
             .replace(/--+/g, '-')     // Replace multiple - with single -
             .replace(/^-+/, '')       // Trim - from start of text
             .replace(/-+$/, '');      // Trim - from end of text
+    };
+
+    const hasBanglaChars = (value: string) => /[\u0980-\u09FF]/.test(value);
+    const getLocalizedCategoryName = (rawName: string, rawNameBn?: string) => {
+        const providedBn = String(rawNameBn || '').trim();
+        if (language === 'bn' && providedBn) {
+            return providedBn;
+        }
+
+        const name = String(rawName || '').trim();
+        if (!name) return '';
+
+        const match = name.match(/^(.+?)\s*\((.+)\)\s*$/);
+        if (!match) return name;
+
+        const first = match[1].trim();
+        const second = match[2].trim();
+        const firstIsBn = hasBanglaChars(first);
+        const secondIsBn = hasBanglaChars(second);
+
+        if (language === 'bn') {
+            if (firstIsBn && !secondIsBn) return first;
+            if (secondIsBn && !firstIsBn) return second;
+            return firstIsBn ? first : second;
+        }
+
+        if (!firstIsBn && secondIsBn) return first;
+        if (!secondIsBn && firstIsBn) return second;
+        return firstIsBn ? second : first;
     };
 
     const getAdUrl = (ad: any) => {
@@ -707,7 +738,7 @@ export default function DashboardClient() {
                                                                 ) : (
                                                                     <CategoryIcon className="w-4 h-4 text-black shrink-0" />
                                                                 )}
-                                                                <span className={cn((expandedCategory === cat._id || filters.category === cat.name) && "text-black")}>{cat.name}</span>
+                                                                <span className={cn((expandedCategory === cat._id || filters.category === cat.name) && "text-black")}>{getLocalizedCategoryName(cat.name, cat.categoryNameBn)}</span>
                                                                 <span className="text-black font-normal ml-0.5">({totalAds.filter(ad => ad.category === cat.name).length.toLocaleString()})</span>
                                                             </div>
                                                             {cat.subcategories.length > 0 && (
@@ -741,7 +772,7 @@ export default function DashboardClient() {
                                                                             ) : (
                                                                                 <div className={cn("w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-[#0088cc] transition-colors", filters.subCategory === sub.name && "bg-[#0088cc]")} />
                                                                             )}
-                                                                            <span className={cn(filters.subCategory === sub.name && "text-black")}>{sub.name}</span>
+                                                                            <span className={cn(filters.subCategory === sub.name && "text-black")}>{getLocalizedCategoryName(sub.name, sub.subCategoryNameBn)}</span>
                                                                             <span className="text-black">({totalAds.filter(ad => ad.subCategory === sub.name).length.toLocaleString()})</span>
                                                                         </Link>
                                                                     ))}
@@ -1126,14 +1157,14 @@ export default function DashboardClient() {
                                                         {cat.icon ? (
                                                             <img
                                                                 src={getImageUrl(cat.icon) || undefined}
-                                                                alt={cat.name}
+                                                                alt={getLocalizedCategoryName(cat.name, cat.categoryNameBn)}
                                                                 className="w-full h-full object-contain"
                                                                 loading="lazy"
                                                             />
                                                         ) : (
                                                             <img
-                                                                src={`https://placehold.co/100x100?text=${cat.name.charAt(0)}`}
-                                                                alt={cat.name}
+                                                                src={`https://placehold.co/100x100?text=${getLocalizedCategoryName(cat.name, cat.categoryNameBn).charAt(0)}`}
+                                                                alt={getLocalizedCategoryName(cat.name, cat.categoryNameBn)}
                                                                 className="w-full h-full object-contain opacity-50"
                                                                 loading="lazy"
                                                             />
@@ -1143,7 +1174,7 @@ export default function DashboardClient() {
                                                 <span className={cn(
                                                     "text-[10px] lg:text-[11px] font-bold text-center max-w-[62px] lg:max-w-[70px] truncate transition-colors",
                                                     cat.name === filters.category ? "text-[#0088cc]" : "text-black"
-                                                )}>{cat.name}</span>
+                                                )}>{getLocalizedCategoryName(cat.name, cat.categoryNameBn)}</span>
                                             </Link>
                                         ))
                                     }
@@ -1546,7 +1577,7 @@ export default function DashboardClient() {
                                             {chunk.showCategoryBatch && categoryToShow && (
                                                 <div className="bg-white relative group/cat rounded-lg p-2 pb-0 mt-2">
                                                     <div className="bg-white flex items-center justify-between px-2 mb-2">
-                                                        <h3 className="text-sm font-medium text-black">{categoryToShow.name}</h3>
+                                                        <h3 className="text-sm font-medium text-black">{getLocalizedCategoryName(categoryToShow.name, categoryToShow.categoryNameBn)}</h3>
                                                         <button
                                                             onClick={() => {
                                                                 const params = new URLSearchParams(searchParams.toString());

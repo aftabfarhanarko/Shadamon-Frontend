@@ -46,6 +46,7 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 interface SubItem {
     _id: string;
     name: string;
+    subCategoryNameBn?: string;
     slug: string;
     image?: string;
 }
@@ -53,6 +54,7 @@ interface SubItem {
 interface Category {
     _id: string;
     name: string;
+    categoryNameBn?: string;
     subcategories: SubItem[];
 }
 
@@ -67,6 +69,35 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     const router = useRouter();
     const searchParams = useSearchParams();
     const pathname = usePathname();
+
+    const hasBanglaChars = (value: string) => /[\u0980-\u09FF]/.test(value);
+    const getLocalizedCategoryName = (rawName: string, rawNameBn?: string) => {
+        const providedBn = String(rawNameBn || '').trim();
+        if (language === 'bn' && providedBn) {
+            return providedBn;
+        }
+
+        const name = String(rawName || '').trim();
+        if (!name) return '';
+
+        const match = name.match(/^(.+?)\s*\((.+)\)\s*$/);
+        if (!match) return name;
+
+        const first = match[1].trim();
+        const second = match[2].trim();
+        const firstIsBn = hasBanglaChars(first);
+        const secondIsBn = hasBanglaChars(second);
+
+        if (language === 'bn') {
+            if (firstIsBn && !secondIsBn) return first;
+            if (secondIsBn && !firstIsBn) return second;
+            return firstIsBn ? first : second;
+        }
+
+        if (!firstIsBn && secondIsBn) return first;
+        if (!secondIsBn && firstIsBn) return second;
+        return firstIsBn ? second : first;
+    };
 
     const [isPostAdModalOpen, setIsPostAdModalOpen] = useState(false);
     const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
@@ -1060,7 +1091,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                                 onClick={() => toggleCategory(cat._id)}
                                                 className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 text-black transition-colors text-sm font-medium"
                                             >
-                                                <span>{cat.name}</span>
+                                                <span>{getLocalizedCategoryName(cat.name, cat.categoryNameBn)}</span>
                                                 {cat.subcategories.length > 0 && (
                                                     expandedCategory === cat._id
                                                         ? <ChevronDown className="w-4 h-4 text-black" />
@@ -1082,7 +1113,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                                                     alt=""
                                                                 />
                                                             )}
-                                                            {sub.name}
+                                                            {getLocalizedCategoryName(sub.name, sub.subCategoryNameBn)}
                                                         </button>
                                                     ))}
                                                 </div>

@@ -29,6 +29,8 @@ interface PostAdModalProps {
 interface SubItem {
     _id: string;
     name: string;
+    subCategoryNameBn?: string;
+    subLocationNameBn?: string;
     slug: string;
     image?: string;
     icon?: string;
@@ -50,6 +52,7 @@ interface Feature {
 interface Category {
     _id: string;
     name: string;
+    categoryNameBn?: string;
     image?: string;
     icon?: string;
     subcategories: SubItem[];
@@ -58,6 +61,7 @@ interface Category {
 interface Location {
     _id: string;
     name: string;
+    locationNameBn?: string;
     image?: string;
     subLocations: SubItem[];
 }
@@ -69,7 +73,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [loadingData, setLoadingData] = useState(false);
     const [compressing, setCompressing] = useState(false);
     const { settings, fetchPostAdSettings } = useSettings();
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
 
     // Form State
     const [headline, setHeadline] = useState("");
@@ -119,6 +123,36 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [showTnC, setShowTnC] = useState(false);
     const [showPrivacy, setShowPrivacy] = useState(false);
     const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+    const hasBanglaChars = (value: string) => /[\u0980-\u09FF]/.test(value);
+
+    const getLocalizedAreaName = React.useCallback((rawName: string, rawNameBn?: string) => {
+        const providedBn = String(rawNameBn || '').trim();
+        if (language === 'bn' && providedBn) {
+            return providedBn;
+        }
+
+        const name = String(rawName || '').trim();
+        if (!name) return '';
+
+        const match = name.match(/^(.+?)\s*\((.+)\)\s*$/);
+        if (!match) return name;
+
+        const first = match[1].trim();
+        const second = match[2].trim();
+        const firstIsBn = hasBanglaChars(first);
+        const secondIsBn = hasBanglaChars(second);
+
+        if (language === 'bn') {
+            if (firstIsBn && !secondIsBn) return first;
+            if (secondIsBn && !firstIsBn) return second;
+            return firstIsBn ? first : second;
+        }
+
+        if (!firstIsBn && secondIsBn) return first;
+        if (!secondIsBn && firstIsBn) return second;
+        return firstIsBn ? second : first;
+    }, [language]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -794,6 +828,13 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         .find(c => c.name === selectedCategory)
         ?.subcategories.find(s => s.name === selectedSubCategory);
 
+    const selectedCategoryMeta = categories.find((c) => c.name === selectedCategory);
+    const selectedSubCategoryMeta = selectedCategoryMeta?.subcategories.find((s) => s.name === selectedSubCategory);
+
+    const selectedLocationMeta = locations.find((l) => l.name === selectedLocation);
+    const selectedSubLocationMeta = selectedLocationMeta?.subLocations.find((s) => s.name === selectedSubLocation);
+    const tempLocationMeta = locations.find((l) => l.name === tempLocation);
+
     if (!isOpen) return null;
 
     return (
@@ -828,7 +869,16 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                         </div>
                         <div className="flex-1 overflow-y-auto">
                             <div className="divide-y divide-slate-100">
-                                {categories.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())).map(cat => (
+                                {categories.filter((c) => {
+                                    const query = searchQuery.toLowerCase();
+                                    if (!query) return true;
+
+                                    return (
+                                        c.name.toLowerCase().includes(query) ||
+                                        (c.categoryNameBn || '').toLowerCase().includes(query) ||
+                                        getLocalizedAreaName(c.name, c.categoryNameBn).toLowerCase().includes(query)
+                                    );
+                                }).map(cat => (
                                     <div key={cat._id} className="flex flex-col bg-white">
                                         <button
                                             onClick={() => setExpandedCategory(expandedCategory === cat._id ? null : cat._id)}
@@ -843,11 +893,11 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                         <img src={getImageUrl(cat.icon || cat.image || "") || ''} alt="" className="w-full h-full object-contain" loading="lazy" />
                                                     ) : (
                                                         <div className="w-full h-full bg-slate-100 rounded flex items-center justify-center text-slate-400 text-xs font-bold">
-                                                            {cat.name[0]}
+                                                            {getLocalizedAreaName(cat.name, cat.categoryNameBn)[0] || cat.name[0]}
                                                         </div>
                                                     )}
                                                 </div>
-                                                <span className="text-sm font-medium text-slate-700">{cat.name}</span>
+                                                <span className="text-sm font-medium text-slate-700">{getLocalizedAreaName(cat.name, cat.categoryNameBn)}</span>
                                             </div>
                                             <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", expandedCategory === cat._id && "rotate-180")} />
                                         </button>
@@ -871,11 +921,11 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                                 <img src={getImageUrl(sub.image || sub.icon || "") || ''} className="w-full h-full object-contain" loading="lazy" />
                                                             ) : (
                                                                 <div className="w-full h-full bg-slate-100 rounded flex items-center justify-center text-slate-400 text-[10px] font-bold">
-                                                                    {sub.name[0]}
+                                                                    {getLocalizedAreaName(sub.name, sub.subCategoryNameBn)[0] || sub.name[0]}
                                                                 </div>
                                                             )}
                                                         </div>
-                                                        <span className="text-sm text-slate-600">{sub.name}</span>
+                                                        <span className="text-sm text-slate-600">{getLocalizedAreaName(sub.name, sub.subCategoryNameBn)}</span>
                                                     </button>
                                                 ))}
                                             </div>
@@ -907,7 +957,16 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                         </div>
                         <div className="flex-1 overflow-y-auto">
                             <div className="divide-y divide-slate-100">
-                                {locations.filter(l => l.name.toLowerCase().includes(searchQuery.toLowerCase())).map(loc => (
+                                {locations.filter((l) => {
+                                    const query = searchQuery.toLowerCase();
+                                    if (!query) return true;
+
+                                    return (
+                                        l.name.toLowerCase().includes(query) ||
+                                        (l.locationNameBn || '').toLowerCase().includes(query) ||
+                                        getLocalizedAreaName(l.name, l.locationNameBn).toLowerCase().includes(query)
+                                    );
+                                }).map(loc => (
                                     <button
                                         key={loc._id}
                                         onClick={() => {
@@ -925,7 +984,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                     <div className="w-2 h-2 rounded-full bg-slate-400"></div>
                                                 )}
                                             </div>
-                                            <span className="text-sm font-medium text-slate-700">{loc.name}</span>
+                                            <span className="text-sm font-medium text-slate-700">{getLocalizedAreaName(loc.name, loc.locationNameBn)}</span>
                                         </div>
                                         <ChevronDown className="w-4 h-4 text-slate-400 -rotate-90" />
                                     </button>
@@ -939,7 +998,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                     <div className="flex flex-col h-full bg-white">
                         <div className="p-2.5 border-b border-slate-100 flex items-center gap-3">
                             <button onClick={() => setView('location')}><ArrowLeft className="w-5 h-5 text-slate-600" /></button>
-                            <h2 className="text-[16px] text-slate-800">{tempLocation}</h2>
+                            <h2 className="text-[16px] text-slate-800">{getLocalizedAreaName(tempLocation, tempLocationMeta?.locationNameBn)}</h2>
                         </div>
                         <div className="flex-1 overflow-y-auto">
                             <div className="p-4">
@@ -957,7 +1016,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                         <img src={getImageUrl(sub.image) || ''} alt="" className="w-full h-full object-contain" loading="lazy" />
                                                     </div>
                                                 )}
-                                                <span className="text-sm text-slate-700 font-medium group-hover:text-black transition-colors">{sub.name}</span>
+                                                <span className="text-sm text-slate-700 font-medium group-hover:text-black transition-colors">{getLocalizedAreaName(sub.name, sub.subLocationNameBn)}</span>
                                             </div>
                                             <ChevronDown className="w-4 h-4 text-slate-300 -rotate-90 group-hover:text-black transition-colors" />
                                         </button>
@@ -1328,7 +1387,9 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                     onClick={() => !editAd && setView('category')}
                                                 >
                                                     <span className={selectedCategory ? "text-black font-bold" : "text-slate-400"}>
-                                                        {selectedCategory || t('category')}
+                                                        {selectedCategory
+                                                            ? `${getLocalizedAreaName(selectedCategory, selectedCategoryMeta?.categoryNameBn)}${selectedSubCategory ? `, ${getLocalizedAreaName(selectedSubCategory, selectedSubCategoryMeta?.subCategoryNameBn)}` : ''}`
+                                                            : t('category')}
                                                     </span>
                                                     {!editAd && <ChevronDown className="w-3 h-3 text-slate-400" />}
                                                 </div>
@@ -1340,7 +1401,9 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                     onClick={() => !editAd && setView('category')}
                                                 >
                                                     <span className={selectedLocation ? "text-black font-bold" : "text-slate-400"}>
-                                                        {selectedLocation || t('location')}
+                                                        {selectedLocation
+                                                            ? `${getLocalizedAreaName(selectedLocation, selectedLocationMeta?.locationNameBn)}${selectedSubLocation ? `, ${getLocalizedAreaName(selectedSubLocation, selectedSubLocationMeta?.subLocationNameBn)}` : ''}`
+                                                            : t('location')}
                                                     </span>
                                                     {!editAd && <ChevronDown className="w-3 h-3 text-slate-400" />}
                                                 </div>

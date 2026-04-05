@@ -89,6 +89,59 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
         return 'bg-[#3B82F6] hover:bg-blue-600';
     };
 
+    const hasBanglaChars = (value: string) => /[\u0980-\u09FF]/.test(value);
+    const getLocalizedLocationName = useCallback((name: string, nameBn?: string) => {
+        const bn = String(nameBn || '').trim();
+        if (language === 'bn' && bn) return bn;
+
+        const raw = String(name || '').trim();
+        if (!raw) return '';
+
+        const match = raw.match(/^(.+?)\s*\((.+)\)\s*$/);
+        if (!match) return raw;
+
+        const first = match[1].trim();
+        const second = match[2].trim();
+        const firstIsBn = hasBanglaChars(first);
+        const secondIsBn = hasBanglaChars(second);
+
+        if (language === 'bn') {
+            if (firstIsBn && !secondIsBn) return first;
+            if (secondIsBn && !firstIsBn) return second;
+            return firstIsBn ? first : second;
+        }
+
+        if (!firstIsBn && secondIsBn) return first;
+        if (!secondIsBn && firstIsBn) return second;
+        return firstIsBn ? second : first;
+    }, [language]);
+
+    const getLocalizedCategoryName = useCallback((name: string, nameBn?: string) => {
+        const bn = String(nameBn || '').trim();
+        if (language === 'bn' && bn) return bn;
+
+        const raw = String(name || '').trim();
+        if (!raw) return '';
+
+        const match = raw.match(/^(.+?)\s*\((.+)\)\s*$/);
+        if (!match) return raw;
+
+        const first = match[1].trim();
+        const second = match[2].trim();
+        const firstIsBn = hasBanglaChars(first);
+        const secondIsBn = hasBanglaChars(second);
+
+        if (language === 'bn') {
+            if (firstIsBn && !secondIsBn) return first;
+            if (secondIsBn && !firstIsBn) return second;
+            return firstIsBn ? first : second;
+        }
+
+        if (!firstIsBn && secondIsBn) return first;
+        if (!secondIsBn && firstIsBn) return second;
+        return firstIsBn ? second : first;
+    }, [language]);
+
     useEffect(() => {
         const handleInitSendCv = (e: CustomEvent) => {
             const ad = e.detail?.ad;
@@ -1850,7 +1903,7 @@ I have sent my CV for your review.`;
                                             >
                                                 <option value="">Select Location</option>
                                                 {locations.map((loc: any) => (
-                                                    <option key={loc._id} value={loc.name}>{loc.name}</option>
+                                                    <option key={loc._id} value={loc.name}>{getLocalizedLocationName(loc.name, loc.locationNameBn)}</option>
                                                 ))}
                                             </select>
                                             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -2660,7 +2713,7 @@ I have sent my CV for your review.`;
                                         <div className="bg-white p-2 rounded border border-slate-200 min-h-[50px] flex flex-wrap gap-2 mb-2">
                                             {activityData?.notifyCategories?.map((cat: string) => (
                                                 <span key={cat} className="bg-slate-100 border border-slate-300 rounded px-2 py-1 text-[11px] font-bold text-slate-700 flex items-center gap-1">
-                                                    {cat}
+                                                    {getLocalizedCategoryName(cat, categories.find((c: any) => c.name === cat)?.categoryNameBn)}
                                                     <button onClick={() => handleNotifyChange(cat)} className="hover:text-red-500"><X className="w-3 h-3" /></button>
                                                 </span>
                                             ))}
@@ -2680,7 +2733,7 @@ I have sent my CV for your review.`;
                                                                 isSelected ? "bg-orange-100 text-orange-700 font-bold" : "hover:bg-slate-50 text-slate-600"
                                                             )}
                                                         >
-                                                            {cat.name}
+                                                            {getLocalizedCategoryName(cat.name, cat.categoryNameBn)}
                                                         </button>
                                                     )
                                                 })}
