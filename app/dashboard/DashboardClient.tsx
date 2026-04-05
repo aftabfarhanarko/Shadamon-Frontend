@@ -102,11 +102,28 @@ export default function DashboardClient() {
     const { t, language } = useLanguage();
     const { settings } = useSettings();
 
+    const getFilterQueryValue = (longKey: string, shortKey: string) => {
+        return searchParams.get(longKey) || searchParams.get(shortKey);
+    };
+
+    const setShortFilterParam = (
+        params: URLSearchParams,
+        shortKey: string,
+        longKey: string,
+        value?: string
+    ) => {
+        params.delete(shortKey);
+        params.delete(longKey);
+        if (value) {
+            params.set(shortKey, value);
+        }
+    };
+
     const getFiltersFromSearchParams = (): FilterState => {
-        const urlCategory = searchParams.get('category');
-        const urlSubCategory = searchParams.get('subCategory');
-        const urlLocation = searchParams.get('location');
-        const urlSubLocation = searchParams.get('subLocation');
+        const urlCategory = getFilterQueryValue('category', 'c');
+        const urlSubCategory = getFilterQueryValue('subCategory', 'sc');
+        const urlLocation = getFilterQueryValue('location', 'l');
+        const urlSubLocation = getFilterQueryValue('subLocation', 'sl');
         const urlSearch = searchParams.get('search');
 
         return {
@@ -261,18 +278,18 @@ export default function DashboardClient() {
 
     const getCategoryUrl = (catName: string, subCatName: string = "") => {
         const params = new URLSearchParams(searchParams.toString());
-        if (catName) params.set('category', catName); else params.delete('category');
-        if (subCatName) params.set('subCategory', subCatName); else params.delete('subCategory');
+        setShortFilterParam(params, 'c', 'category', catName || undefined);
+        setShortFilterParam(params, 'sc', 'subCategory', subCatName || undefined);
         const str = params.toString();
-        return str ? `/dashboard?${str}` : '/dashboard';
+        return str ? `/d?${str}` : '/d';
     };
 
     const getLocationUrl = (locName: string, subLocName: string = "") => {
         const params = new URLSearchParams(searchParams.toString());
-        if (locName) params.set('location', locName); else params.delete('location');
-        if (subLocName) params.set('subLocation', subLocName); else params.delete('subLocation');
+        setShortFilterParam(params, 'l', 'location', locName || undefined);
+        setShortFilterParam(params, 'sl', 'subLocation', subLocName || undefined);
         const str = params.toString();
-        return str ? `/dashboard?${str}` : '/dashboard';
+        return str ? `/d?${str}` : '/d';
     };
 
     // Initialize filters from URL on mount
@@ -315,10 +332,10 @@ export default function DashboardClient() {
         }
 
         const params = new URLSearchParams();
-        if (filters.category) params.set('category', filters.category);
-        if (filters.subCategory) params.set('subCategory', filters.subCategory);
-        if (filters.location) params.set('location', filters.location);
-        if (filters.subLocation) params.set('subLocation', filters.subLocation);
+        if (filters.category) params.set('c', filters.category);
+        if (filters.subCategory) params.set('sc', filters.subCategory);
+        if (filters.location) params.set('l', filters.location);
+        if (filters.subLocation) params.set('sl', filters.subLocation);
         if (filters.search) params.set('search', filters.search);
         if (filters.promoteTag && filters.promoteTag !== 'All') params.set('promoteTag', filters.promoteTag);
         if (filters.sort && filters.sort !== 'newest') params.set('sort', filters.sort);
@@ -328,9 +345,15 @@ export default function DashboardClient() {
         if (adParam) params.set('ad', adParam);
 
         const queryString = params.toString();
-        const newUrl = queryString ? `/dashboard?${queryString}` : '/dashboard';
+        const newUrl = queryString ? `/d?${queryString}` : '/d';
 
-        const currentQuery = searchParams.toString();
+        const currentParams = new URLSearchParams(searchParams.toString());
+        setShortFilterParam(currentParams, 'c', 'category', getFilterQueryValue('category', 'c') || undefined);
+        setShortFilterParam(currentParams, 'sc', 'subCategory', getFilterQueryValue('subCategory', 'sc') || undefined);
+        setShortFilterParam(currentParams, 'l', 'location', getFilterQueryValue('location', 'l') || undefined);
+        setShortFilterParam(currentParams, 'sl', 'subLocation', getFilterQueryValue('subLocation', 'sl') || undefined);
+        const currentQuery = currentParams.toString();
+
         if (queryString !== currentQuery) {
             router.push(newUrl, { scroll: false });
         }
@@ -1581,8 +1604,8 @@ export default function DashboardClient() {
                                                         <button
                                                             onClick={() => {
                                                                 const params = new URLSearchParams(searchParams.toString());
-                                                                params.set('category', categoryToShow.name);
-                                                                router.push(`/dashboard?${params.toString()}`, { scroll: false });
+                                                                setShortFilterParam(params, 'c', 'category', categoryToShow.name);
+                                                                router.push(`/d?${params.toString()}`, { scroll: false });
                                                                 setFilters(prev => ({ ...prev, category: categoryToShow.name }));
                                                             }}
                                                             className="text-xs text-black hover:underline"

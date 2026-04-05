@@ -5,9 +5,37 @@ export function middleware(request: NextRequest) {
     const token = request.cookies.get('token')?.value;
     const { pathname } = request.nextUrl;
 
+    if (pathname === '/d') {
+        const rewriteUrl = request.nextUrl.clone();
+        const shortCategory = rewriteUrl.searchParams.get('c');
+        const shortSubCategory = rewriteUrl.searchParams.get('sc');
+        const shortLocation = rewriteUrl.searchParams.get('l');
+        const shortSubLocation = rewriteUrl.searchParams.get('sl');
+
+        rewriteUrl.pathname = '/dashboard';
+        if (shortCategory && !rewriteUrl.searchParams.get('category')) rewriteUrl.searchParams.set('category', shortCategory);
+        if (shortSubCategory && !rewriteUrl.searchParams.get('subCategory')) rewriteUrl.searchParams.set('subCategory', shortSubCategory);
+        if (shortLocation && !rewriteUrl.searchParams.get('location')) rewriteUrl.searchParams.set('location', shortLocation);
+        if (shortSubLocation && !rewriteUrl.searchParams.get('subLocation')) rewriteUrl.searchParams.set('subLocation', shortSubLocation);
+
+        return NextResponse.rewrite(rewriteUrl);
+    }
+
     const authRoutes = ['/login', '/register'];
-    const publicRoutes = ['/', '/dashboard', '/dashboard/post-ad'];
+    const publicRoutes = ['/', '/d', '/dashboard', '/dashboard/post-ad'];
     const isInfoRoute = pathname === '/info' || pathname.startsWith('/info/');
+    const slug = pathname.replace(/^\/+|\/+$/g, '');
+    const isSingleSegmentRoute = slug.length > 0 && !slug.includes('/');
+    const reservedSlugs = new Set(['d', 'login', 'register', 'dashboard', 'info']);
+    const isSellerProfileRoute = isSingleSegmentRoute && !reservedSlugs.has(slug.toLowerCase());
+
+    // Support shared seller links like /nurislam by forwarding to the existing profile flow.
+    if (isSellerProfileRoute) {
+        const dashboardUrl = request.nextUrl.clone();
+        dashboardUrl.pathname = '/dashboard';
+        dashboardUrl.searchParams.set('profile', slug);
+        return NextResponse.redirect(dashboardUrl);
+    }
 
     // If user is logged in and tries to access auth routes (login/register), redirect to dashboard
     if (token && authRoutes.includes(pathname)) {
