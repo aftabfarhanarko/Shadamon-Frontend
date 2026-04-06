@@ -119,6 +119,9 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [showOtpVerification, setShowOtpVerification] = useState(false);
     const [otp, setOtp] = useState(["", "", "", "", "", ""]);
     const [otpTimer, setOtpTimer] = useState(300);
+    const [showOtpConfirmation, setShowOtpConfirmation] = useState(false);
+    const [isEditingOtpPhone, setIsEditingOtpPhone] = useState(false);
+    const [editedOtpPhone, setEditedOtpPhone] = useState("");
 
     const [showTnC, setShowTnC] = useState(false);
     const [showPrivacy, setShowPrivacy] = useState(false);
@@ -233,6 +236,9 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 setShowOtpVerification(false);
                 setOtp(["", "", "", "", "", ""]);
                 setOtpTimer(300);
+                setShowOtpConfirmation(false);
+                setIsEditingOtpPhone(false);
+                setEditedOtpPhone("");
                 setMobileCheckResult(null);
 
                 if (initialMobile) {
@@ -495,6 +501,30 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         }
     };
 
+    const requestOtpConfirmation = () => {
+        const trimmedPhone = phone.trim();
+        if (!/^\d{11}$/.test(trimmedPhone)) {
+            toast.error("Please enter a valid 11-digit mobile number");
+            return;
+        }
+        setShowOtpConfirmation(true);
+    };
+
+    const handleConfirmOtpSend = async () => {
+        setShowOtpConfirmation(false);
+        await sendMobileOtp(phone.trim());
+    };
+
+    const handleSaveEditedOtpPhone = async () => {
+        const nextPhone = editedOtpPhone.trim();
+        if (!/^\d{11}$/.test(nextPhone)) {
+            toast.error("Please enter a valid 11-digit mobile number");
+            return;
+        }
+
+        await sendMobileOtp(nextPhone);
+    };
+
 
     // Actual submission logic moved here
     const submitAd = async (otpValue?: string, wasOtpVerified: boolean = false) => {
@@ -632,19 +662,29 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         }
     };
 
-    const sendMobileOtp = async () => {
+    const sendMobileOtp = async (phoneNumber?: string) => {
+        const targetPhone = (phoneNumber ?? phone).trim();
+        if (!/^\d{11}$/.test(targetPhone)) {
+            toast.error("Please enter a valid 11-digit mobile number");
+            return;
+        }
+
         try {
             setLoading(true);
             const res = await fetch(`${API_BASE_URL}/api/user/otp/mobile/request`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone })
+                body: JSON.stringify({ phone: targetPhone })
             });
             const data = await res.json();
             if (data.success) {
                 toast.success("OTP sent to your mobile");
+                setPhone(targetPhone);
                 setShowOtpVerification(true);
+                setOtp(["", "", "", "", "", ""]);
                 setOtpTimer(300);
+                setIsEditingOtpPhone(false);
+                setEditedOtpPhone("");
             } else {
                 toast.error(data.message || "Failed to send OTP");
             }
@@ -750,7 +790,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                     if (normalizeVerifiedBy(userData?.verifiedBy) === 'mobile') {
                         submitAd();
                     } else {
-                        sendMobileOtp();
+                        requestOtpConfirmation();
                     }
                     return;
                 }
@@ -785,7 +825,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 if (normalizeVerifiedBy(user.verifiedBy) === 'mobile') {
                     submitAd(undefined, true);
                 } else {
-                    sendMobileOtp();
+                    requestOtpConfirmation();
                 }
             } else if (currentMobileCheck?.emailExists) {
                 // CASE 2: EMAIL EXISTS BUT HAS NO MOBILE
@@ -810,11 +850,11 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 setIsUserLoggedIn(true);
                 setUserData(loginData.user);
 
-                sendMobileOtp();
+                requestOtpConfirmation();
             } else {
                 // CASE 3: NEW USER / NEW MOBILE / NEW EMAIL
                 // Send OTP, then register and post in handleVerifyOtp -> submitAd
-                sendMobileOtp();
+                requestOtpConfirmation();
             }
         } catch (err) {
             console.error(err);
@@ -1173,19 +1213,40 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                 <div className="bg-white rounded-lg p-5 border border-slate-100 min-h-[300px] flex flex-col items-center justify-center font-sans animate-in fade-in slide-in-from-right duration-300">
                                     <div className="w-full max-w-xs space-y-4">
                                         <h3 className="text-[17px] font-bold text-slate-800 text-left">{t('enter_the_otp')}</h3>
-                                        <p className="text-[14px] text-slate-500 text-left">
-                                            {t('enter_otp_sent_to')} <span className="font-bold text-slate-700">{phone}</span>
-                                            {!(userData?.mobile || (initialMobile && !initialMobile.includes('@')) || editAd?.phone) && (
+                                        {!isEditingOtpPhone ? (
+                                            <p className="text-[14px] text-slate-500 text-left">
+                                                {t('enter_otp_sent_to')} <span className="font-bold text-slate-700">{phone}</span>
+                                                {otpTimer <= 0 && (
+                                                    <button
+                                                        onClick={() => {
+                                                            setIsEditingOtpPhone(true);
+                                                            setEditedOtpPhone("");
+                                                        }}
+                                                        className="text-[#0088cc] hover:underline cursor-pointer font-medium ml-1"
+                                                    >
+                                                        {t('edit_btn')}
+                                                    </button>
+                                                )}
+                                            </p>
+                                        ) : (
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="tel"
+                                                    value={editedOtpPhone}
+                                                    onChange={(e) => setEditedOtpPhone(e.target.value)}
+                                                    placeholder={phone}
+                                                    className="flex-1 h-10 px-3 border border-slate-300 rounded text-sm text-slate-700 focus:outline-none focus:border-teal-500"
+                                                />
                                                 <button
-                                                    onClick={() => {
-                                                        setShowOtpVerification(false);
-                                                    }}
-                                                    className="text-[#0088cc] hover:underline cursor-pointer font-medium ml-1"
+                                                    type="button"
+                                                    onClick={handleSaveEditedOtpPhone}
+                                                    disabled={loading || !editedOtpPhone.trim()}
+                                                    className="h-10 px-3 bg-[#1A1A1A] text-white rounded text-sm font-semibold hover:bg-black disabled:opacity-50"
                                                 >
-                                                    {t('edit_btn')}
+                                                    Save
                                                 </button>
-                                            )}
-                                        </p>
+                                            </div>
+                                        )}
                                         <div className="flex gap-2 justify-between pt-2">
                                             {otp.map((digit, index) => (
                                                 <input
@@ -1202,11 +1263,17 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                             ))}
                                         </div>
                                         <div className="flex items-center justify-between pt-2">
-                                            <div className="text-[13px] text-slate-400 font-medium">
-                                                {t('resend_otp')} <span className="text-slate-800 font-bold ml-1">
-                                                    {Math.floor(otpTimer / 60)}:{(otpTimer % 60).toString().padStart(2, '0')}
-                                                </span>
-                                            </div>
+                                            {otpTimer > 0 ? (
+                                                <div className="text-[13px] text-slate-400 font-medium">
+                                                    {t('resend_otp')} <span className="text-slate-800 font-bold ml-1">
+                                                        {Math.floor(otpTimer / 60)}:{(otpTimer % 60).toString().padStart(2, '0')}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <div className="text-[13px] text-slate-500 font-medium">
+                                                    You can now edit your number and request a new OTP.
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="pt-4">
                                             <button
@@ -1642,6 +1709,34 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                         </div>
                     </>
                 )}
+
+                {showOtpConfirmation && (
+                    <div className="absolute inset-0 z-[2200] bg-black/40 flex items-center justify-center p-4">
+                        <div className="w-full max-w-sm bg-white rounded-xl p-5 shadow-2xl">
+                            <p className="text-sm text-slate-700 leading-relaxed">
+                                An OTP code will be sent to your <span className="font-bold text-slate-900">{phone.trim()}</span> number, is the number correct?
+                            </p>
+                            <div className="mt-5 flex items-center justify-end gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowOtpConfirmation(false)}
+                                    className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
+                                >
+                                    No
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleConfirmOtpSend}
+                                    disabled={loading}
+                                    className="px-4 py-2 rounded-lg bg-[#1A1A1A] text-white hover:bg-black disabled:opacity-50"
+                                >
+                                    Yes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Floating Chat Icon */}
                 <div
                     className="absolute right-5 bottom-20 z-[210] cursor-pointer"
