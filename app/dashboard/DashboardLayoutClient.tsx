@@ -8,7 +8,7 @@ import {
     Home, Plus, Inbox, LogOut, Settings, Menu, X,
     Grid, MapPin, ChevronRight, ChevronDown, Megaphone
 } from 'lucide-react';
-import { RiMailFill, RiMailLine, RiUser3Fill, RiHome5Line, RiSearchLine, RiAddLine, RiUser3Line } from 'react-icons/ri';
+import { RiMailFill, RiMailLine, RiUser3Fill, RiHome5Fill, RiHome5Line, RiSearchLine, RiAddLine, RiUser3Line } from 'react-icons/ri';
 import Cookies from 'js-cookie';
 import { io } from 'socket.io-client';
 import { useLanguage } from '../context/LanguageContext';
@@ -29,11 +29,13 @@ import InfoModal from '../../components/InfoModal';
 import AdDisplay from '../../components/AdDisplay';
 import AdPopup from '../../components/AdPopup';
 import SearchModal from '../../components/SearchModal';
+import FilterModal, { FilterState } from '../../components/FilterModal';
 import { toast } from 'react-hot-toast';
 
 
 import { API_BASE_URL } from '../../utils/apiConfig';
 import { getImageUrl } from '../../utils/imageUrl';
+import { INFO_CONTENT, type InfoPageType } from '../../utils/infoContent';
 import { div } from 'framer-motion/client';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
@@ -44,6 +46,7 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 interface SubItem {
     _id: string;
     name: string;
+    subCategoryNameBn?: string;
     slug: string;
     image?: string;
 }
@@ -51,6 +54,7 @@ interface SubItem {
 interface Category {
     _id: string;
     name: string;
+    categoryNameBn?: string;
     subcategories: SubItem[];
 }
 
@@ -65,6 +69,35 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     const router = useRouter();
     const searchParams = useSearchParams();
     const pathname = usePathname();
+
+    const hasBanglaChars = (value: string) => /[\u0980-\u09FF]/.test(value);
+    const getLocalizedCategoryName = (rawName: string, rawNameBn?: string) => {
+        const providedBn = String(rawNameBn || '').trim();
+        if (language === 'bn' && providedBn) {
+            return providedBn;
+        }
+
+        const name = String(rawName || '').trim();
+        if (!name) return '';
+
+        const match = name.match(/^(.+?)\s*\((.+)\)\s*$/);
+        if (!match) return name;
+
+        const first = match[1].trim();
+        const second = match[2].trim();
+        const firstIsBn = hasBanglaChars(first);
+        const secondIsBn = hasBanglaChars(second);
+
+        if (language === 'bn') {
+            if (firstIsBn && !secondIsBn) return first;
+            if (secondIsBn && !firstIsBn) return second;
+            return firstIsBn ? first : second;
+        }
+
+        if (!firstIsBn && secondIsBn) return first;
+        if (!secondIsBn && firstIsBn) return second;
+        return firstIsBn ? second : first;
+    };
 
     const [isPostAdModalOpen, setIsPostAdModalOpen] = useState(false);
     const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
@@ -152,186 +185,8 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         };
     }, []);
 
-    const openInfoModal = (type: 'about' | 'terms' | 'privacy' | 'contact' | 'safety' | 'return') => {
-        const contentMap: Record<string, { title: string; content: string }> = {
-            about: {
-                title: 'Shadamon.com সম্পর্কে',
-                content: `Shadamon.com একটি আধুনিক অনলাইন মার্কেটপ্লেস, যেখানে আপনি খুব সহজে ও নিরাপদে বিভিন্ন ধরনের পণ্য কেনাবেচা করতে পারেন। আপনি আপনার আশেপাশের এলাকা কিংবা সারা বাংলাদেশের মধ্যে থেকে সহজেই পছন্দের পণ্য খুঁজে নিতে পারবেন।
-
-আপনি কি কিছু বিক্রি করতে চান?
-Shadamon.com-এ একটি অ্যাকাউন্ট খোলা সম্পূর্ণ ফ্রি এবং খুব সহজ। মাত্র কয়েক মিনিটেই আপনি আপনার পণ্যের বিজ্ঞাপন পোস্ট করতে পারবেন এবং আগ্রহী ক্রেতাদের কাছে পৌঁছে যেতে পারবেন। দ্রুত বিক্রির জন্য আপনার বিজ্ঞাপনটি পরিষ্কার, তথ্যবহুল ও আকর্ষণীয়ভাবে তৈরি করুন। যদি আপনার একাধিক পণ্য থাকে বা ব্যবসায়িকভাবে বিক্রি করেন, তাহলে Shadamon.com-এর প্রিমিয়াম ফিচার ব্যবহার করে আরও বেশি মানুষের কাছে পৌঁছাতে পারবেন।
-
-আপনি কি কিছু কিনতে চান?
-Shadamon.com-এ বিভিন্ন ক্যাটাগরিতে সারা বাংলাদেশ জুড়ে অসংখ্য পণ্যের সংগ্রহ রয়েছে। ইলেকট্রনিক্স, গাড়ি, বাসা-বাড়ি থেকে শুরু করে দৈনন্দিন প্রয়োজনীয় জিনিস—সবকিছুই এক জায়গায় খুঁজে পাবেন। সহজ সার্চ ও ফিল্টার অপশন আপনাকে দ্রুত আপনার প্রয়োজন অনুযায়ী পণ্য খুঁজে পেতে সাহায্য করবে।
-Shadamon.com-এর প্রতিটি বিজ্ঞাপন প্রকাশের আগে যাচাই করা হয় যাতে মান বজায় থাকে।`
-            },
-            terms: {
-                title: 'Shadamon.com এর টার্ম ও কণ্ডিশন',
-                content: `Shadamon.com ব্যবহার করার মাধ্যমে আপনি আমাদের নীতিমালা ও শর্তাবলী মেনে চলতে সম্মত হচ্ছেন। দয়া করে এটি মনোযোগ দিয়ে পড়ুন।
-
-১. সাধারণ
-ব্যবহারকারী এবং বিজ্ঞাপনদাতারা নিশ্চিত করবেন যে তাদের আপলোড করা সকল কনটেন্ট (লেখা, ছবি, ভিডিও বা গ্রাফিক্স) প্রযোজ্য সকল আইন অনুযায়ী সঠিক। Shadamon.com কোনো আইনি বা তথ্যগত অসঙ্গতির জন্য দায়ভার বহন করে না।
-ব্যবহারকারীরা নিশ্চয়তা দেন যে তাদের কনটেন্ট কপিরাইট বা অন্যান্য আইনি অধিকার লঙ্ঘন করে না এবং Shadamon.com কে কোনো দাবী, ক্ষতি বা দায় থেকে মুক্ত রাখবেন।
-
-২. কপিরাইট
-ব্যবহারকারীরা Shadamon.com-কে তাদের কনটেন্ট ব্যবহার, প্রকাশ, সম্পাদনা, অনুবাদ, ডেরিভেটিভ তৈরি এবং বিতরণের জন্য আজীবন, রায়াল্টি-ফ্রি, অ-বিশেষ অধিকার প্রদান করছেন।
-Shadamon.com-এর সকল কনটেন্ট, সফটওয়্যার এবং সেবাসমূহ আমাদের এবং আমাদের পার্টনারদের সম্পত্তি। লিখিত অনুমতি ছাড়া এগুলো অনুলিপি বা বিতরণ করা যাবে না।
-
-৩. Watermarks ও ছবি
-Shadamon.com-এ থাকা ছবিতে ওয়াটারমার্ক থাকতে পারে যাতে অন্যত্র ব্যবহার না হয়। প্রয়োজন হলে Shadamon.com কনটেন্ট সম্পাদনা বা বাতিল করার অধিকার রাখে।
-
-৪. নিরাপত্তা ও আইনি বিষয়
-যদি কোনো কনটেন্ট আইন লঙ্ঘন করে, Shadamon.com প্রয়োজন হলে কর্তৃপক্ষের সাথে সহযোগিতা করবে। ব্যবহারকারীর পরিচয় যাচাই করা যেতে পারে।
-
-৫. প্রাইভেসি
-Shadamon.com ব্যবহারকারীর তথ্য সংগ্রহ করে সেবা প্রদানের ও উন্নয়নের জন্য। এই তথ্য ব্যবহার, গবেষণা, মার্কেটিং ও প্রোডাক্ট উন্নয়নে ব্যবহারের জন্য আপনি সম্মত হবেন। প্রয়োজনে তথ্য শেয়ার করা হতে পারে।
-
-৬. কুকিজ
-Shadamon.com সঠিকভাবে কাজ করার জন্য কুকিজ ব্যবহার করে। কুকিজ ব্যক্তিগত তথ্য সংগ্রহ করে না।
-
-৭. ইমেল, মোবাইল নং ও ব্যাক্তিগত তথ্যাবলি 
-বিজ্ঞাপন পোস্ট করার জন্য মোবাইল নাম্বার বা ইমেল ঠিকানা আবশ্যক। ইমেল ঠিকানা গোপন রাখা হবে, তবে ব্যবহারকারীরা Shadamon.com-এর মাধ্যমে বার্তা পাঠাতে পারবেন।
-
-৮. সাইট অ্যাভেলিবিলিটি
-Shadamon.com “যেমন আছে” ভিত্তিতে সরবরাহ করা হচ্ছে এবং অনবরত বা নিরাপদ অ্যাক্সেসের নিশ্চয়তা নেই।
-
-৯. তৃতীয় পক্ষের লিঙ্ক
-Shadamon.com-এ তৃতীয় পক্ষের ওয়েবসাইটের লিঙ্ক থাকতে পারে। সেগুলোর জন্য Shadamon.com দায়ী নয়। ব্যবহারকারী নিজ দায়িত্বে এগুলো ব্যবহার করবেন।
-
-১০. পেইড কনটেন্ট ও সার্ভিস
-কিছু সেবা যেমন প্রিমিয়াম মেম্বারশিপ, বিজ্ঞাপন প্রচারণা এবং ডোরস্টেপ ডেলিভারি পেইড হতে পারে। Shadamon.com এইসব কনটেন্ট নিয়ন্ত্রণ করতে পারে এবং শর্ত লঙ্ঘনের ক্ষেত্রে তা বাতিল করার অধিকার রাখে।
-
-১১. দায়মুক্তি
-Shadamon.com কোনো ভুল, ডাউনটাইম, তৃতীয় পক্ষের কনটেন্ট বা ব্যবহার থেকে উদ্ভূত ক্ষতির জন্য দায়ী নয়।
-
-১২. ক্ষতিপূরণ
-ব্যবহারকারীরা Shadamon.com এবং তার স্টাফকে শর্তাবলী লঙ্ঘনের কারণে সৃষ্ট যেকোনো ক্ষতি বা দাবী থেকে মুক্ত রাখবেন।
-
-১৩. সংশোধনী
-Shadamon.com যে কোনো সময় শর্তাবলী পরিবর্তন করতে পারে। প্ল্যাটফর্ম ব্যবহার চালিয়ে যাওয়া মানে সংশোধিত শর্তাবলী মেনে নেওয়া।
-
-১৪. প্রযোজ্য আইন
-Shadamon.com বাংলাদেশের আইন ও নিয়ম অনুযায়ী পরিচালিত হয়।`
-            },
-            privacy: {
-                title: 'Shadamon.com প্রাইভেসি পলিসি',
-                content: `Shadamon.com-এ আপনার গোপনীয়তা এবং নিরাপত্তা আমাদের জন্য গুরুত্বপূর্ণ। নিরাপদ এবং কার্যকর সেবা প্রদানের জন্য আমরা কিছু ব্যক্তিগত তথ্য সংগ্রহ, ব্যবহার এবং পরিচালনা করি।
-
-১. তথ্য সংগ্রহ
-আমরা নিম্নলিখিত তথ্য সংগ্রহ করতে পারি:
-• ইমেল, ফোন নম্বর এবং ব্যাক্তিগত ও প্রয়োজন অনুযায়ী আর্থিক তথ্য।
-• ডিভাইস ও ব্রাউজার ডেটা, পেজ ভিউ ও ট্রাফিক স্ট্যাটিস্টিক।
-• অন্যান্য প্রযুক্তিগত তথ্য, যেমন IP ঠিকানা ও স্ট্যান্ডার্ড ওয়েব লগ।
-তথ্য সরবরাহ করলে আপনি Shadamon.com সার্ভারে এর সংরক্ষণ ও ব্যবহারে সম্মত হবেন।
-
-২. তথ্য ব্যবহার
-আমরা তথ্য ব্যবহার করি:
-• সেবা প্রদানে ও উন্নতিতে।
-• সমস্যার সমাধান, ফি সংগ্রহ এবং টেকনিকাল সহায়তায়।
-• নিরাপদ লেনদেন নিশ্চিত করতে এবং নীতি বাস্তবায়নে।
-• ব্যবহারকারীর অভিজ্ঞতা কাস্টমাইজ করতে ও সেবায় আগ্রহ মাপতে।
-• আপডেট, অফার ও প্রচারণা জানাতে।
-
-৩. কুকিজ
-কুকিজ কী?
-কুকিজ হলো ছোট তথ্য ফাইল যা আপনার ডিভাইসে সংরক্ষিত হয়। এগুলো Shadamon.com-কে আপনার ডিভাইস চিনতে এবং ব্যবহারকারীর অভিজ্ঞতা উন্নত করতে সাহায্য করে।
-
-ব্যব্যবহৃত কুকিজের ধরন:
-• সেশন কুকিজ: সেবা চলমান রাখতে।
-• প্রেফারেন্স কুকিজ: সেটিংস মনে রাখার জন্য।
-• সিকিউরিটি কুকিজ: নিরাপত্তা রক্ষা করতে।
-আপনি আপনার ব্রাউজার সেটিংস থেকে কুকিজ নিয়ন্ত্রণ করতে বা প্রত্যাখ্যান করতে পারেন। তবে কিছু ফিচার কাজ নাও করতে পারে।
-
-৪. তথ্য শেয়ারিং ও প্রকাশ
-Shadamon.com ব্যবহারকারীর অনুমতি ছাড়া তথ্য বিক্রি বা ভাড়া দেয় না। তথ্য শেয়ার করা হতে পারে:
-• সেই বিক্রেতাদের সঙ্গে যাদের সাথে আপনি যোগাযোগ করেছেন বা আগ্রহ দেখিয়েছেন।
-• আইনি প্রয়োজন অনুযায়ী কর্তৃপক্ষের সঙ্গে।
-• পার্টনারদের সঙ্গে সেবা পরিচালনা, বিশ্লেষণ, মার্কেটিং ও উন্নয়নের জন্য।
-
-৫. যোগাযোগ ও ইমেল
-আপনি Shadamon.com ব্যবহার করলে বিজ্ঞাপন বা অফার সম্পর্কিত মেসেজ পেতে পারেন। 
-ব্যবহারকারীরা আমাদের টুল ব্যবহার করে স্প্যাম পাঠাতে পারবেন না। Shadamon.com মেসেজ মনিটর করে যেকোনো ক্ষতিকর কনটেন্ট প্রতিরোধ করে।
-
-৬. নিরাপত্তা
-• আমরা এনক্রিপশন, পাসওয়ার্ড ও অন্যান্য পদ্ধতি ব্যবহার করে ব্যক্তিগত তথ্য রক্ষা করি।
-• ব্যক্তিগত তথ্য গোপন রাখা হয় যতক্ষণ না আপনি নিজে শেয়ার করেন। অন্যদের যোগাযোগ তথ্য প্রকাশ করা নিষিদ্ধ।
-
-৭. আনসাবস্ক্রাইব ও তথ্য অপসারণ
-আপনি যেকোনো সময় আপনার ব্যক্তিগত তথ্য পর্যালোচনা বা মুছে ফেলার জন্য আমাদের সাথে যোগাযোগ করতে পারেন।
-
-৮. বিজ্ঞাপন ও রিমার্কেটিং
-Shadamon.com প্রদর্শনী বিজ্ঞাপন এবং রিমার্কেটিং ব্যবহার করে।`
-            },
-            safety: {
-                title: 'সেফটি টিপস (Safety Tips)',
-                content: `Shadamon.com-এ আপনার নিরাপত্তা আমাদের প্রথম অগ্রাধিকার। প্ল্যাটফর্ম ব্যবহার করার সময় নিরাপদ থাকার জন্য কিছু পরামর্শ:
-
-পণ্য সরাসরি যাচাই করুন: পেমেন্ট করার আগে বিক্রেতার সাথে দেখা করুন এবং পণ্যটি ভালোভাবে পরীক্ষা করুন।
-চাকরির জন্য আবেদন: নিয়োগকর্তা এবং চাকরির তথ্য যাচাই করুন। ব্যক্তিগত তথ্য শেয়ার করবেন না। দূরের বা অজানা স্থানে সাক্ষাৎ এড়িয়ে চলুন।
-
-পণ্য ও পেমেন্ট একসাথে করুন:
-• ক্রেতারা: পণ্য পাওয়ার আগে অর্থ প্রদান করবেন না।
-• বিক্রেতারা: পেমেন্ট পাওয়ার আগে পণ্য পাঠাবেন না।
-
-• সাধারণ বুদ্ধি ব্যবহার করুন: খুবই সস্তা অফার বা দ্রুত টাকা আয়ের প্রতিশ্রুতি এড়িয়ে চলুন।
-• ব্যাংক বা আর্থিক তথ্য কখনও দেবেন না।
-
-সতর্কতা (Scams)
-• ভুয়া পেমেন্ট সার্ভিস: Shadamon.com কোনো পেমেন্ট সেবা বা প্রোটেকশন দেয় না। নিশ্চিত না হলে তৃতীয় পক্ষের পেমেন্ট ব্যবহার করবেন না।
-• ভুয়া তথ্যের অনুরোধ: Shadamon.com কখনও ব্যক্তিগত তথ্য ইমেলে চায় না। সন্দেহজনক লিঙ্ক এড়িয়ে চলুন। রিপোর্ট করে ইমেল মুছে দিন।
-• অতিরিক্ত ফি দাবি: সাধারণ সেবার জন্য অতিরিক্ত ফি দাবি করা হয় না।
-• মানি ট্রান্সফার সার্ভিস (Western Union / MoneyGram): অচেনা ব্যক্তির সাথে ব্যবহার করবেন না।
-• ভুয়া ডেলিভারি দাবী: Shadamon.com সরাসরি ডেলিভারি দেয় না। ভুয়া দাবী রিপোর্ট করুন।
-
-Shadamon.com-এর নিরাপত্তা ব্যবস্থা
-• ইমেল ঠিকানা লুকানো থাকে।
-• ফোন নম্বর লুকানোর অপশন আছে।
-• প্রযুক্তি উন্নতি চালু থাকে সন্দেহজনক কার্যকলাপ রোধের জন্য।
-• পুনরাবৃত্ত অপরাধী ব্লক করা হয়।
-
-নিরাপত্তা সমস্যা রিপোর্ট
-প্রতারণার শিকার হলে দ্রুত রিপোর্ট করুন। প্রয়োজনে স্থানীয় পুলিশ বা আইন প্রয়োগকারীর সঙ্গে যোগাযোগ করুন।
-
-সাবধানী নির্দেশনা: 
-• Shadamon.com সর্বোচ্চ চেষ্টা করে নিরাপদ লেনদেন নিশ্চিত করতে, কিন্তু ব্যবহারকারীর কার্যকলাপের জন্য দায়ী নয়।
-• ব্যবহারকারীরা সতর্ক থাকবেন এবং ব্যক্তিগত/আর্থিক তথ্য শেয়ার করার আগে যাচাই করবেন।
-• ব্যবহারকারীর গোপনীয়তা রক্ষা করা হয়, তবে প্রতারণা বা অপরাধমূলক কার্যক্রমের ক্ষেত্রে আমরা আইন প্রয়োগকারীর সঙ্গে সহযোগিতা করি।`
-            },
-            contact: {
-                title: 'যোগাযোগ',
-                content: `আপনার কোনো প্রশ্ন থাকলে প্রথমে আমাদের সেইফটি টিপস সেকশন দেখুন। যদি সেখানে উত্তর না পান, তাহলে আমাদের সাথে যোগাযোগ করুন। আমরা দ্রুত উত্তর দেব।
-
-যোগাযোগের উপায়:
-• মেসেজ অথবা চ্যাট: m.me/ShadamonDotCom
-• কল করুন: 01752 84 20 84
-• ব্যবসায়িক সময়: প্রতিদিন সকাল ১০টা থেকে রাত ৮টা
-• ঠিকানা: Road 4, Block J, Banasree, Rampura, Dhaka.`
-            },
-            return: {
-                title: 'রিটার্ন & রিফান্ড পলিসি',
-                content: `Shadamon.com-চায় ব্যবহারকারীদের অভিজ্ঞতা সহজ, সুরক্ষিত এবং কার্যকর হোক। প্রমোশনাল কার্যক্রমের ক্ষেত্রে, প্রদত্ত অর্থ এবং প্রমোশনাল ফলাফলের ধরন সম্পর্কে কিছু গুরুত্বপূর্ণ দিক বিবেচনা করা দরকার।
-
-পারফরম্যান্স ও ফলাফলের ধরন:
-প্রমোশনাল কার্যক্রমের ফলাফল অনুমানভিত্তিক। আমাদের স্বয়ংক্রিয় সিস্টেম সর্বোচ্চ চেষ্টা করবে আপনার পোস্টকে প্রাসঙ্গিক দর্শকের কাছে পৌঁছে দিতে। তবে দর্শকসংখ্যা, আগ্রহ বা ফলাফল শতভাগ নির্ধারিত নয়। এটি একটি সম্ভাব্যতা ভিত্তিক প্রক্রিয়া যা প্রমোশনাল কার্যক্রমের অবস্থা, সময় এবং দর্শকের প্রতিক্রিয়ার ওপর নির্ভরশীল।
-
-ব্যবহারকারীর দায়িত্ব:
-প্রমোট করার আগে নিশ্চিত হোন যে আপনার পোস্টে দেওয়া তথ্য সঠিক, কার্যকর এবং আপডেটেড। কোনো ভুল বা অসম্পূর্ণ তথ্যের কারণে প্রমোশনাল ফলাফলে প্রভাব পড়লে Shadamon.com কোনো ধরনের ক্ষতিপূরণ বা অর্থ ফেরতের জন্য দায়ী নয়। কোনো ভুল বা অসম্পূর্ণ তথ্যের কারণে লাইভ প্রমোশনকে বন্ধ করলে সে অর্থও ফেরত দেয়া সম্ভব হয় না।
-
-ফলাফল ট্র্যাকিং ও স্বচ্ছতা:
-প্রমোট করলে আপনি সরাসরি দেখতে পাবেন কতজন দর্শক বা কাস্টমার আপনার পোস্টে আগ্রহ দেখিয়েছে। এই তথ্য ব্যবহার করে আপনি ভবিষ্যতে প্রমোশনাল পরিকল্পনা আরও কার্যকর করতে পারেন।
-
-স্বয়ংক্রিয় এবং সহজ ব্যবহার:
-Shadamon.com-এর প্রমোশনাল সিস্টেম স্বয়ংক্রিয়ভাবে সব কার্যক্রম পরিচালনা করে। কোনো জটিল সেটআপ বা আলাদা ফিচার নির্বাচন করার প্রয়োজন নেই। প্রমোট বাটনে ক্লিক করার সঙ্গে সঙ্গে কার্যক্রম শুরু হয় এবং ফলাফল স্বয়ংক্রিয়ভাবে প্রদর্শিত হয়।
-
-প্রমোশনাল অর্থের ব্যবহার:
-প্রমোশনের প্রসেসিং শুরু হলে, প্রদত্ত অর্থ স্বয়ংক্রিয়ভাবে কার্যকর হয়। অর্থটি প্রক্রিয়াজাত হয়ে সিস্টেমের শিডিউলিং-এ চলে যায় এবং প্রমোশনাল কার্যক্রমের বিভিন্ন ধাপ অনুযায়ী পোস্ট বা বিজ্ঞাপনকে লক্ষ্য নির্ধারিত দর্শকের কাছে পৌঁছে দেয়া হয়। এর ফলে, প্রসেসিং এ চলে গেলে, সে অর্থ ফেরতের পর্যায়ে থাকে না। 
-
-মোট কথা:
-Shadamon.com-এর প্রমোশনাল সিস্টেম ব্যবহার করা সহজ, নিরাপদ এবং কার্যকর। প্রদত্ত অর্থ প্রক্রিয়াজাত হয়ে স্বয়ংক্রিয়ভাবে পোস্ট প্রদর্শনের পথে চলে যায়, সিস্টেম সর্বোচ্চ চেষ্টা করেসবোচ্ছ ভিজিটরের কাছে পোস্টটিকে পৌঁছে দিতে, এবং ব্যবহারকারী সরাসরি ফলাফল দেখতে পান।`
-            }
-        };
-
-        const selected = contentMap[type];
+    const openInfoModal = (type: InfoPageType) => {
+        const selected = INFO_CONTENT[type];
         if (selected) {
             setInfoModal({
                 isOpen: true,
@@ -347,7 +202,80 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [selectedAdForDetail, setSelectedAdForDetail] = useState<any | null>(null);
 
+    const getFilterQueryValue = (longKey: string, shortKey: string) => {
+        return searchParams.get(longKey) || searchParams.get(shortKey);
+    };
+
+    const setShortFilterParam = (
+        params: URLSearchParams,
+        shortKey: string,
+        longKey: string,
+        value?: string
+    ) => {
+        params.delete(shortKey);
+        params.delete(longKey);
+        if (value) {
+            params.set(shortKey, value);
+        }
+    };
+
+    const getFiltersFromSearchParams = (): FilterState => {
+        const urlCategory = getFilterQueryValue('category', 'c');
+        const urlSubCategory = getFilterQueryValue('subCategory', 'sc');
+        const urlLocation = getFilterQueryValue('location', 'l');
+        const urlSubLocation = getFilterQueryValue('subLocation', 'sl');
+        const urlSearch = searchParams.get('search');
+
+        return {
+            category: urlCategory || "",
+            subCategory: urlSubCategory || "",
+            location: urlLocation || "",
+            subLocation: urlSubLocation || "",
+            search: urlSearch || "",
+            promoteTag: searchParams.get('promoteTag') || "All",
+            sort: searchParams.get('sort') || "newest"
+        };
+    };
+
+    const [isGlobalFilterModalOpen, setIsGlobalFilterModalOpen] = useState(false);
+    const [globalFilters, setGlobalFilters] = useState<FilterState>(() => getFiltersFromSearchParams());
+
     const searchRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setGlobalFilters(getFiltersFromSearchParams());
+    }, [searchParams]);
+
+    const openGlobalFilterFromSearch = (view: 'main' | 'category' | 'location') => {
+        setIsSearchModalOpen(false);
+        setGlobalFilters(getFiltersFromSearchParams());
+        setIsGlobalFilterModalOpen(true);
+
+        if (view !== 'main') {
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('open-filter-view', { detail: { view } }));
+            }, 50);
+        }
+    };
+
+    const applyGlobalFilters = (newFilters: FilterState) => {
+        setGlobalFilters(newFilters);
+        setIsGlobalFilterModalOpen(false);
+
+        const params = new URLSearchParams(searchParams.toString());
+        const nextSearch = (newFilters.search ?? searchParams.get('search') ?? '').trim();
+
+        setShortFilterParam(params, 'c', 'category', newFilters.category || undefined);
+        setShortFilterParam(params, 'sc', 'subCategory', newFilters.subCategory || undefined);
+        setShortFilterParam(params, 'l', 'location', newFilters.location || undefined);
+        setShortFilterParam(params, 'sl', 'subLocation', newFilters.subLocation || undefined);
+        if (newFilters.promoteTag && newFilters.promoteTag !== 'All') params.set('promoteTag', newFilters.promoteTag); else params.delete('promoteTag');
+        if (newFilters.sort && newFilters.sort !== 'newest') params.set('sort', newFilters.sort); else params.delete('sort');
+        if (nextSearch) params.set('search', nextSearch); else params.delete('search');
+
+        const queryString = params.toString();
+        router.push(queryString ? `/d?${queryString}` : '/d', { scroll: false });
+    };
 
     // Event Listener for opening account modal from children
     useEffect(() => {
@@ -805,44 +733,63 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
         return () => window.removeEventListener('center-scroll', handleCenterScroll as EventListener);
     }, []);
 
+    const isHomeNavActive = pathname === '/dashboard';
+    const isInboxNavActive = pathname.startsWith('/dashboard/inbox');
+
     return (
         <div className="h-screen bg-[#F1F5F9] font-sans overflow-hidden flex flex-col relative">
             <AdPopup />
             <nav className={cn(
-                "md:hidden fixed bottom-0 inset-x-0 z-[60] h-[65px] transition-transform duration-300",
+                "md:hidden fixed bottom-0 inset-x-0 z-[60] h-[84px] pb-[max(8px,env(safe-area-inset-bottom))] transition-transform duration-300",
                 !isNavbarVisible && "translate-y-[115%]"
             )}>
-                {/* Background bar with rounded top corners and shadow */}
-                <div className="absolute inset-0 bg-white rounded-t-[20px] shadow-[0_-8px_15px_-5px_rgba(0,0,0,0.15)] border-t border-slate-200" />
+                <div className="absolute inset-x-0 top-0 bottom-0 rounded-t-[26px] rounded-b-none bg-gradient-to-b from-white to-[#F6FAFF] border-t border-slate-200 shadow-[0_-8px_20px_-14px_rgba(15,23,42,0.55)]" />
 
-                <div className="relative h-full flex items-center justify-around px-2 z-10">
+                <div className="relative h-full flex items-center justify-around px-3 z-10">
                     {/* Home */}
-                    <Link href="/dashboard" className="flex flex-col items-center justify-center min-w-[60px] h-full pt-1">
-                        <RiHome5Line className="w-7 h-7 text-black" />
-                        <span className="text-[10px] text-black leading-none mb-0 mt-1">{t('home')}</span>
+                    <Link href="/dashboard" className="flex flex-col items-center justify-center min-w-[58px] h-full gap-1">
+                        <div
+                            className={cn(
+                                "w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-200",
+                                isHomeNavActive
+                                    ? "bg-[#E6F4FF] text-[#0079b8] shadow-[inset_0_0_0_1px_rgba(0,136,204,0.18)]"
+                                    : "text-slate-600"
+                            )}
+                        >
+                            {isHomeNavActive ? <RiHome5Fill className="w-6.5 h-6.5" /> : <RiHome5Line className="w-6.5 h-6.5" />}
+                        </div>
+                        <span className={cn("text-[10px] leading-none font-medium", isHomeNavActive ? "text-[#0079b8]" : "text-slate-500")}>
+                            {t('home')}
+                        </span>
                     </Link>
 
                     {/* Search */}
                     <button
                         onClick={() => setIsSearchModalOpen(true)}
                         className={cn(
-                            "flex flex-col items-center justify-center min-w-[60px] h-full pt-1 transition-colors",
-                            isSearchModalOpen ? "text-[#0088cc]" : "text-black"
+                            "flex flex-col items-center justify-center min-w-[58px] h-full gap-1 transition-colors",
+                            isSearchModalOpen ? "text-[#0079b8]" : "text-slate-600"
                         )}
                     >
-                        <RiSearchLine className="w-7 h-7" />
-                        <span className="text-[10px] leading-none mb-0 mt-1">{t('search_nav')}</span>
+                        <div
+                            className={cn(
+                                "w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-200",
+                                isSearchModalOpen && "bg-[#E6F4FF] shadow-[inset_0_0_0_1px_rgba(0,136,204,0.18)]"
+                            )}
+                        >
+                            <RiSearchLine className="w-6.5 h-6.5" />
+                        </div>
+                        <span className={cn("text-[10px] leading-none font-medium", isSearchModalOpen ? "text-[#0079b8]" : "text-slate-500")}>{t('search_nav')}</span>
                     </button>
 
                     {/* Centered Floating Post Ad Button */}
                     <div className="relative h-full flex flex-col items-center justify-end">
                         <button
                             onClick={handleAddAdClick}
-                            className="absolute -top-2 w-14 h-14 bg-[#0088cc] rounded-full flex items-center justify-center text-white shadow-xl active:scale-95 transition-transform"
+                            className="absolute -top-3.5 w-14 h-14 bg-[#0088cc] rounded-full flex items-center justify-center text-white shadow-[0_7px_14px_-6px_rgba(0,136,204,0.7)] active:scale-95 transition-transform"
                         >
                             <RiAddLine className="w-9 h-9" />
                         </button>
-                        {/* Placeholder to maintain spacing and text if needed, or just gap */}
                         <div className="w-14 flex flex-col items-center">
                             <span className="text-[10px] text-transparent leading-none mb-0 mt-1">.</span>
                         </div>
@@ -852,37 +799,43 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
                     <Link
                         href="/dashboard/inbox"
                         onClick={handleMessageClick}
-                        className="flex flex-col items-center justify-center min-w-[60px] h-full pt-1 text-black relative"
+                        className={cn(
+                            "flex flex-col items-center justify-center min-w-[58px] h-full gap-1 relative",
+                            isInboxNavActive ? "text-[#0079b8]" : "text-slate-600"
+                        )}
                     >
-                        <div className="relative">
-                            <RiMailLine className="w-7 h-7" />
+                        <div className={cn(
+                            "relative w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-200",
+                            isInboxNavActive && "bg-[#E6F4FF] shadow-[inset_0_0_0_1px_rgba(0,136,204,0.18)]"
+                        )}>
+                            {isInboxNavActive ? <RiMailFill className="w-6.5 h-6.5" /> : <RiMailLine className="w-6.5 h-6.5" />}
                             {unreadCount > 0 && (
                                 <span className="absolute -top-1.5 -right-2 bg-red-600 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-white">
                                     {unreadCount > 99 ? '99+' : unreadCount}
                                 </span>
                             )}
                         </div>
-                        <span className="text-[10px] text-black leading-none mb-0 mt-1">{t('inbox')}</span>
+                        <span className={cn("text-[10px] leading-none font-medium", isInboxNavActive ? "text-[#0079b8]" : "text-slate-500")}>{t('inbox')}</span>
                     </Link>
 
                     {/* Account */}
                     <Link
                         href="/dashboard/profile"
                         onClick={handleAccountClick}
-                        className="flex flex-col items-center justify-center min-w-[60px] h-full pt-1 text-black transition-all"
+                        className="flex flex-col items-center justify-center min-w-[58px] h-full gap-1 text-slate-600 transition-all"
                     >
-                        <div className="w-7 h-7 rounded-full bg-[#EDF2F7] flex items-center justify-center overflow-hidden border border-[#0088cc]">
+                        <div className="w-10 h-10 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden">
                             {user && user.photo ? (
                                 <img
                                     src={getImageUrl(user.photo)}
                                     alt={user.name}
-                                    className="w-full h-full object-contain"
+                                    className="w-full h-full object-cover"
                                 />
                             ) : (
-                                <RiUser3Line className="w-6 h-6" />
+                                <RiUser3Line className="w-6.5 h-6.5" />
                             )}
                         </div>
-                        <span className="text-[10px] text-black leading-none mb-0 mt-1">{t('account')}</span>
+                        <span className="text-[10px] text-slate-500 leading-none font-medium">{t('account')}</span>
                     </Link>
                 </div>
             </nav>
@@ -921,10 +874,10 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
                     !isNavbarVisible && "-translate-y-full"
                 )}>
                     {/* Top Navigation Bar */}
-                    <header className="bg-white border-b border-slate-200 h-16 w-full">
-                        <div className="max-w-[1320px] mx-auto px-4 h-full flex items-center justify-between md:justify-center">
+                    <header className="bg-white border-b border-slate-200 h-14 md:h-16 w-full">
+                        <div className="max-w-[1320px] mx-auto px-2.5 md:px-4 h-full flex items-center justify-between md:justify-center">
                             {/* Section 1: 300px (Logo & Ad Count) */}
-                            <div className={cn("md:w-[300px] flex-none flex items-center gap-2", isMobileSearchOpen && "hidden md:flex")}>
+                            <div className={cn("md:w-[300px] flex-none flex items-center gap-1.5 md:gap-2", isMobileSearchOpen && "hidden md:flex")}>
                                 {/* Mobile Menu Button - Hidden as requested */}
                                 <button
                                     className="hidden p-2 -ml-2 text-black hover:bg-slate-100 rounded-full transition-colors"
@@ -935,14 +888,14 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
 
                                 <Link
                                     href="/dashboard"
-                                    className="flex items-center gap-2 shrink-0"
+                                    className="flex items-center gap-1.5 md:gap-2 shrink-0"
                                     onClick={() => {
                                         window.dispatchEvent(new Event('reset-saved-search'));
                                         window.dispatchEvent(new Event('refresh-ads'));
                                     }}
                                 >
                                     {settings.siteLogo ? (
-                                        <div className="h-10 w-auto">
+                                        <div className="h-7 md:h-10 w-auto">
                                             <img
                                                 src={getImageUrl(settings.siteLogo)}
                                                 alt="Logo"
@@ -959,7 +912,7 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
                             <div className="w-[50px] flex-none hidden md:block"></div>
 
                             {/* Section 2: 565px (Search & Icons) */}
-                            <div className={cn("md:w-[565px] flex-1 md:flex-none flex items-center gap-2 md:gap-4 relative", !isMobileSearchOpen ? "flex justify-end md:justify-center" : "flex")} ref={searchRef}>
+                            <div className={cn("md:w-[565px] flex-1 md:flex-none flex items-center gap-1.5 md:gap-4 relative", !isMobileSearchOpen ? "flex justify-end md:justify-center" : "flex")} ref={searchRef}>
                                 <div className={cn("flex-1 flex bg-[#EDF2F7] rounded relative", !isMobileSearchOpen && "hidden md:flex")}>
                                     <div className="flex-1 relative flex items-center">
                                         <input
@@ -1049,10 +1002,10 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
                                 </div>
 
                                 {/* Language & Action Icons */}
-                                <div className={cn("flex items-center gap-3 shrink-0", isMobileSearchOpen && "hidden md:flex")}>
+                                <div className={cn("flex items-center gap-2 md:gap-3 shrink-0", isMobileSearchOpen && "hidden md:flex")}>
                                     <button
                                         onClick={toggleLanguage}
-                                        className="w-10 h-10 bg-[#EDF2F7] rounded-full flex items-center justify-center text-[14px] text-black uppercase"
+                                        className="w-8 h-8 md:w-10 md:h-10 bg-[#EDF2F7] rounded-full border border-slate-200 flex items-center justify-center text-[11px] md:text-[14px] text-black uppercase shadow-sm"
                                     >
                                         {language}
                                     </button>
@@ -1071,9 +1024,9 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
                                     {/* Promote Button (Mobile Only) */}
                                     <button
                                         onClick={handlePromoteClick}
-                                        className="w-10 h-10 bg-[#EDF2F7] rounded-full flex md:hidden items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all relative"
+                                        className="w-8 h-8 bg-[#EDF2F7] rounded-full border border-slate-200 shadow-sm flex md:hidden items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all relative"
                                     >
-                                        <Megaphone className="w-5 h-5" />
+                                        <Megaphone className="w-4 h-4" />
                                     </button>
 
                                     <Link
@@ -1155,7 +1108,7 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
                                                 onClick={() => toggleCategory(cat._id)}
                                                 className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 text-black transition-colors text-sm font-medium"
                                             >
-                                                <span>{cat.name}</span>
+                                                <span>{getLocalizedCategoryName(cat.name, cat.categoryNameBn)}</span>
                                                 {cat.subcategories.length > 0 && (
                                                     expandedCategory === cat._id
                                                         ? <ChevronDown className="w-4 h-4 text-black" />
@@ -1177,7 +1130,7 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
                                                                     alt=""
                                                                 />
                                                             )}
-                                                            {sub.name}
+                                                            {getLocalizedCategoryName(sub.name, sub.subCategoryNameBn)}
                                                         </button>
                                                     ))}
                                                 </div>
@@ -1481,6 +1434,7 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
                 onSearch={(query) => {
                     window.dispatchEvent(new CustomEvent('show-search-results', { detail: { query } }));
                 }}
+                onOpenFilter={openGlobalFilterFromSearch}
                 onSelectAd={(ad) => {
                     setSelectedAdForDetail(ad);
                     if (ad?._id) {
@@ -1489,6 +1443,15 @@ Shadamon.com-এর প্রমোশনাল সিস্টেম ব্য�
                         router.push(`${pathname}?${params.toString()}`, { scroll: false });
                     }
                 }}
+            />
+
+            <FilterModal
+                isOpen={isGlobalFilterModalOpen}
+                onClose={() => setIsGlobalFilterModalOpen(false)}
+                categories={categories}
+                locations={locations}
+                initialFilters={globalFilters}
+                onApply={applyGlobalFilters}
             />
 
 

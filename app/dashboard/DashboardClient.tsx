@@ -20,6 +20,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { timeAgo } from '../../utils/timeAgo';
 import { getImageUrl } from '../../utils/imageUrl';
 import { getNonHighlightLabels, hasHighlightLabel } from '../../utils/labels';
+import { INFO_PAGE_ROUTES } from '../../utils/infoContent';
 import Image from 'next/image';
 import LatestFreeAdPromo from '../../components/LatestFreeAdPromo';
 
@@ -31,6 +32,7 @@ import { useSettings } from '../context/SettingsContext';
 interface SubItem {
     _id: string;
     name: string;
+    subCategoryNameBn?: string;
     slug: string;
     image?: string;
 }
@@ -38,6 +40,7 @@ interface SubItem {
 interface Category {
     _id: string;
     name: string;
+    categoryNameBn?: string;
     icon?: string; // Changed from photo
     subcategories: SubItem[];
 }
@@ -99,11 +102,28 @@ export default function DashboardClient() {
     const { t, language } = useLanguage();
     const { settings } = useSettings();
 
+    const getFilterQueryValue = (longKey: string, shortKey: string) => {
+        return searchParams.get(longKey) || searchParams.get(shortKey);
+    };
+
+    const setShortFilterParam = (
+        params: URLSearchParams,
+        shortKey: string,
+        longKey: string,
+        value?: string
+    ) => {
+        params.delete(shortKey);
+        params.delete(longKey);
+        if (value) {
+            params.set(shortKey, value);
+        }
+    };
+
     const getFiltersFromSearchParams = (): FilterState => {
-        const urlCategory = searchParams.get('category');
-        const urlSubCategory = searchParams.get('subCategory');
-        const urlLocation = searchParams.get('location');
-        const urlSubLocation = searchParams.get('subLocation');
+        const urlCategory = getFilterQueryValue('category', 'c');
+        const urlSubCategory = getFilterQueryValue('subCategory', 'sc');
+        const urlLocation = getFilterQueryValue('location', 'l');
+        const urlSubLocation = getFilterQueryValue('subLocation', 'sl');
         const urlSearch = searchParams.get('search');
 
         return {
@@ -179,10 +199,6 @@ export default function DashboardClient() {
         }
     }, [categories, locations, activeSelectorTab, checkScroll]);
 
-    const openInfoModal = (type: 'about' | 'terms' | 'privacy' | 'contact' | 'safety') => {
-        window.dispatchEvent(new CustomEvent('open-info-modal', { detail: { type } }));
-    };
-
     useEffect(() => {
         const saved = localStorage.getItem('saved_search_ads');
         if (saved) {
@@ -225,6 +241,35 @@ export default function DashboardClient() {
             .replace(/-+$/, '');      // Trim - from end of text
     };
 
+    const hasBanglaChars = (value: string) => /[\u0980-\u09FF]/.test(value);
+    const getLocalizedCategoryName = (rawName: string, rawNameBn?: string) => {
+        const providedBn = String(rawNameBn || '').trim();
+        if (language === 'bn' && providedBn) {
+            return providedBn;
+        }
+
+        const name = String(rawName || '').trim();
+        if (!name) return '';
+
+        const match = name.match(/^(.+?)\s*\((.+)\)\s*$/);
+        if (!match) return name;
+
+        const first = match[1].trim();
+        const second = match[2].trim();
+        const firstIsBn = hasBanglaChars(first);
+        const secondIsBn = hasBanglaChars(second);
+
+        if (language === 'bn') {
+            if (firstIsBn && !secondIsBn) return first;
+            if (secondIsBn && !firstIsBn) return second;
+            return firstIsBn ? first : second;
+        }
+
+        if (!firstIsBn && secondIsBn) return first;
+        if (!secondIsBn && firstIsBn) return second;
+        return firstIsBn ? second : first;
+    };
+
     const getAdUrl = (ad: any) => {
         const params = new URLSearchParams(searchParams.toString());
         params.set('ad', ad._id);
@@ -233,18 +278,18 @@ export default function DashboardClient() {
 
     const getCategoryUrl = (catName: string, subCatName: string = "") => {
         const params = new URLSearchParams(searchParams.toString());
-        if (catName) params.set('category', catName); else params.delete('category');
-        if (subCatName) params.set('subCategory', subCatName); else params.delete('subCategory');
+        setShortFilterParam(params, 'c', 'category', catName || undefined);
+        setShortFilterParam(params, 'sc', 'subCategory', subCatName || undefined);
         const str = params.toString();
-        return str ? `/dashboard?${str}` : '/dashboard';
+        return str ? `/d?${str}` : '/d';
     };
 
     const getLocationUrl = (locName: string, subLocName: string = "") => {
         const params = new URLSearchParams(searchParams.toString());
-        if (locName) params.set('location', locName); else params.delete('location');
-        if (subLocName) params.set('subLocation', subLocName); else params.delete('subLocation');
+        setShortFilterParam(params, 'l', 'location', locName || undefined);
+        setShortFilterParam(params, 'sl', 'subLocation', subLocName || undefined);
         const str = params.toString();
-        return str ? `/dashboard?${str}` : '/dashboard';
+        return str ? `/d?${str}` : '/d';
     };
 
     // Initialize filters from URL on mount
@@ -287,10 +332,10 @@ export default function DashboardClient() {
         }
 
         const params = new URLSearchParams();
-        if (filters.category) params.set('category', filters.category);
-        if (filters.subCategory) params.set('subCategory', filters.subCategory);
-        if (filters.location) params.set('location', filters.location);
-        if (filters.subLocation) params.set('subLocation', filters.subLocation);
+        if (filters.category) params.set('c', filters.category);
+        if (filters.subCategory) params.set('sc', filters.subCategory);
+        if (filters.location) params.set('l', filters.location);
+        if (filters.subLocation) params.set('sl', filters.subLocation);
         if (filters.search) params.set('search', filters.search);
         if (filters.promoteTag && filters.promoteTag !== 'All') params.set('promoteTag', filters.promoteTag);
         if (filters.sort && filters.sort !== 'newest') params.set('sort', filters.sort);
@@ -300,9 +345,15 @@ export default function DashboardClient() {
         if (adParam) params.set('ad', adParam);
 
         const queryString = params.toString();
-        const newUrl = queryString ? `/dashboard?${queryString}` : '/dashboard';
+        const newUrl = queryString ? `/d?${queryString}` : '/d';
 
-        const currentQuery = searchParams.toString();
+        const currentParams = new URLSearchParams(searchParams.toString());
+        setShortFilterParam(currentParams, 'c', 'category', getFilterQueryValue('category', 'c') || undefined);
+        setShortFilterParam(currentParams, 'sc', 'subCategory', getFilterQueryValue('subCategory', 'sc') || undefined);
+        setShortFilterParam(currentParams, 'l', 'location', getFilterQueryValue('location', 'l') || undefined);
+        setShortFilterParam(currentParams, 'sl', 'subLocation', getFilterQueryValue('subLocation', 'sl') || undefined);
+        const currentQuery = currentParams.toString();
+
         if (queryString !== currentQuery) {
             router.push(newUrl, { scroll: false });
         }
@@ -710,7 +761,7 @@ export default function DashboardClient() {
                                                                 ) : (
                                                                     <CategoryIcon className="w-4 h-4 text-black shrink-0" />
                                                                 )}
-                                                                <span className={cn((expandedCategory === cat._id || filters.category === cat.name) && "text-black")}>{cat.name}</span>
+                                                                <span className={cn((expandedCategory === cat._id || filters.category === cat.name) && "text-black")}>{getLocalizedCategoryName(cat.name, cat.categoryNameBn)}</span>
                                                                 <span className="text-black font-normal ml-0.5">({totalAds.filter(ad => ad.category === cat.name).length.toLocaleString()})</span>
                                                             </div>
                                                             {cat.subcategories.length > 0 && (
@@ -744,7 +795,7 @@ export default function DashboardClient() {
                                                                             ) : (
                                                                                 <div className={cn("w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-[#0088cc] transition-colors", filters.subCategory === sub.name && "bg-[#0088cc]")} />
                                                                             )}
-                                                                            <span className={cn(filters.subCategory === sub.name && "text-black")}>{sub.name}</span>
+                                                                            <span className={cn(filters.subCategory === sub.name && "text-black")}>{getLocalizedCategoryName(sub.name, sub.subCategoryNameBn)}</span>
                                                                             <span className="text-black">({totalAds.filter(ad => ad.subCategory === sub.name).length.toLocaleString()})</span>
                                                                         </Link>
                                                                     ))}
@@ -876,17 +927,17 @@ export default function DashboardClient() {
                     {/* 3. Footer Links & Apps Card */}
                     <div className="bg-white rounded-lg p-3 space-y-4 mt-auto shadow-sm border border-slate-50">
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-black font-medium">
-                            <button onClick={() => openInfoModal('about')} className="hover:text-black transition-colors">{t('about_us')}</button>
+                            <Link href={INFO_PAGE_ROUTES.about} className="hover:text-black transition-colors">{t('about_us')}</Link>
                             <span>•</span>
-                            <button onClick={() => openInfoModal('terms')} className="hover:text-black transition-colors">{t('terms_and_con')}</button>
+                            <Link href={INFO_PAGE_ROUTES.terms} className="hover:text-black transition-colors">{t('terms_and_con')}</Link>
                             <span>•</span>
-                            <button onClick={() => openInfoModal('privacy')} className="hover:text-black transition-colors">{t('privacy_policy')}</button>
+                            <Link href={INFO_PAGE_ROUTES.privacy} className="hover:text-black transition-colors">{t('privacy_policy')}</Link>
                             <span>•</span>
-                            <button onClick={() => openInfoModal('contact')} className="hover:text-black transition-colors">{t('contact_us')}</button>
+                            <Link href={INFO_PAGE_ROUTES.contact} className="hover:text-black transition-colors">{t('contact_us')}</Link>
                             <span>•</span>
-                            <button onClick={() => openInfoModal('safety')} className="hover:text-black transition-colors">
+                            <Link href={INFO_PAGE_ROUTES.safety} className="hover:text-black transition-colors">
                                 {language === 'bn' ? 'নিরাপদ থাকুন' : 'Safety Tips'}
-                            </button>
+                            </Link>
                             <span>•</span>
                             <button
                                 onClick={() => {
@@ -1019,47 +1070,47 @@ export default function DashboardClient() {
                 {/* Category Selector Card */}
                 <div className="bg-white rounded-none lg:rounded-lg overflow-hidden">
                     {/* Selector Header Tabs */}
-                    <div className="px-5 pt-4 flex items-center justify-between border-b border-slate-50">
-                        <div className="flex items-center gap-8">
+                    <div className="px-3 lg:px-5 pt-2.5 lg:pt-4 flex items-center justify-between border-b border-slate-50">
+                        <div className="flex items-center gap-5 lg:gap-8">
                             <div
-                                className="relative pb-2 cursor-pointer"
+                                className="relative pb-1.5 lg:pb-2 cursor-pointer"
                                 onClick={() => setActiveSelectorTab('category')}
                             >
                                 <span className={cn(
-                                    "text-[15px] transition-colors",
+                                    "text-[13px] lg:text-[15px] transition-colors",
                                     activeSelectorTab === 'category' ? "text-black" : "text-black hover:text-black"
                                 )}>
                                     Select Category
                                 </span>
                                 {activeSelectorTab === 'category' && (
-                                    <div className="absolute -top-4 left-0 right-0 h-[3px] bg-blue-500 rounded-b-full" />
+                                    <div className="absolute -top-2.5 lg:-top-4 left-0 right-0 h-[3px] bg-blue-500 rounded-b-full" />
                                 )}
                             </div>
                             <div
-                                className="relative pb-2 cursor-pointer"
+                                className="relative pb-1.5 lg:pb-2 cursor-pointer"
                                 onClick={() => setActiveSelectorTab('location')}
                             >
                                 <span className={cn(
-                                    "text-[15px] transition-colors",
+                                    "text-[13px] lg:text-[15px] transition-colors",
                                     activeSelectorTab === 'location' ? "text-black" : "text-black hover:text-black"
                                 )}>
                                     Select Location
                                 </span>
                                 {activeSelectorTab === 'location' && (
-                                    <div className="absolute -top-4 left-0 right-0 h-[3px] bg-blue-500 rounded-b-full" />
+                                    <div className="absolute -top-2.5 lg:-top-4 left-0 right-0 h-[3px] bg-blue-500 rounded-b-full" />
                                 )}
                             </div>
                         </div>
                     </div>
 
                     {/* Category/Location Bubbles */}
-                    <div className="px-2 lg:px-5 pb-5 pt-2 relative group/bubbles flex items-center">
+                    <div className="px-2 lg:px-5 pb-3 lg:pb-5 pt-1 lg:pt-2 relative group/bubbles flex items-center">
                         {/* Left Scroll Arrow */}
                         <button
                             onClick={scrollLeft}
                             className={
                                 cn(
-                                    "absolute left-4 top-[42px] w-9 h-9 rounded-full bg-white shadow-md border border-slate-100 items-center justify-center text-black hover:bg-slate-50 hover:scale-110 active:scale-95 transition-all z-20",
+                                    "absolute left-4 top-[36px] lg:top-[42px] w-9 h-9 rounded-full bg-white shadow-md border border-slate-100 items-center justify-center text-black hover:bg-slate-50 hover:scale-110 active:scale-95 transition-all z-20",
                                     canScrollLeft ? "flex" : "hidden"
                                 )
                             }
@@ -1069,7 +1120,7 @@ export default function DashboardClient() {
 
                         <div
                             ref={scrollContainerRef}
-                            className="flex items-center gap-4 overflow-x-auto no-scrollbar scroll-smooth w-full py-1"
+                            className="flex items-center gap-3 lg:gap-4 overflow-x-auto no-scrollbar scroll-smooth w-full py-0.5 lg:py-1"
                         >
                             {activeSelectorTab === 'category' ? (
                                 <>
@@ -1079,7 +1130,7 @@ export default function DashboardClient() {
                                         href={getCategoryUrl("")}
                                         scroll={false}
                                         className={cn(
-                                            "flex flex-col items-center gap-2 flex-none group cursor-pointer",
+                                            "flex flex-col items-center gap-1.5 lg:gap-2 flex-none group cursor-pointer",
                                             !filters.category && "relative"
                                         )}
                                         onClick={() => {
@@ -1088,7 +1139,7 @@ export default function DashboardClient() {
                                         }}
                                     >
                                         <div className={cn(
-                                            "w-[70px] h-[70px] rounded-full border-2 p-1 transition-all",
+                                            "w-[62px] h-[62px] lg:w-[70px] lg:h-[70px] rounded-full border-2 p-1 transition-all",
                                             !filters.category ? "border-[#0088cc] bg-blue-50" : "border-slate-200"
                                         )}>
                                             <div className="w-full h-full rounded-full bg-slate-50 overflow-hidden flex items-center justify-center">
@@ -1096,7 +1147,7 @@ export default function DashboardClient() {
                                             </div>
                                         </div>
                                         <span className={cn(
-                                            "text-[11px] font-bold text-center max-w-[70px] truncate transition-colors",
+                                            "text-[10px] lg:text-[11px] font-bold text-center max-w-[62px] lg:max-w-[70px] truncate transition-colors",
                                             !filters.category ? "text-[#0088cc]" : "text-black"
                                         )}>{language === 'bn' ? 'সব বিজ্ঞাপন' : 'All Categories'}</span>
                                     </Link>
@@ -1108,7 +1159,7 @@ export default function DashboardClient() {
                                                 href={cat.name === filters.category ? getCategoryUrl("") : getCategoryUrl(cat.name)}
                                                 scroll={false}
                                                 className={cn(
-                                                    "flex flex-col items-center gap-2 flex-none group cursor-pointer",
+                                                    "flex flex-col items-center gap-1.5 lg:gap-2 flex-none group cursor-pointer",
                                                     cat.name === filters.category && "relative"
                                                 )}
                                                 onClick={() => {
@@ -1122,21 +1173,21 @@ export default function DashboardClient() {
                                                 }}
                                             >
                                                 <div className={cn(
-                                                    "w-[70px] h-[70px] rounded-full border-2 p-1 transition-all",
+                                                    "w-[62px] h-[62px] lg:w-[70px] lg:h-[70px] rounded-full border-2 p-1 transition-all",
                                                     cat.name === filters.category ? "border-[#0088cc] bg-blue-50" : "border-slate-200"
                                                 )}>
                                                     <div className="w-full h-full rounded-full bg-blue-50 overflow-hidden flex items-center justify-center">
                                                         {cat.icon ? (
                                                             <img
                                                                 src={getImageUrl(cat.icon) || undefined}
-                                                                alt={cat.name}
+                                                                alt={getLocalizedCategoryName(cat.name, cat.categoryNameBn)}
                                                                 className="w-full h-full object-contain"
                                                                 loading="lazy"
                                                             />
                                                         ) : (
                                                             <img
-                                                                src={`https://placehold.co/100x100?text=${cat.name.charAt(0)}`}
-                                                                alt={cat.name}
+                                                                src={`https://placehold.co/100x100?text=${getLocalizedCategoryName(cat.name, cat.categoryNameBn).charAt(0)}`}
+                                                                alt={getLocalizedCategoryName(cat.name, cat.categoryNameBn)}
                                                                 className="w-full h-full object-contain opacity-50"
                                                                 loading="lazy"
                                                             />
@@ -1144,9 +1195,9 @@ export default function DashboardClient() {
                                                     </div>
                                                 </div>
                                                 <span className={cn(
-                                                    "text-[11px] font-bold text-center max-w-[70px] truncate transition-colors",
+                                                    "text-[10px] lg:text-[11px] font-bold text-center max-w-[62px] lg:max-w-[70px] truncate transition-colors",
                                                     cat.name === filters.category ? "text-[#0088cc]" : "text-black"
-                                                )}>{cat.name}</span>
+                                                )}>{getLocalizedCategoryName(cat.name, cat.categoryNameBn)}</span>
                                             </Link>
                                         ))
                                     }
@@ -1159,7 +1210,7 @@ export default function DashboardClient() {
                                         href={getLocationUrl("")}
                                         scroll={false}
                                         className={cn(
-                                            "flex flex-col items-center gap-2 flex-none group cursor-pointer",
+                                            "flex flex-col items-center gap-1.5 lg:gap-2 flex-none group cursor-pointer",
                                             !filters.location && "relative"
                                         )}
                                         onClick={() => {
@@ -1168,7 +1219,7 @@ export default function DashboardClient() {
                                         }}
                                     >
                                         <div className={cn(
-                                            "w-[70px] h-[70px] rounded-full border-2 p-1 transition-all",
+                                            "w-[62px] h-[62px] lg:w-[70px] lg:h-[70px] rounded-full border-2 p-1 transition-all",
                                             !filters.location ? "border-[#0088cc] bg-blue-50" : "border-slate-200"
                                         )}>
                                             <div className="w-full h-full rounded-full bg-slate-50 overflow-hidden flex items-center justify-center">
@@ -1176,7 +1227,7 @@ export default function DashboardClient() {
                                             </div>
                                         </div>
                                         <span className={cn(
-                                            "text-[11px] font-bold text-center max-w-[70px] truncate transition-colors",
+                                            "text-[10px] lg:text-[11px] font-bold text-center max-w-[62px] lg:max-w-[70px] truncate transition-colors",
                                             !filters.location ? "text-[#0088cc]" : "text-black"
                                         )}>{language === 'bn' ? 'সব এলাকা' : 'All Location'}</span>
                                     </Link>
@@ -1188,7 +1239,7 @@ export default function DashboardClient() {
                                                 href={loc.name === filters.location ? getLocationUrl("") : getLocationUrl(loc.name)}
                                                 scroll={false}
                                                 className={cn(
-                                                    "flex flex-col items-center gap-2 flex-none group cursor-pointer",
+                                                    "flex flex-col items-center gap-1.5 lg:gap-2 flex-none group cursor-pointer",
                                                     loc.name === filters.location && "relative"
                                                 )}
                                                 onClick={() => {
@@ -1202,7 +1253,7 @@ export default function DashboardClient() {
                                                 }}
                                             >
                                                 <div className={cn(
-                                                    "w-[70px] h-[70px] rounded-full border-2 p-1 transition-all",
+                                                    "w-[62px] h-[62px] lg:w-[70px] lg:h-[70px] rounded-full border-2 p-1 transition-all",
                                                     loc.name === filters.location ? "border-[#0088cc] bg-blue-50" : "border-slate-200"
                                                 )}>
                                                     <div className="w-full h-full rounded-full bg-blue-50 overflow-hidden flex items-center justify-center">
@@ -1224,7 +1275,7 @@ export default function DashboardClient() {
                                                     </div>
                                                 </div>
                                                 <span className={cn(
-                                                    "text-[11px] font-bold text-center max-w-[70px] truncate transition-colors",
+                                                    "text-[10px] lg:text-[11px] font-bold text-center max-w-[62px] lg:max-w-[70px] truncate transition-colors",
                                                     loc.name === filters.location ? "text-[#0088cc]" : "text-black"
                                                 )}>{loc.name}</span>
                                             </Link>
@@ -1238,7 +1289,7 @@ export default function DashboardClient() {
                         <button
                             onClick={scrollRight}
                             className={cn(
-                                "absolute right-4 top-[42px] w-9 h-9 rounded-full bg-white shadow-md border border-slate-100 items-center justify-center text-black hover:bg-slate-50 hover:scale-110 active:scale-95 transition-all z-20",
+                                "absolute right-4 top-[36px] lg:top-[42px] w-9 h-9 rounded-full bg-white shadow-md border border-slate-100 items-center justify-center text-black hover:bg-slate-50 hover:scale-110 active:scale-95 transition-all z-20",
                                 canScrollRight ? "flex" : "hidden"
                             )}
                         >
@@ -1294,6 +1345,7 @@ export default function DashboardClient() {
 
                         const promotedPool = [...displayAdsList.filter(ad => ad.adType === 'Promoted')];
                         const freePool = [...displayAdsList.filter(ad => ad.adType !== 'Promoted')];
+                        const promotedForFreePool = [...displayAdsList.filter(ad => ad.adType === 'Promoted')];
                         const chunks = [];
 
                         // 1. Process Promoted Ads until pool is empty
@@ -1313,17 +1365,19 @@ export default function DashboardClient() {
                             });
                         }
 
-                        // 2. Process Free Ads (Small only)
+                        // 2. Process Free Ads with inserted big promoted cards
                         while (freePool.length > 0) {
-                            const s1 = freePool.splice(0, 10);
-                            const s2 = freePool.splice(0, 10);
+                            const b1 = promotedForFreePool.shift() || null;
+                            const s1 = freePool.splice(0, 5);
+                            const b2 = promotedForFreePool.shift() || null;
+                            const s2 = freePool.splice(0, 5);
 
                             if (s1.length > 0 || s2.length > 0) {
                                 chunks.push({
                                     type: 'free',
                                     blocks: [
-                                        { bigAd: null, smallAds: s1 },
-                                        { bigAd: null, smallAds: s2 }
+                                        { bigAd: b1, smallAds: s1 },
+                                        { bigAd: b2, smallAds: s2 }
                                     ].filter(b => b.smallAds.length > 0),
                                     showCategoryBatch: freePool.length > 0 // Maybe show category row between free chunks too?
                                 });
@@ -1336,8 +1390,8 @@ export default function DashboardClient() {
 
                         return (
                             <div className="space-y-1">
-                                <div className="flex items-center justify-between px-4 lg:px-0">
-                                    <div className="text-sm text-black flex items-center gap-1">
+                                <div className="flex items-center justify-between px-2.5 lg:px-0">
+                                    <div className="text-xs lg:text-sm text-black flex items-center gap-1">
                                         <span className="font-medium">
                                             {language === 'bn'
                                                 ? `${filteredTotalAdsCount.toLocaleString('bn-BD')} টি বিজ্ঞাপন দেখছেন`
@@ -1347,7 +1401,7 @@ export default function DashboardClient() {
                                     <button
                                         onClick={handleSaveSearch}
                                         className={cn(
-                                            "flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition-colors",
+                                            "flex items-center gap-1.5 text-[11px] lg:text-xs px-2.5 lg:px-3 py-1 lg:py-1.5 rounded-full transition-colors",
                                             isViewingSavedSearch
                                                 ? "bg-blue-600 text-white hover:bg-blue-700"
                                                 : "text-black bg-white border border-slate-200 hover:bg-slate-50"
@@ -1397,7 +1451,7 @@ export default function DashboardClient() {
                                                                             <img
                                                                                 src={getImageUrl(block.bigAd.images?.[0]) || undefined}
                                                                                 alt=""
-                                                                                className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-70"
+                                                                                className="absolute inset-0 w-full h-full object-contain blur-xl scale-110 opacity-70"
                                                                             />
                                                                             <img
                                                                                 src={getImageUrl(block.bigAd.images?.[0]) || undefined}
@@ -1420,10 +1474,10 @@ export default function DashboardClient() {
                                                                         </div>
                                                                     )}
                                                                 </div>
-                                                                <div className="p-3">
+                                                                <div className="p-2.5 lg:p-3">
                                                                     <div className="flex items-start justify-between">
                                                                         <div className="min-w-0">
-                                                                            <div className="flex items-center gap-1 text-[11px] text-black mb-0.5">
+                                                                            <div className="flex items-center gap-1 text-[10px] lg:text-[11px] text-black mb-0.5">
                                                                                 <span>{block.bigAd.adType === 'Promoted' ? 'Promoted By' : 'Post By'}</span>
                                                                                 <span
                                                                                     className="font-bold text-black cursor-pointer hover:text-blue-600 hover:underline"
@@ -1436,9 +1490,11 @@ export default function DashboardClient() {
                                                                                 </span>
                                                                                 {block.bigAd.user?.mVerified && <VerifiedBadge className="translate-y-[0.5px]" />}
                                                                             </div>
-                                                                            <h3 className="font-bold text-lg text-black leading-tight mb-0.5 truncate">{block.bigAd.headline}</h3>
-                                                                            <div className="font-bold text-base text-black mb-1">৳ {block.bigAd.price?.toLocaleString() || 'N/A'}</div>
-                                                                            <div className="flex items-center gap-3 text-[10px] text-black">
+                                                                            <div className="border-l-2 border-slate-300 pl-2 lg:border-l-0 lg:pl-0">
+                                                                                <h3 className="font-bold text-base lg:text-lg text-black leading-tight mb-0 line-clamp-1">{block.bigAd.headline}</h3>
+                                                                                <div className="font-bold text-sm lg:text-base text-black mb-0.5 lg:mb-1">৳ {block.bigAd.price?.toLocaleString() || 'N/A'}</div>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-2 lg:gap-3 text-[10px] text-black">
                                                                                 <div className="flex items-center gap-1"><MapPin className="w-3 h-3 text-black" />{block.bigAd.location}</div>
                                                                                 <div className="flex items-center gap-1"><Grid className="w-3 h-3 text-black" />{block.bigAd.category}</div>
                                                                             </div>
@@ -1449,12 +1505,20 @@ export default function DashboardClient() {
                                                                                 target="_blank"
                                                                                 rel="noopener noreferrer"
                                                                                 onClick={(e) => e.stopPropagation()}
-                                                                                className="border border-slate-300 text-black bg-gray-200 px-3 py-1 rounded text-xs font-bold hover:bg-slate-50"
+                                                                                className="border border-slate-300 text-black bg-gray-200 px-2 lg:px-3 py-0.5 lg:py-1 rounded text-[10px] lg:text-xs font-bold hover:bg-slate-50"
                                                                             >
                                                                                 {block.bigAd.trafficButtonType || 'Visit'}
                                                                             </a>
                                                                         ) : (
-                                                                            <button className="border border-slate-300 text-black bg-gray-200 px-3 py-1 rounded text-xs font-bold hover:bg-slate-50">Detail</button>
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    router.push(getAdUrl(block.bigAd), { scroll: false });
+                                                                                }}
+                                                                                className="border border-slate-300 text-black bg-gray-200 px-2 lg:px-3 py-0.5 lg:py-1 rounded text-[10px] lg:text-xs font-bold hover:bg-slate-50"
+                                                                            >
+                                                                                Detail
+                                                                            </button>
                                                                         )}
                                                                     </div>
                                                                 </div>
@@ -1470,19 +1534,19 @@ export default function DashboardClient() {
                                                                             router.push(getAdUrl(ad), { scroll: false });
                                                                         }}
                                                                         className={cn(
-                                                                            "bg-white rounded-lg lg:rounded-lg p-3 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50 border mx-1 lg:mx-0",
+                                                                            "bg-white rounded-lg lg:rounded-lg p-2.5 lg:p-3 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50 border mx-1 lg:mx-0",
                                                                             hasHighlightLabel(ad)
                                                                                 ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-2 ring-orange-400/30"
                                                                                 : "border-transparent"
                                                                         )}
                                                                     >
-                                                                        <div className="flex-1 lg:flex-none lg:w-[200px] h-[130px] rounded-lg overflow-hidden shrink-0 relative group-hover:scale-[1.02] transition-transform">
+                                                                        <div className="flex-1 lg:flex-none lg:w-[200px] h-[120px] lg:h-[130px] rounded-lg overflow-hidden shrink-0 relative group-hover:scale-[1.02] transition-transform">
                                                                             {getImageUrl(ad.images?.[0]) && (
                                                                                 <>
                                                                                     <img
                                                                                         src={getImageUrl(ad.images?.[0]) || undefined}
                                                                                         alt=""
-                                                                                        className="absolute inset-0 w-full h-full object-cover blur-lg scale-110 opacity-60"
+                                                                                        className="absolute inset-0 w-full h-full object-contain blur-lg scale-110 opacity-60"
                                                                                     />
                                                                                     <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-contain" loading="lazy" />
                                                                                 </>
@@ -1501,22 +1565,22 @@ export default function DashboardClient() {
                                                                             )}
                                                                         </div>
                                                                         <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                                                            <div className="flex max-[390px]:flex-col items-center max-[390px]:items-start gap-1 text-[10px] text-black mb-0.5">
+                                                                            <div className="flex items-center gap-1 text-[9px] lg:text-[10px] text-black mb-0.5 flex-wrap">
                                                                                 <span>{ad.adType === 'Promoted' ? 'Promoted By' : 'Post By'}</span>
                                                                                 <div className="flex items-center gap-1">
                                                                                     <span className="font-bold text-black hover:text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id } })); }}>{ad.user?.storeName || ad.user?.name || 'User'}</span>
                                                                                     {ad.user?.mVerified && <VerifiedBadge className="translate-y-[0.5px]" />}
                                                                                 </div>
                                                                             </div>
-                                                                            <h4 className="text-sm text-black truncate mb-0.5">{ad.headline}</h4>
-                                                                            <div className="text-sm text-black mb-1">৳ {ad.price?.toLocaleString() || 'N/A'}</div>
-                                                                            <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2 text-[10px] text-black group-hover:text-black">
-                                                                                <div className="flex max-[390px]:flex-col items-center max-[390px]:items-start gap-2 max-[390px]:gap-1">
-                                                                                    <div className="flex items-center gap-0.5 shrink-0"><MapPin className="w-2.5 h-2.5" /><span className="truncate max-w-[100px] md:max-w-[120px]">{ad.location}</span></div>
-                                                                                    <div className="flex items-center gap-0.5 shrink-0"><Grid className="w-2.5 h-2.5" /><span className="truncate max-w-[100px] md:max-w-[120px]">{ad.category}</span></div>
+                                                                            <h4 className="text-[13px] lg:text-sm text-black line-clamp-1 mb-0.5">{ad.headline}</h4>
+                                                                            <div className="text-[13px] lg:text-sm text-black mb-1">৳ {ad.price?.toLocaleString() || 'N/A'}</div>
+                                                                            <div className="flex items-center gap-2 text-[9px] lg:text-[10px] text-black group-hover:text-black flex-wrap">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <div className="flex items-center gap-0.5 shrink-0"><MapPin className="w-2.5 h-2.5" /><span className="truncate max-w-[110px] md:max-w-[120px]">{ad.location}</span></div>
+                                                                                    <div className="flex items-center gap-0.5 shrink-0"><Grid className="w-2.5 h-2.5" /><span className="truncate max-w-[110px] md:max-w-[120px]">{ad.category}</span></div>
                                                                                 </div>
                                                                                 {ad.adType !== 'Promoted' && (
-                                                                                    <div className="md:ml-auto text-black/60 text-[10px] whitespace-nowrap">
+                                                                                    <div className="lg:ml-auto text-black/60 text-[9px] lg:text-[10px] whitespace-nowrap">
                                                                                         {timeAgo(ad.createdAt, language as 'en' | 'bn')}
                                                                                     </div>
                                                                                 )}
@@ -1536,12 +1600,12 @@ export default function DashboardClient() {
                                             {chunk.showCategoryBatch && categoryToShow && (
                                                 <div className="bg-white relative group/cat rounded-lg p-2 pb-0 mt-2">
                                                     <div className="bg-white flex items-center justify-between px-2 mb-2">
-                                                        <h3 className="text-sm font-medium text-black">{categoryToShow.name}</h3>
+                                                        <h3 className="text-sm font-medium text-black">{getLocalizedCategoryName(categoryToShow.name, categoryToShow.categoryNameBn)}</h3>
                                                         <button
                                                             onClick={() => {
                                                                 const params = new URLSearchParams(searchParams.toString());
-                                                                params.set('category', categoryToShow.name);
-                                                                router.push(`/dashboard?${params.toString()}`, { scroll: false });
+                                                                setShortFilterParam(params, 'c', 'category', categoryToShow.name);
+                                                                router.push(`/d?${params.toString()}`, { scroll: false });
                                                                 setFilters(prev => ({ ...prev, category: categoryToShow.name }));
                                                             }}
                                                             className="text-xs text-black hover:underline"
@@ -1658,12 +1722,7 @@ export default function DashboardClient() {
                                                                     </p>
                                                                     <button
                                                                         onClick={(e) => handleFollowUser(e, user._id)}
-                                                                        className={cn(
-                                                                            "mt-1 px-3 py-1 rounded-full text-[10px] font-bold transition-all w-full",
-                                                                            user.isFollowing
-                                                                                ? "bg-slate-100 text-slate-500 border border-slate-200"
-                                                                                : "bg-[#0088cc] text-white"
-                                                                        )}
+                                                                        className="mt-1 px-3 py-1 rounded-full text-[10px] font-bold transition-all w-full bg-white text-black border border-black hover:bg-slate-50"
                                                                     >
                                                                         {user.isFollowing ? t('Unfollow') : t('Follow')}
                                                                     </button>

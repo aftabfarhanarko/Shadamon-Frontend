@@ -1,12 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, ArrowLeft, Search, Loader2, ChevronRight } from 'lucide-react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { X, ArrowLeft, Search, Loader2, ChevronRight, Grid, MapPin, SlidersHorizontal } from 'lucide-react';
 import { useLanguage } from '../app/context/LanguageContext';
 import { API_BASE_URL } from '../utils/apiConfig';
 import { getImageUrl } from '../utils/imageUrl';
 import { twMerge } from 'tailwind-merge';
 import { clsx, type ClassValue } from 'clsx';
+import { FilterState } from './FilterModal';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -17,25 +19,69 @@ interface SearchModalProps {
     onClose: () => void;
     onSearch: (query: string) => void;
     onSelectAd: (ad: any) => void;
+    onOpenFilter: (view: 'main' | 'category' | 'location') => void;
 }
 
 export default function SearchModal({
     isOpen,
     onClose,
     onSearch,
-    onSelectAd
+    onSelectAd,
+    onOpenFilter
 }: SearchModalProps) {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
     const { language } = useLanguage();
     const [searchQuery, setSearchQuery] = useState("");
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
+    const getFiltersFromSearchParams = (): FilterState => {
+        const urlCategory = searchParams.get('category');
+        const urlSubCategory = searchParams.get('subCategory');
+        const urlLocation = searchParams.get('location');
+        const urlSubLocation = searchParams.get('subLocation');
+        const urlSearch = searchParams.get('search');
+
+        return {
+            category: urlCategory || "",
+            subCategory: urlSubCategory || "",
+            location: urlLocation || "",
+            subLocation: urlSubLocation || "",
+            search: urlSearch || "",
+            promoteTag: searchParams.get('promoteTag') || "All",
+            sort: searchParams.get('sort') || "newest"
+        };
+    };
+
+    const [filters, setFilters] = useState<FilterState>(() => getFiltersFromSearchParams());
+
     const translate = (en: string, bn: string) => language === 'bn' ? bn : en;
+
+    const syncFiltersToUrl = (nextFilters: FilterState, nextSearch?: string) => {
+        const params = new URLSearchParams(searchParams.toString());
+        const finalSearch = (nextSearch ?? nextFilters.search ?? "").trim();
+
+        if (nextFilters.category) params.set('category', nextFilters.category); else params.delete('category');
+        if (nextFilters.subCategory) params.set('subCategory', nextFilters.subCategory); else params.delete('subCategory');
+        if (nextFilters.location) params.set('location', nextFilters.location); else params.delete('location');
+        if (nextFilters.subLocation) params.set('subLocation', nextFilters.subLocation); else params.delete('subLocation');
+        if (nextFilters.promoteTag && nextFilters.promoteTag !== 'All') params.set('promoteTag', nextFilters.promoteTag); else params.delete('promoteTag');
+        if (nextFilters.sort && nextFilters.sort !== 'newest') params.set('sort', nextFilters.sort); else params.delete('sort');
+        if (finalSearch) params.set('search', finalSearch); else params.delete('search');
+
+        const queryString = params.toString();
+        router.push(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
+    };
 
     useEffect(() => {
         if (isOpen) {
             setTimeout(() => inputRef.current?.focus(), 100);
+            const currentFilters = getFiltersFromSearchParams();
+            setFilters(currentFilters);
+            setSearchQuery(currentFilters.search || "");
         } else {
             setSearchQuery("");
             setSuggestions([]);
@@ -47,7 +93,17 @@ export default function SearchModal({
             if (searchQuery.trim().length >= 2) {
                 setLoading(true);
                 try {
-                    const res = await fetch(`${API_BASE_URL}/api/ads/public/all?search=${encodeURIComponent(searchQuery)}&limit=10`);
+                    const params = new URLSearchParams();
+                    params.set('search', searchQuery.trim());
+                    params.set('limit', '10');
+                    if (filters.category) params.set('category', filters.category);
+                    if (filters.subCategory) params.set('subCategory', filters.subCategory);
+                    if (filters.location) params.set('location', filters.location);
+                    if (filters.subLocation) params.set('subLocation', filters.subLocation);
+                    if (filters.promoteTag && filters.promoteTag !== 'All') params.set('promoteTag', filters.promoteTag);
+                    if (filters.sort) params.set('sort', filters.sort);
+
+                    const res = await fetch(`${API_BASE_URL}/api/ads/public/all?${params.toString()}`);
                     const data = await res.json();
                     if (data.success) {
                         setSuggestions(data.data);
@@ -64,10 +120,13 @@ export default function SearchModal({
 
         const timeoutId = setTimeout(fetchSuggestions, 300);
         return () => clearTimeout(timeoutId);
-    }, [searchQuery]);
+    }, [searchQuery, filters]);
 
     const handleSearch = () => {
         if (searchQuery.trim()) {
+            const nextFilters = { ...filters, search: searchQuery.trim() };
+            setFilters(nextFilters);
+            syncFiltersToUrl(nextFilters, searchQuery.trim());
             onSearch(searchQuery);
             onClose();
         }
@@ -82,7 +141,7 @@ export default function SearchModal({
 
             {/* Modal Content */}
             <div className="relative bg-white w-full max-w-[565px] rounded-t-lg rounded-b-none overflow-hidden flex flex-col animate-in slide-in-from-bottom-full duration-300 shadow-2xl h-[calc(100vh-80px)] font-sans">
-                
+
                 {/* Header */}
                 <div className="flex items-center justify-between p-3 px-4 border-b border-slate-100 bg-white shrink-0">
                     <div className="flex items-center gap-0">
@@ -127,6 +186,76 @@ export default function SearchModal({
                         >
                             {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
                             <span>{translate("Search", "সার্চ")}</span>
+                        </button>
+                    </div>
+
+                    {/* Secondary Filter Bar (same style/function as dashboard header filter) */}
+                    <div className="mt-2 bg-white rounded-lg flex divide-x divide-slate-100 overflow-hidden shadow-sm border border-slate-100">
+                        <button
+                            onClick={() => {
+                                onClose();
+                                onOpenFilter('category');
+                            }}
+                            className="flex-1 px-4 py-2.5 flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors group"
+                        >
+                            <Grid className="w-5 h-5 text-black" />
+                            <div className="flex items-center gap-1 min-w-0">
+                                <span className="text-xs sm:text-sm text-black truncate">
+                                    {filters.category ? (filters.subCategory || filters.category) : (language === 'bn' ? 'ক্যাটাগরি' : 'Category')}
+                                </span>
+                                {filters.category && (
+                                    <div
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const nextFilters = { ...filters, category: "", subCategory: "" };
+                                            setFilters(nextFilters);
+                                            syncFiltersToUrl(nextFilters, searchQuery);
+                                        }}
+                                        className="p-1 rounded-full hover:bg-slate-200 transition-colors shrink-0"
+                                    >
+                                        <X className="w-5 h-5 text-slate-500" />
+                                    </div>
+                                )}
+                            </div>
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                onClose();
+                                onOpenFilter('location');
+                            }}
+                            className="flex-1 px-4 py-2.5 flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors group"
+                        >
+                            <MapPin className="w-5 h-5 text-black" />
+                            <div className="flex items-center gap-1 min-w-0">
+                                <span className="text-xs sm:text-sm text-black truncate">
+                                    {filters.location ? (filters.subLocation || filters.location) : (language === 'bn' ? 'লোকেশন' : 'Location')}
+                                </span>
+                                {filters.location && (
+                                    <div
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const nextFilters = { ...filters, location: "", subLocation: "" };
+                                            setFilters(nextFilters);
+                                            syncFiltersToUrl(nextFilters, searchQuery);
+                                        }}
+                                        className="p-1 rounded-full hover:bg-slate-200 transition-colors shrink-0"
+                                    >
+                                        <X className="w-5 h-5 text-slate-500" />
+                                    </div>
+                                )}
+                            </div>
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                onClose();
+                                onOpenFilter('main');
+                            }}
+                            className="flex-1 px-4 py-2.5 flex items-center justify-center gap-3 hover:bg-slate-50 transition-colors"
+                        >
+                            <SlidersHorizontal className="w-5 h-5 text-black" />
+                            <span className="text-xs sm:text-sm text-black">{language === 'bn' ? 'ফিল্টার' : 'Filter'}</span>
                         </button>
                     </div>
                 </div>
@@ -195,12 +324,13 @@ export default function SearchModal({
                             <p className="text-sm">{translate("No matches found", "কোনো ফলাফল পাওয়া যায়নি")}</p>
                         </div>
                     ) : !searchQuery && (
-                         <div className="p-10 text-center text-slate-400">
-                             <Search className="w-10 h-10 mx-auto mb-3 opacity-10" />
-                             <p className="text-sm">{translate("Type to search ads...", "বিজ্ঞাপন খুঁজতে লিখুন...")}</p>
-                         </div>
+                        <div className="p-10 text-center text-slate-400">
+                            <Search className="w-10 h-10 mx-auto mb-3 opacity-10" />
+                            <p className="text-sm">{translate("Type to search ads...", "বিজ্ঞাপন খুঁজতে লিখুন...")}</p>
+                        </div>
                     )}
                 </div>
+
             </div>
         </div>
     );

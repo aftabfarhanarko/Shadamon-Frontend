@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 import { LanguageProvider } from "./context/LanguageContext";
 import { Toaster } from "react-hot-toast";
@@ -31,7 +32,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Shadamon" />
-        
+
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/apple-icon.png" />
 
@@ -77,6 +78,18 @@ export default function RootLayout({
         data-developer="Abtahi Md. Mahib Uddin"
         data-developed-by="Abtahi Md. Mahib Uddin"
       >
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-8E75HC4681"
+          strategy="afterInteractive"
+        />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-8E75HC4681');
+          `}
+        </Script>
         <script
           dangerouslySetInnerHTML={{
             __html: `
