@@ -192,7 +192,8 @@ export default function VerifyProfileModal({ isOpen, onClose, user }: VerifyProf
                                 </p>
                                 <div className="space-y-1 text-[13px] text-slate-800 mb-3 font-medium">
                                     <div>বিকাশ নাম্বার: 01732661224</div>
-                                    <div>রকেট নাম্বার: 01732661224</div>
+                                    <div>নগদ নাম্বার: 01732661224</div>
+                                    <div>রকেট নাম্বার: 01732661224 3</div>
                                 </div>
                                 <button
                                     onClick={() => window.open('https://m.me/shadamonDotCom', '_blank')}

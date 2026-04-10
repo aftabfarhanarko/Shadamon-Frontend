@@ -312,13 +312,13 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                 >
 
                     {/* 2. Image Gallery */}
-                    <div className="relative w-full aspect-[16/9] overflow-hidden group">
+                    <div className="relative w-full aspect-[16/9] overflow-hidden group bg-slate-50">
                         {hasImages ? (
                             <>
                                 <img
                                     src={getImageUrl(images[currentImageIndex]) || undefined}
                                     alt=""
-                                    className="absolute inset-0 w-full h-full object-contain blur-2xl scale-110 opacity-60"
+                                    className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60"
                                 />
                                 <img
                                     src={getImageUrl(images[currentImageIndex]) || undefined}
@@ -861,11 +861,16 @@ I have sent my CV for your review.`;
                                                 }
                                             }}
                                         >
-                                            <div className="relative h-40 bg-slate-100">
+                                            <div className="relative h-40 bg-slate-100 overflow-hidden">
+                                                <img
+                                                    src={getImageUrl(pad.images?.[0] || '')}
+                                                    alt=""
+                                                    className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60"
+                                                />
                                                 <img
                                                     src={getImageUrl(pad.images?.[0] || '')}
                                                     alt={pad.headline}
-                                                    className="w-full h-full object-contain"
+                                                    className="relative z-10 w-full h-full object-contain"
                                                     loading="lazy"
                                                 />
                                                 {/* Top Left Badge */}
@@ -938,7 +943,7 @@ I have sent my CV for your review.`;
                                         />
                                     ) : (
                                         <div className="w-full h-full bg-red-600 flex items-center justify-center text-white text-xl font-bold">
-                                            {(ad as any).user?.storeName?.charAt(0) || 'S'}
+                                            {(ad as any).user?.storeName?.charAt(0) || (ad as any).user?.name?.charAt(0) || 'S'}
                                         </div>
                                     )}
                                 </div>
@@ -955,7 +960,7 @@ I have sent my CV for your review.`;
                                                 window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: (ad as any).user?._id } }));
                                             }}
                                         >
-                                            {(ad as any).user?.storeName || 'Store Name'}
+                                            {(ad as any).user?.storeName || (ad as any).user?.name || 'Store Name'}
                                         </h4>
                                         {(ad as any).user?.mVerified && (
                                             <VerifiedBadge className="-mt-0.5 ml-1" iconClassName="w-5 h-5" tooltipWidthClassName="w-[240px]" />
@@ -1012,14 +1017,21 @@ I have sent my CV for your review.`;
                                                 }
                                             }}
                                         >
-                                            <div className="w-24 h-20 bg-slate-100 rounded bg-cover bg-center shrink-0 relative overflow-hidden">
+                                            <div className="w-24 h-20 bg-slate-100 rounded shrink-0 relative overflow-hidden">
                                                 {getImageUrl(sad.images?.[0]) && (
-                                                    <img
-                                                        src={getImageUrl(sad.images?.[0]) || ''}
-                                                        alt={sad.headline}
-                                                        className="w-full h-full object-contain"
-                                                        loading="lazy"
-                                                    />
+                                                    <>
+                                                        <img
+                                                            src={getImageUrl(sad.images?.[0]) || ''}
+                                                            alt=""
+                                                            className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60"
+                                                        />
+                                                        <img
+                                                            src={getImageUrl(sad.images?.[0]) || ''}
+                                                            alt={sad.headline}
+                                                            className="relative z-10 w-full h-full object-contain"
+                                                            loading="lazy"
+                                                        />
+                                                    </>
                                                 )}
                                                 {getNonHighlightLabels(sad).length > 0 && (
                                                     <div className="absolute top-1 left-1 z-20 flex flex-col gap-0.5">
@@ -1303,7 +1315,7 @@ I have sent my CV for your review.`;
                                 <img
                                     src={getImageUrl(images[currentImageIndex]) || undefined}
                                     alt=""
-                                    className="absolute inset-0 w-full h-full object-contain blur-3xl scale-110 opacity-50"
+                                    className="absolute inset-0 w-full h-full object-cover blur-3xl scale-110 opacity-50"
                                 />
                                 <div className="relative z-10 w-full h-full flex items-center justify-center p-4">
                                     {images.length > 1 && (

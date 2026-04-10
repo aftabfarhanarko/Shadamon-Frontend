@@ -429,8 +429,9 @@ export default function PromoteModal({ isOpen, onClose, ad, user }: PromoteModal
                     {/* 3. Ad Config Card */}
                     <div className="bg-white rounded-lg p-0">
                         <div className="flex gap-3 mb-3 items-stretch">
-                            <div className="w-[110px] rounded overflow-hidden shrink-0 relative">
-                                <img src={mainImage} className="w-full h-full object-contain absolute inset-0" alt="ad" loading="lazy" />
+                            <div className="w-[110px] aspect-square rounded overflow-hidden shrink-0 relative">
+                                <img src={mainImage} className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-70" alt="ad" loading="lazy" />
+                                <img src={mainImage} className="relative z-10 w-full h-full object-contain" alt="ad" loading="lazy" />
                                 <button
                                     onClick={() => setSelectedDetailAd(ad)}
                                     className="absolute top-1 left-1 bg-white/90 text-[8px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm text-slate-700 hover:bg-white z-10"
@@ -877,7 +878,8 @@ export default function PromoteModal({ isOpen, onClose, ad, user }: PromoteModal
                                 </p>
                                 <div className="space-y-0.5 text-xs text-slate-700 mb-4">
                                     <div><span className="font-bold">বিকাশ নাম্বার: </span>01732661224</div>
-                                    <div><span className="font-bold">রকেট নাম্বার: </span>01732661224</div>
+                                    <div><span className="font-bold">নগদ নাম্বার: </span>01732661224</div>
+                                    <div><span className="font-bold">রকেট নাম্বার: </span>01732661224 3</div>
                                 </div>
 
                                 <button

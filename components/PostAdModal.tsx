@@ -80,10 +80,11 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [hidePhone, setHidePhone] = useState(false);
     const [price, setPrice] = useState("");
     const [priceType, setPriceType] = useState("Negotiable");
+    const [email, setEmail] = useState("");
     const [hasReadRules, setHasReadRules] = useState(true);
     const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
     const [userData, setUserData] = useState<any>(null);
-    const [mobileCheckResult, setMobileCheckResult] = useState<{ exists: boolean; verifiedBy: string | null } | null>(null);
+    const [mobileCheckResult, setMobileCheckResult] = useState<{ exists: boolean; verifiedBy: string | null; matchesEmail?: boolean } | null>(null);
 
     // Categories & Locations
     const [categories, setCategories] = useState<Category[]>([]);
@@ -114,7 +115,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [showOtpVerification, setShowOtpVerification] = useState(false);
     const [otp, setOtp] = useState(["", "", "", "", "", ""]);
     const [otpTimer, setOtpTimer] = useState(300);
-    const [isEditingPhone, setIsEditingPhone] = useState(false);
+
     const [showTnC, setShowTnC] = useState(false);
     const [showPrivacy, setShowPrivacy] = useState(false);
     const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -197,13 +198,19 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 setShowOtpVerification(false);
                 setOtp(["", "", "", "", "", ""]);
                 setOtpTimer(300);
-                setIsEditingPhone(false);
                 setMobileCheckResult(null);
 
                 if (initialMobile) {
-                    setPhone(initialMobile);
+                    if (initialMobile.includes('@')) {
+                        setEmail(initialMobile);
+                        setPhone("");
+                    } else {
+                        setPhone(initialMobile);
+                        setEmail("");
+                    }
                 } else {
                     setPhone("");
+                    setEmail("");
                 }
                 setSubmissionStatus(null);
                 // View reset handled in checkUser
@@ -223,15 +230,21 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     }, [showOtpVerification, otpTimer]);
 
     useEffect(() => {
-        if (!isOpen || isUserLoggedIn) return;
+        if (!isOpen) return;
 
-        if (/^\d{11}$/.test(phone.trim())) {
-            checkMobileStatus(phone);
+        const trimmedPhone = phone.trim();
+        if (/^\d{11}$/.test(trimmedPhone)) {
+            // If logged in, only check if it's DIFFERENT from their own mobile
+            if (isUserLoggedIn && trimmedPhone === userData?.mobile) {
+                setMobileCheckResult({ exists: true, verifiedBy: userData?.verifiedBy || null });
+                return;
+            }
+            checkMobileStatus(trimmedPhone);
             return;
         }
 
         setMobileCheckResult(null);
-    }, [isOpen, isUserLoggedIn, phone]);
+    }, [isOpen, isUserLoggedIn, phone, userData]);
 
     const fetchData = async () => {
         setLoadingData(true);
@@ -287,6 +300,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 if (userData) {
                     setIsUserLoggedIn(true);
                     setUserData(userData);
+                    if (userData.email) setEmail(userData.email);
                     if (userData.mobile) setPhone(userData.mobile);
                     if (userData.name) setName(userData.name);
 
@@ -397,14 +411,15 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             const res = await fetch(`${API_BASE_URL}/api/user/check-mobile`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mobile: trimmedMobile })
+                body: JSON.stringify({ mobile: trimmedMobile, email: email || "" })
             });
             const data = await res.json();
 
             if (res.ok) {
                 const result = {
                     exists: !!data.exists,
-                    verifiedBy: data.verifiedBy || null
+                    verifiedBy: data.verifiedBy || null,
+                    matchesEmail: data.matchesEmail !== false
                 };
                 setMobileCheckResult(result);
                 return result;
@@ -444,60 +459,80 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         }
     };
 
-    const handlePhoneEditSubmit = () => {
-        setIsEditingPhone(false);
-        setOtp(["", "", "", "", "", ""]);
-        sendMobileOtp();
-    };
 
     // Actual submission logic moved here
-    const submitAd = async (authToken?: string, wasOtpVerified: boolean = false) => {
-        let token = authToken || Cookies.get('token');
+    const submitAd = async (otpValue?: string, wasOtpVerified: boolean = false) => {
+        let token = Cookies.get('token');
+        let finalPhone = phone.trim();
 
-        // Auto-Auth if needed
-        if (!token && !isUserLoggedIn) {
+        // Register or Login if not logged in OR if phone changed
+        if (!isUserLoggedIn || (finalPhone !== userData?.mobile)) {
             try {
-                const currentMobileCheck = mobileCheckResult || await checkMobileStatus(phone);
                 const trimmedPhone = phone.trim();
-                const loginPayload = /^\d{11}$/.test(trimmedPhone)
-                    ? { mobile: trimmedPhone, password }
-                    : { email: trimmedPhone, password };
+                const currentMobileCheck = mobileCheckResult || await checkMobileStatus(trimmedPhone);
+                
+                const authPayload: any = {
+                    mobile: trimmedPhone,
+                    password,
+                    otp: otpValue,
+                    name: name || trimmedPhone.split('').slice(0, 5).join(''),
+                    storeName: name || trimmedPhone.split('').slice(0, 5).join(''),
+                };
 
-                let res;
-                let data;
-
-                if (currentMobileCheck?.exists !== false) {
-                    res = await fetch(`${API_BASE_URL}/api/user/login`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(loginPayload)
-                    });
-                    data = await res.json();
-
-                    if (!res.ok || !data.token) {
-                        toast.error(data.message || "Invalid mobile number or password");
-                        setLoading(false);
-                        return;
-                    }
-                } else {
-                    res = await fetch(`${API_BASE_URL}/api/user/register`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name, mobile: trimmedPhone, password })
-                    });
-                    data = await res.json();
-
-                    if (!res.ok || !data.token) {
-                        toast.error(data.message || "Authentication failed");
-                        setLoading(false);
-                        return;
-                    }
+                if (email) {
+                    authPayload.email = email;
                 }
 
-                token = data.token;
-                Cookies.set('token', token as string, { expires: 7 }); // Save token
-            } catch (err) {
-                toast.error("Authentication Error");
+                let authUrl = `${API_BASE_URL}/api/user/register`;
+                let authMethod = 'POST';
+                const headers: any = { 'Content-Type': 'application/json' };
+
+                if (isUserLoggedIn) {
+                    // If already logged in (e.g. via Social), just update the profile with phone/password
+                    authUrl = `${API_BASE_URL}/api/user/update`;
+                    authMethod = 'PUT';
+                    headers['Authorization'] = `Bearer ${Cookies.get('token')}`;
+                } else if (currentMobileCheck?.exists) {
+                    authUrl = `${API_BASE_URL}/api/user/login`;
+                }
+
+                const authRes = await fetch(authUrl, {
+                    method: authMethod,
+                    headers: headers,
+                    body: JSON.stringify(authPayload)
+                });
+
+                const authData = await authRes.json();
+
+                if (!authRes.ok) {
+                    throw new Error(authData.message || "Authentication failed");
+                }
+
+                token = authData.token || Cookies.get('token');
+                if (authData.token) {
+                    Cookies.set('token', token as string, { expires: 7 });
+                }
+                setIsUserLoggedIn(true);
+                setUserData(authData.user);
+                
+                if (authData.user?.mobile) {
+                    finalPhone = authData.user.mobile;
+                    setPhone(authData.user.mobile);
+                }
+
+                // If existing user and OTP entered, ensure verified status is synced
+                if (currentMobileCheck?.exists && otpValue) {
+                    await fetch(`${API_BASE_URL}/api/user/otp/mobile/verify`, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ phone: finalPhone, otp: otpValue })
+                    });
+                }
+            } catch (err: any) {
+                toast.error(err.message || "Authentication Error");
                 setLoading(false);
                 return;
             }
@@ -512,7 +547,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             formData.append('subCategory', selectedSubCategory);
             formData.append('location', selectedLocation);
             formData.append('subLocation', selectedSubLocation);
-            formData.append('phone', phone);
+            formData.append('phone', finalPhone);
             formData.append('name', name);
             formData.append('hidePhone', String(hidePhone));
             formData.append('additionalPhones', JSON.stringify(additionalPhones));
@@ -600,7 +635,8 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             });
             const data = await res.json();
             if (data.success) {
-                submitAd(undefined, true);
+                // Success! Pass fullOtp to submitAd
+                submitAd(fullOtp, true);
             } else {
                 toast.error(data.message || "Invalid OTP");
             }
@@ -620,11 +656,14 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             return;
         }
 
+        const trimmedPhone = phone.trim();
+        const isNewPhone = isUserLoggedIn ? (trimmedPhone !== userData?.mobile) : true;
+
         // Basic validation before OTP
         if (
             !headline ||
             !phone ||
-            (!isUserLoggedIn && !password) ||
+            (isNewPhone && !password) ||
             (images.length === 0 && existingImages.length === 0) ||
             !selectedCategory ||
             !selectedLocation ||
@@ -656,19 +695,97 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             return;
         }
 
-        const currentMobileCheck = !isUserLoggedIn ? (mobileCheckResult || await checkMobileStatus(phone)) : null;
+        setLoading(true);
 
-        // If already verified by Mobile, skip OTP
-        if (
-            (isUserLoggedIn && normalizeVerifiedBy(userData?.verifiedBy) === 'mobile') ||
-            (!isUserLoggedIn && currentMobileCheck?.exists && normalizeVerifiedBy(currentMobileCheck.verifiedBy) === 'mobile')
-        ) {
-            submitAd();
-            return;
+        try {
+            const currentMobileCheck: any = mobileCheckResult || await checkMobileStatus(trimmedPhone);
+
+            // CASE 1: USER EXISTS (either phone exists OR email already has another phone)
+            if (currentMobileCheck?.exists) {
+                // If it exists but doesn't match the current email/phone pairing
+                if (currentMobileCheck.matchesEmail === false) {
+                    toast.error("Account mismatch! This email is already registered with a different mobile number, or this mobile belongs to another account.");
+                    setLoading(false);
+                    return;
+                }
+
+                // If logged in and entering their own phone, check verification directly
+                if (isUserLoggedIn && trimmedPhone === userData?.mobile) {
+                    if (normalizeVerifiedBy(userData?.verifiedBy) === 'mobile') {
+                        submitAd();
+                    } else {
+                        sendMobileOtp();
+                    }
+                    return;
+                }
+
+                // Otherwise, it belongs to this email account but phone/pass login needed
+                // We MUST verify password first for any existing account (by email or mobile)
+                const loginPayload: any = { mobile: trimmedPhone, password };
+                if (email) {
+                    loginPayload.email = email;
+                }
+                const loginRes = await fetch(`${API_BASE_URL}/api/user/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(loginPayload)
+                });
+                const loginData = await loginRes.json();
+
+                if (!loginRes.ok || !loginData.token) {
+                    toast.error(loginData.message || "Invalid password for this account");
+                    setLoading(false);
+                    return;
+                }
+
+                // Login success
+                const token = loginData.token;
+                const user = loginData.user;
+                Cookies.set('token', token, { expires: 7 });
+                setIsUserLoggedIn(true);
+                setUserData(user);
+
+                // Check verification
+                if (normalizeVerifiedBy(user.verifiedBy) === 'mobile') {
+                    submitAd(undefined, true);
+                } else {
+                    sendMobileOtp();
+                }
+            } else if (currentMobileCheck?.emailExists) {
+                // CASE 2: EMAIL EXISTS BUT HAS NO MOBILE
+                // We MUST verify password first to prove ownership of the email account
+                const loginPayload: any = { email, password };
+                const loginRes = await fetch(`${API_BASE_URL}/api/user/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(loginPayload)
+                });
+                const loginData = await loginRes.json();
+
+                if (!loginRes.ok || !loginData.token) {
+                    toast.error(loginData.message || "Invalid password for your account");
+                    setLoading(false);
+                    return;
+                }
+
+                // Ownership verified, now proceed to OTP for the NEW number
+                const token = loginData.token;
+                Cookies.set('token', token, { expires: 7 });
+                setIsUserLoggedIn(true);
+                setUserData(loginData.user);
+                
+                sendMobileOtp();
+            } else {
+                // CASE 3: NEW USER / NEW MOBILE / NEW EMAIL
+                // Send OTP, then register and post in handleVerifyOtp -> submitAd
+                sendMobileOtp();
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error("Something went wrong. Please try again.");
+        } finally {
+            setLoading(false);
         }
-
-        // For unverified users or new users, show OTP
-        sendMobileOtp();
     };
 
     const subCat = categories
@@ -962,7 +1079,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                         <div className="p-4 border-t border-slate-200 bg-slate-50">
                             <button
                                 onClick={() => setView('form')}
-                                className="w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-slate-800 transition-colors"
+                                className="w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-slate-800 transition-colors mb-4"
                             >
                                 {t('continue_btn')}
                             </button>
@@ -995,35 +1112,19 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                 <div className="bg-white rounded-lg p-5 border border-slate-100 min-h-[300px] flex flex-col items-center justify-center font-sans animate-in fade-in slide-in-from-right duration-300">
                                     <div className="w-full max-w-xs space-y-4">
                                         <h3 className="text-[17px] font-bold text-slate-800 text-left">{t('enter_the_otp')}</h3>
-                                        {isEditingPhone ? (
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="tel"
-                                                    value={phone}
-                                                    onChange={(e) => setPhone(e.target.value)}
-                                                    className="flex-1 border border-slate-300 rounded px-2 py-1 text-sm text-slate-700 font-bold focus:outline-none focus:border-black"
-                                                    autoFocus
-                                                />
+                                        <p className="text-[14px] text-slate-500 text-left">
+                                            {t('enter_otp_sent_to')} <span className="font-bold text-slate-700">{phone}</span>
+                                            {!(userData?.mobile || (initialMobile && !initialMobile.includes('@')) || editAd?.phone) && (
                                                 <button
-                                                    onClick={handlePhoneEditSubmit}
-                                                    className="bg-black text-white text-[11px] px-3 py-1.5 rounded font-bold hover:bg-slate-800 transition-colors whitespace-nowrap"
+                                                    onClick={() => {
+                                                        setShowOtpVerification(false);
+                                                    }}
+                                                    className="text-[#0088cc] hover:underline cursor-pointer font-medium ml-1"
                                                 >
-                                                    {t('resend_otp')}
+                                                    {t('edit_btn')}
                                                 </button>
-                                            </div>
-                                        ) : (
-                                            <p className="text-[14px] text-slate-500 text-left">
-                                                {t('enter_otp_sent_to')} <span className="font-bold text-slate-700">{phone}</span>
-                                                {!(userData?.mobile || initialMobile || editAd?.phone) && (
-                                                    <button
-                                                        onClick={() => setIsEditingPhone(true)}
-                                                        className="text-[#0088cc] hover:underline cursor-pointer font-medium ml-1"
-                                                    >
-                                                        {t('edit_btn')}
-                                                    </button>
-                                                )}
-                                            </p>
-                                        )}
+                                            )}
+                                        </p>
                                         <div className="flex gap-2 justify-between pt-2">
                                             {otp.map((digit, index) => (
                                                 <input
@@ -1283,15 +1384,15 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                             <input
                                                 type="tel"
                                                 value={phone}
-                                                readOnly={!!(userData?.mobile || initialMobile || editAd?.phone)}
+                                                readOnly={!!(userData?.mobile || (initialMobile && !initialMobile.includes('@')) || editAd?.phone)}
                                                 onChange={(e) => setPhone(e.target.value)}
                                                 placeholder={t('phone_number_placeholder')}
                                                 className={cn(
                                                     "flex-1 text-[14px] text-black tracking-wide focus:outline-none bg-transparent",
-                                                    (userData?.mobile || initialMobile || editAd?.phone) ? "cursor-not-allowed" : "cursor-text"
+                                                    (userData?.mobile || (initialMobile && !initialMobile.includes('@')) || editAd?.phone) ? "cursor-not-allowed" : "cursor-text"
                                                 )}
                                             />
-                                            {!(userData?.mobile || initialMobile || editAd?.phone) && (
+                                            {!(userData?.mobile || (initialMobile && !initialMobile.includes('@')) || editAd?.phone) && (
                                                 <button
                                                     onClick={() => {
                                                         if (additionalPhones.length > 0) {
@@ -1308,7 +1409,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                             )}
                                         </div>
 
-                                        {!isUserLoggedIn && (
+                                        {(!isUserLoggedIn || (phone.trim() !== userData?.mobile)) && (
                                             <div className="space-y-1 pt-2">
                                                 <input
                                                     type="password"
@@ -1317,7 +1418,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                     placeholder={t('password_placeholder')}
                                                     className={cn(
                                                         "w-full text-[13px] text-black focus:outline-none placeholder:text-black px-1 border-b pb-1",
-                                                        attemptedSubmit && !password.trim() ? "border-red-300" : "border-slate-500"
+                                                        attemptedSubmit && (phone.trim() !== userData?.mobile) && !password.trim() ? "border-red-300" : "border-slate-500"
                                                     )}
                                                 />
                                             </div>
