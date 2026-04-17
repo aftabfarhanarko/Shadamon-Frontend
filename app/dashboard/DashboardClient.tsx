@@ -702,7 +702,7 @@ export default function DashboardClient() {
     };
 
     return (
-        <div className="flex flex-col lg:flex-row items-start justify-center w-full">
+        <div className="w-full max-w-[1320px] mx-auto px-2 sm:px-3 lg:px-4 xl:px-0 flex flex-col lg:flex-row items-start justify-center">
             {/* Left Sidebar - 300px */}
             <div className="hidden lg:block w-[300px] flex-none sticky top-4 h-[calc(100vh-32px)] overflow-y-auto no-scrollbar pb-10">
                 <div className="flex flex-col min-h-full space-y-4">
@@ -1690,7 +1690,7 @@ export default function DashboardClient() {
                                             {chunk.showCategoryBatch && premiumUsers.length > 0 && (
                                                 <div className="lg:hidden mt-2 bg-white rounded-lg p-2 pb-4">
                                                     <div className="flex items-center justify-between px-2 mb-3">
-                                                        <h3 className="text-sm font-semibold text-black">{language === 'bn' ? 'জনপ্রিয় বিক্রেতা' : 'Popular Seller'}</h3>
+                                                        <h3 className="text-[13px] text-black">{language === 'bn' ? 'জনপ্রিয় বিক্রেতা' : 'Popular Seller'}</h3>
                                                     </div>
                                                     <div className="flex gap-4 overflow-x-auto no-scrollbar pb-1 px-1">
                                                         {premiumUsers.map((user) => (
@@ -1773,7 +1773,7 @@ export default function DashboardClient() {
             </div>
 
             {/* Gap 2: 50px */}
-            <div className="hidden lg:block w-[50px] flex-none relative self-stretch">
+            <div className="hidden xl:block w-[50px] flex-none relative self-stretch">
                 <div className="sticky top-[90vh] pl-1">
                     <button
                         onClick={() => document.getElementById('main-dashboard-scroller')?.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -1785,10 +1785,10 @@ export default function DashboardClient() {
             </div>
 
             {/* Right Sidebar - Popular Seller: 230px */}
-            <div className="hidden lg:block w-[230px] flex-none sticky top-4 h-[calc(100vh-32px)] overflow-y-auto no-scrollbar pb-10 z-40">
+            <div className="hidden xl:block w-[230px] flex-none sticky top-4 h-[calc(100vh-32px)] overflow-y-auto no-scrollbar pb-10 z-40">
                 <div className="bg-white rounded-lg w-full">
                     <div className="p-3 pb-1">
-                        <h3 className="text-sm text-black">{t('popular_seller')}</h3>
+                        <h3 className="text-[13px] text-black">{t('popular_seller')}</h3>
                     </div>
 
                     <div className="space-y-3 px-3 pb-3">
@@ -1821,7 +1821,7 @@ export default function DashboardClient() {
                                                 className="flex items-center gap-1.5 leading-tight cursor-pointer group/name"
                                                 onClick={() => handleProfileClick(user._id)}
                                             >
-                                                <h4 className="font-bold text-black text-[14px] truncate group-hover/name:text-[#0088cc] transition-colors">
+                                                <h4 className="font-bold text-black text-[13px] truncate group-hover/name:text-[#0088cc] transition-colors">
                                                     {user.storeName || user.name}
                                                 </h4>
                                                 {user.mVerified && <VerifiedBadge className="translate-y-[0.5px]" />}
@@ -1851,7 +1851,7 @@ export default function DashboardClient() {
             </div>
 
             {/* Balancing Spacer: 70px */}
-            <div className="hidden lg:block w-[70px] flex-none" />
+            <div className="hidden xl:block w-[70px] flex-none" />
         </div>
     );
 }
