@@ -2294,7 +2294,7 @@ I have sent my CV for your review.`;
                                                 <div className="p-3 flex flex-row md:flex-row gap-2.5 md:gap-3 items-stretch">
                                                     {/* Left: Image (Spans height of details + performance) */}
                                                     <div className="w-[138px] md:w-[150px] flex justify-center md:block shrink-0">
-                                                        <div className="w-full h-[190px] md:h-[130px] bg-slate-100 relative rounded overflow-hidden group mb-2 md:mb-0 flex items-center justify-center">
+                                                        <div className="w-full h-[145px] md:h-[130px] bg-slate-100 relative rounded overflow-hidden group mb-2 md:mb-0 flex items-center justify-center">
                                                             {ad.images && ad.images.length > 0 ? (
                                                                 <>
                                                                     <div className="absolute inset-0">
