@@ -740,25 +740,25 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         <div className="h-screen bg-[#F1F5F9] font-sans overflow-hidden flex flex-col relative">
             <AdPopup />
             <nav className={cn(
-                "md:hidden fixed bottom-0 inset-x-0 z-[60] h-[84px] pb-[max(8px,env(safe-area-inset-bottom))] transition-transform duration-300",
+                "md:hidden fixed bottom-0 inset-x-0 z-[60] h-[66px] pb-[max(2px,env(safe-area-inset-bottom))] transition-transform duration-300",
                 !isNavbarVisible && "translate-y-[115%]"
             )}>
-                <div className="absolute inset-x-0 top-0 bottom-0 rounded-t-[26px] rounded-b-none bg-gradient-to-b from-white to-[#F6FAFF] border-t border-slate-200 shadow-[0_-8px_20px_-14px_rgba(15,23,42,0.55)]" />
+                <div className="absolute inset-x-0 top-0 bottom-0 rounded-t-[22px] rounded-b-none bg-gradient-to-b from-white to-[#F6FAFF] border-t border-slate-200 shadow-[0_-8px_18px_-14px_rgba(15,23,42,0.55)]" />
 
-                <div className="relative h-full flex items-center justify-around px-3 z-10">
+                <div className="relative h-full flex items-center justify-around px-2 z-10">
                     {/* Home */}
-                    <Link href="/dashboard" className="flex flex-col items-center justify-center min-w-[58px] h-full gap-1">
+                    <Link href="/dashboard" className="flex flex-col items-center justify-center min-w-[52px] h-full gap-0.5">
                         <div
                             className={cn(
-                                "w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-200",
+                                "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200",
                                 isHomeNavActive
                                     ? "bg-[#E6F4FF] text-[#0079b8] shadow-[inset_0_0_0_1px_rgba(0,136,204,0.18)]"
                                     : "text-slate-600"
                             )}
                         >
-                            {isHomeNavActive ? <RiHome5Fill className="w-6.5 h-6.5" /> : <RiHome5Line className="w-6.5 h-6.5" />}
+                            {isHomeNavActive ? <RiHome5Fill className="w-5.5 h-5.5" /> : <RiHome5Line className="w-5.5 h-5.5" />}
                         </div>
-                        <span className={cn("text-[10px] leading-none font-medium", isHomeNavActive ? "text-[#0079b8]" : "text-slate-500")}>
+                        <span className={cn("text-[9px] leading-none font-medium", isHomeNavActive ? "text-[#0079b8]" : "text-slate-500")}>
                             {t('home')}
                         </span>
                     </Link>
@@ -767,31 +767,31 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     <button
                         onClick={() => setIsSearchModalOpen(true)}
                         className={cn(
-                            "flex flex-col items-center justify-center min-w-[58px] h-full gap-1 transition-colors",
+                            "flex flex-col items-center justify-center min-w-[52px] h-full gap-0.5 transition-colors",
                             isSearchModalOpen ? "text-[#0079b8]" : "text-slate-600"
                         )}
                     >
                         <div
                             className={cn(
-                                "w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-200",
+                                "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200",
                                 isSearchModalOpen && "bg-[#E6F4FF] shadow-[inset_0_0_0_1px_rgba(0,136,204,0.18)]"
                             )}
                         >
-                            <RiSearchLine className="w-6.5 h-6.5" />
+                            <RiSearchLine className="w-5.5 h-5.5" />
                         </div>
-                        <span className={cn("text-[10px] leading-none font-medium", isSearchModalOpen ? "text-[#0079b8]" : "text-slate-500")}>{t('search_nav')}</span>
+                        <span className={cn("text-[9px] leading-none font-medium", isSearchModalOpen ? "text-[#0079b8]" : "text-slate-500")}>{t('search_nav')}</span>
                     </button>
 
                     {/* Centered Floating Post Ad Button */}
                     <div className="relative h-full flex flex-col items-center justify-end">
                         <button
                             onClick={handleAddAdClick}
-                            className="absolute -top-3.5 w-14 h-14 bg-[#0088cc] rounded-full flex items-center justify-center text-white shadow-[0_7px_14px_-6px_rgba(0,136,204,0.7)] active:scale-95 transition-transform"
+                            className="absolute -top-1.5 w-12 h-12 bg-[#0088cc] rounded-full flex items-center justify-center text-white shadow-[0_7px_14px_-6px_rgba(0,136,204,0.65)] active:scale-95 transition-transform"
                         >
-                            <RiAddLine className="w-9 h-9" />
+                            <RiAddLine className="w-7 h-7" />
                         </button>
-                        <div className="w-14 flex flex-col items-center">
-                            <span className="text-[10px] text-transparent leading-none mb-0 mt-1">.</span>
+                        <div className="w-12 flex flex-col items-center">
+                            <span className="text-[9px] text-transparent leading-none mb-0 mt-1">.</span>
                         </div>
                     </div>
 
@@ -800,31 +800,31 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                         href="/dashboard/inbox"
                         onClick={handleMessageClick}
                         className={cn(
-                            "flex flex-col items-center justify-center min-w-[58px] h-full gap-1 relative",
+                            "flex flex-col items-center justify-center min-w-[52px] h-full gap-0.5 relative",
                             isInboxNavActive ? "text-[#0079b8]" : "text-slate-600"
                         )}
                     >
                         <div className={cn(
-                            "relative w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-200",
+                            "relative w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200",
                             isInboxNavActive && "bg-[#E6F4FF] shadow-[inset_0_0_0_1px_rgba(0,136,204,0.18)]"
                         )}>
-                            {isInboxNavActive ? <RiMailFill className="w-6.5 h-6.5" /> : <RiMailLine className="w-6.5 h-6.5" />}
+                            {isInboxNavActive ? <RiMailFill className="w-5.5 h-5.5" /> : <RiMailLine className="w-5.5 h-5.5" />}
                             {unreadCount > 0 && (
                                 <span className="absolute -top-1.5 -right-2 bg-red-600 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-white">
                                     {unreadCount > 99 ? '99+' : unreadCount}
                                 </span>
                             )}
                         </div>
-                        <span className={cn("text-[10px] leading-none font-medium", isInboxNavActive ? "text-[#0079b8]" : "text-slate-500")}>{t('inbox')}</span>
+                        <span className={cn("text-[9px] leading-none font-medium", isInboxNavActive ? "text-[#0079b8]" : "text-slate-500")}>{t('inbox')}</span>
                     </Link>
 
                     {/* Account */}
                     <Link
                         href="/dashboard/profile"
                         onClick={handleAccountClick}
-                        className="flex flex-col items-center justify-center min-w-[58px] h-full gap-1 text-slate-600 transition-all"
+                        className="flex flex-col items-center justify-center min-w-[52px] h-full gap-0.5 text-slate-600 transition-all"
                     >
-                        <div className="w-10 h-10 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden">
+                        <div className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden">
                             {user && user.photo ? (
                                 <img
                                     src={getImageUrl(user.photo)}
@@ -832,10 +832,10 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                     className="w-full h-full object-cover"
                                 />
                             ) : (
-                                <RiUser3Line className="w-6.5 h-6.5" />
+                                <RiUser3Line className="w-5.5 h-5.5" />
                             )}
                         </div>
-                        <span className="text-[10px] text-slate-500 leading-none font-medium">{t('account')}</span>
+                        <span className="text-[9px] text-slate-500 leading-none font-medium">{t('account')}</span>
                     </Link>
                 </div>
             </nav>

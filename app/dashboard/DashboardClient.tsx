@@ -1540,7 +1540,7 @@ export default function DashboardClient() {
                                                                                 : "border-transparent"
                                                                         )}
                                                                     >
-                                                                        <div className="flex-1 lg:flex-none lg:w-[200px] h-[120px] lg:h-[130px] rounded-lg overflow-hidden shrink-0 relative group-hover:scale-[1.02] transition-transform">
+                                                                        <div className="w-[180px] h-[100px] lg:w-[200px] lg:h-[130px] rounded-lg overflow-hidden shrink-0 relative group-hover:scale-[1.02] transition-transform">
                                                                             {getImageUrl(ad.images?.[0]) && (
                                                                                 <>
                                                                                     <img

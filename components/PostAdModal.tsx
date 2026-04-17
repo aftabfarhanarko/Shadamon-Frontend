@@ -1355,7 +1355,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                                     onClick={() => !compressing && !reachedLimit && cameraInputRef.current?.click()}
                                                                     disabled={compressing || reachedLimit}
                                                                     className={cn(
-                                                                        "min-w-[80px] h-[80px] rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all",
+                                                                        "min-w-[80px] h-[80px] rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all md:hidden",
                                                                         compressing || reachedLimit
                                                                             ? "border-slate-200 bg-slate-50 cursor-not-allowed text-slate-300"
                                                                             : "border-slate-200 flex flex-col items-center justify-center gap-1 text-slate-400 bg-slate-50/50 hover:bg-slate-100/80 active:scale-95"
