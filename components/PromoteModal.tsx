@@ -878,7 +878,8 @@ export default function PromoteModal({ isOpen, onClose, ad, user }: PromoteModal
                                 </p>
                                 <div className="space-y-0.5 text-xs text-slate-700 mb-4">
                                     <div><span className="font-bold">বিকাশ নাম্বার: </span>01732661224</div>
-                                    <div><span className="font-bold">রকেট নাম্বার: </span>01732661224</div>
+                                    <div><span className="font-bold">নগদ নাম্বার: </span>01732661224</div>
+                                    <div><span className="font-bold">রকেট নাম্বার: </span>01732661224 3</div>
                                 </div>
 
                                 <button

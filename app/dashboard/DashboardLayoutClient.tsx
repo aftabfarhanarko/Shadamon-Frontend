@@ -1434,7 +1434,8 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 onSearch={(query) => {
                     window.dispatchEvent(new CustomEvent('show-search-results', { detail: { query } }));
                 }}
-                onOpenFilter={openGlobalFilterFromSearch}
+                categories={categories}
+                locations={locations}
                 onSelectAd={(ad) => {
                     setSelectedAdForDetail(ad);
                     if (ad?._id) {

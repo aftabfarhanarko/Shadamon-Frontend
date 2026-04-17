@@ -2,16 +2,33 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { X, ArrowLeft, Search, Loader2, ChevronRight, Grid, MapPin, SlidersHorizontal } from 'lucide-react';
+import { X, ArrowLeft, Search, Loader2, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../app/context/LanguageContext';
 import { API_BASE_URL } from '../utils/apiConfig';
 import { getImageUrl } from '../utils/imageUrl';
-import { twMerge } from 'tailwind-merge';
-import { clsx, type ClassValue } from 'clsx';
-import { FilterState } from './FilterModal';
+import FilterModal, { FilterState } from './FilterModal';
 
-function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs));
+interface SubItem {
+    _id: string;
+    name: string;
+    subCategoryNameBn?: string;
+    subLocationNameBn?: string;
+    order?: number;
+    priority?: number;
+}
+
+interface CategoryItem {
+    _id: string;
+    name: string;
+    categoryNameBn?: string;
+    subcategories: SubItem[];
+}
+
+interface LocationItem {
+    _id: string;
+    name: string;
+    locationNameBn?: string;
+    subLocations: SubItem[];
 }
 
 interface SearchModalProps {
@@ -19,7 +36,8 @@ interface SearchModalProps {
     onClose: () => void;
     onSearch: (query: string) => void;
     onSelectAd: (ad: any) => void;
-    onOpenFilter: (view: 'main' | 'category' | 'location') => void;
+    categories: CategoryItem[];
+    locations: LocationItem[];
 }
 
 export default function SearchModal({
@@ -27,7 +45,8 @@ export default function SearchModal({
     onClose,
     onSearch,
     onSelectAd,
-    onOpenFilter
+    categories,
+    locations
 }: SearchModalProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -38,11 +57,15 @@ export default function SearchModal({
     const [loading, setLoading] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
+    const getFilterQueryValue = (longKey: string, shortKey: string) => {
+        return searchParams.get(longKey) || searchParams.get(shortKey);
+    };
+
     const getFiltersFromSearchParams = (): FilterState => {
-        const urlCategory = searchParams.get('category');
-        const urlSubCategory = searchParams.get('subCategory');
-        const urlLocation = searchParams.get('location');
-        const urlSubLocation = searchParams.get('subLocation');
+        const urlCategory = getFilterQueryValue('category', 'c');
+        const urlSubCategory = getFilterQueryValue('subCategory', 'sc');
+        const urlLocation = getFilterQueryValue('location', 'l');
+        const urlSubLocation = getFilterQueryValue('subLocation', 'sl');
         const urlSearch = searchParams.get('search');
 
         return {
@@ -132,6 +155,23 @@ export default function SearchModal({
         }
     };
 
+    const handleApplyInlineFilters = (newFilters: FilterState) => {
+        const currentSearch = searchQuery.trim();
+        const nextFilters: FilterState = {
+            ...newFilters,
+            search: currentSearch
+        };
+
+        setFilters(nextFilters);
+        syncFiltersToUrl(nextFilters, currentSearch);
+
+        if (currentSearch) {
+            onSearch(currentSearch);
+        }
+
+        onClose();
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -159,7 +199,7 @@ export default function SearchModal({
                 </div>
 
                 {/* Search Input Area */}
-                <div className="p-2 border-b border-slate-50 bg-white sticky top-0 z-10">
+                <div className="p-2 border-b border-slate-50 bg-white">
                     <div className="flex bg-[#EDF2F7] rounded overflow-hidden">
                         <div className="flex-1 relative flex items-center">
                             <input
@@ -189,75 +229,18 @@ export default function SearchModal({
                         </button>
                     </div>
 
-                    {/* Secondary Filter Bar (same style/function as dashboard header filter) */}
-                    <div className="mt-2 bg-white rounded-lg flex divide-x divide-slate-100 overflow-hidden shadow-sm border border-slate-100">
-                        <button
-                            onClick={() => {
-                                onClose();
-                                onOpenFilter('category');
-                            }}
-                            className="flex-1 px-4 py-2.5 flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors group"
-                        >
-                            <Grid className="w-5 h-5 text-black" />
-                            <div className="flex items-center gap-1 min-w-0">
-                                <span className="text-xs sm:text-sm text-black truncate">
-                                    {filters.category ? (filters.subCategory || filters.category) : (language === 'bn' ? 'ক্যাটাগরি' : 'Category')}
-                                </span>
-                                {filters.category && (
-                                    <div
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            const nextFilters = { ...filters, category: "", subCategory: "" };
-                                            setFilters(nextFilters);
-                                            syncFiltersToUrl(nextFilters, searchQuery);
-                                        }}
-                                        className="p-1 rounded-full hover:bg-slate-200 transition-colors shrink-0"
-                                    >
-                                        <X className="w-5 h-5 text-slate-500" />
-                                    </div>
-                                )}
-                            </div>
-                        </button>
-
-                        <button
-                            onClick={() => {
-                                onClose();
-                                onOpenFilter('location');
-                            }}
-                            className="flex-1 px-4 py-2.5 flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors group"
-                        >
-                            <MapPin className="w-5 h-5 text-black" />
-                            <div className="flex items-center gap-1 min-w-0">
-                                <span className="text-xs sm:text-sm text-black truncate">
-                                    {filters.location ? (filters.subLocation || filters.location) : (language === 'bn' ? 'লোকেশন' : 'Location')}
-                                </span>
-                                {filters.location && (
-                                    <div
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            const nextFilters = { ...filters, location: "", subLocation: "" };
-                                            setFilters(nextFilters);
-                                            syncFiltersToUrl(nextFilters, searchQuery);
-                                        }}
-                                        className="p-1 rounded-full hover:bg-slate-200 transition-colors shrink-0"
-                                    >
-                                        <X className="w-5 h-5 text-slate-500" />
-                                    </div>
-                                )}
-                            </div>
-                        </button>
-
-                        <button
-                            onClick={() => {
-                                onClose();
-                                onOpenFilter('main');
-                            }}
-                            className="flex-1 px-4 py-2.5 flex items-center justify-center gap-3 hover:bg-slate-50 transition-colors"
-                        >
-                            <SlidersHorizontal className="w-5 h-5 text-black" />
-                            <span className="text-xs sm:text-sm text-black">{language === 'bn' ? 'ফিল্টার' : 'Filter'}</span>
-                        </button>
+                    <div className="mt-2">
+                        <FilterModal
+                            mode="inline"
+                            isOpen={isOpen}
+                            onClose={() => { }}
+                            onApply={handleApplyInlineFilters}
+                            initialFilters={{ ...filters, search: searchQuery.trim() }}
+                            categories={categories}
+                            locations={locations}
+                        />
                     </div>
+
                 </div>
 
                 {/* Suggestions / Results Area */}
