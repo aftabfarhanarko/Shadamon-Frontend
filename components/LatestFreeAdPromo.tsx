@@ -76,7 +76,7 @@ export default function LatestFreeAdPromo() {
                 <div className="bg-white px-3 py-1 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <RiLockFill className="w-4 h-4 text-slate-500" />
-                        <span className="text-[14px] text-slate-700 font-medium">Your Post Preview, only you can See that</span>
+                        <span className="text-[14px] text-slate-700 font-medium">Post Preview(You See)</span>
                     </div>
                     <button
                         onClick={() => window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: user?._id, activeTab: 'Post' } }))}
@@ -109,7 +109,7 @@ export default function LatestFreeAdPromo() {
                     )}
 
                     <div className="absolute bottom-4 left-4 flex z-20">
-                        <div className="w-1 bg-white mr-2 self-stretch rounded-full" />
+                        <div className="w-1 bg-white mr-2 self-stretch" />
                         <div className="text-white drop-shadow-md">
                             <h2 className="text-[18px] leading-tight font-medium truncate">{latestAd.headline}</h2>
                             <p className="text-[14px] mt-0">৳ {latestAd.price || '0.00'}</p>
@@ -120,14 +120,14 @@ export default function LatestFreeAdPromo() {
                 {/* 3. Promotion Footer */}
                 <div className="px-5 py-2 flex items-center justify-between">
                     <div className="flex flex-col">
-                        <span className="text-[12px] text-slate-600">Want More Customer Response?</span>
+                        <span className="text-[12px] text-slate-600">Want More Customer?</span>
                         <span className="text-[14px] text-slate-900 font-medium">Promote this Post</span>
                     </div>
                     <button
                         onClick={handlePromoteClick}
-                        className="bg-[#0088cc] text-white px-6 py-2.5 rounded-lg text-[14px] hover:bg-[#0077b5] transition-colors"
+                        className="bg-[#0088cc] text-white px-3 py-2.5 rounded-lg text-[14px] hover:bg-[#0077b5] transition-colors"
                     >
-                        Promote Post
+                        Promote
                     </button>
                 </div>
             </div>

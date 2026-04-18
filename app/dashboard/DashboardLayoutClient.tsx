@@ -745,7 +745,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             )}>
                 <div className="absolute inset-x-0 top-0 bottom-0 rounded-t-[22px] rounded-b-none bg-gradient-to-b from-white to-[#F6FAFF] border-t border-slate-200 shadow-[0_-8px_18px_-14px_rgba(15,23,42,0.55)]" />
 
-                <div className="relative h-full flex items-center justify-around px-2 z-10">
+                <div className="relative h-full flex items-center justify-around px-2 z-10 py-0">
                     {/* Home */}
                     <Link href="/dashboard" className="flex flex-col items-center justify-center min-w-[52px] h-full gap-0.5">
                         <div

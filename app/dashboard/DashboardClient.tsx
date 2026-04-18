@@ -936,7 +936,7 @@ export default function DashboardClient() {
                             <Link href={INFO_PAGE_ROUTES.contact} className="hover:text-black transition-colors">{t('contact_us')}</Link>
                             <span>•</span>
                             <Link href={INFO_PAGE_ROUTES.safety} className="hover:text-black transition-colors">
-                                {language === 'bn' ? 'নিরাপদ থাকুন' : 'Safety Tips'}
+                                {language === 'bn' ? 'Safety Tips' : 'Safety Tips'}
                             </Link>
                             <span>•</span>
                             <button
@@ -1445,13 +1445,14 @@ export default function DashboardClient() {
                                                                         : "border-slate-100"
                                                                 )}
                                                             >
-                                                                <div className="relative h-[315px] w-full rounded-none lg:rounded-t-xl overflow-hidden group">
+                                                                {/* <div className="relative h-[315px] w-full rounded-none lg:rounded-t-xl overflow-hidden group"> */}
+                                                                <div className="relative aspect-[16/9] w-full rounded-none lg:rounded-t-xl overflow-hidden group">
                                                                     {getImageUrl(block.bigAd.images?.[0]) && (
                                                                         <>
                                                                             <img
                                                                                 src={getImageUrl(block.bigAd.images?.[0]) || undefined}
                                                                                 alt=""
-                                                                                className="absolute inset-0 w-full h-full object-contain blur-xl scale-110 opacity-70"
+                                                                                className="absolute inset-0 w-full h-full object-contain blur scale-130 opacity-80"
                                                                             />
                                                                             <img
                                                                                 src={getImageUrl(block.bigAd.images?.[0]) || undefined}
@@ -1490,7 +1491,7 @@ export default function DashboardClient() {
                                                                                 </span>
                                                                                 {block.bigAd.user?.mVerified && <VerifiedBadge className="translate-y-[0.5px]" />}
                                                                             </div>
-                                                                            <div className="border-l-2 border-slate-300 pl-2 lg:border-l-0 lg:pl-0">
+                                                                            <div className="border-l-0 border-slate-300 pl-0 lg:border-l-0 lg:pl-0">
                                                                                 <h3 className="font-bold text-base lg:text-lg text-black leading-tight mb-0 line-clamp-1">{block.bigAd.headline}</h3>
                                                                                 <div className="font-bold text-sm lg:text-base text-black mb-0.5 lg:mb-1">৳ {block.bigAd.price?.toLocaleString() || 'N/A'}</div>
                                                                             </div>
@@ -1540,13 +1541,13 @@ export default function DashboardClient() {
                                                                                 : "border-transparent"
                                                                         )}
                                                                     >
-                                                                        <div className="w-[180px] h-[100px] lg:w-[200px] lg:h-[130px] rounded-lg overflow-hidden shrink-0 relative group-hover:scale-[1.02] transition-transform">
+                                                                        <div className="w-[120px] h-[90px] lg:w-[160px] lg:h-[130px] rounded-lg overflow-hidden shrink-0 relative group-hover:scale-[1.02] transition-transform">
                                                                             {getImageUrl(ad.images?.[0]) && (
                                                                                 <>
                                                                                     <img
                                                                                         src={getImageUrl(ad.images?.[0]) || undefined}
                                                                                         alt=""
-                                                                                        className="absolute inset-0 w-full h-full object-contain blur-lg scale-110 opacity-60"
+                                                                                        className="absolute inset-0 w-full h-full object-contain blur scale-140 opacity-80"
                                                                                     />
                                                                                     <img src={getImageUrl(ad.images?.[0]) || undefined} alt={ad.headline} className="relative z-10 w-full h-full object-contain" loading="lazy" />
                                                                                 </>
@@ -1572,8 +1573,8 @@ export default function DashboardClient() {
                                                                                     {ad.user?.mVerified && <VerifiedBadge className="translate-y-[0.5px]" />}
                                                                                 </div>
                                                                             </div>
-                                                                            <h4 className="text-[13px] lg:text-sm text-black line-clamp-1 mb-0.5">{ad.headline}</h4>
-                                                                            <div className="text-[13px] lg:text-sm text-black mb-1">৳ {ad.price?.toLocaleString() || 'N/A'}</div>
+                                                                            <h4 className="text-[15px]  text-black line-clamp-1 mb-0.5">{ad.headline}</h4>
+                                                                            <div className="text-[15px] lg:text-sm text-black mb-1">৳ {ad.price?.toLocaleString() || 'N/A'}</div>
                                                                             <div className="flex items-center gap-2 text-[9px] lg:text-[10px] text-black group-hover:text-black flex-wrap">
                                                                                 <div className="flex items-center gap-2">
                                                                                     <div className="flex items-center gap-0.5 shrink-0"><MapPin className="w-2.5 h-2.5" /><span className="truncate max-w-[110px] md:max-w-[120px]">{ad.location}</span></div>
