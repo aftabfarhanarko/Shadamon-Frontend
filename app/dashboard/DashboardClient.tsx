@@ -702,7 +702,7 @@ export default function DashboardClient() {
     };
 
     return (
-        <div className="w-full max-w-[1320px] mx-auto px-2 sm:px-3 lg:px-4 xl:px-0 flex flex-col lg:flex-row items-start justify-center">
+        <div className="w-full max-w-[1320px] mx-auto px-0 lg:px-4 xl:px-0 flex flex-col lg:flex-row items-start justify-center">
             {/* Left Sidebar - 300px */}
             <div className="hidden lg:block w-[300px] flex-none sticky top-4 h-[calc(100vh-32px)] overflow-y-auto no-scrollbar pb-10">
                 <div className="flex flex-col min-h-full space-y-4">
@@ -750,7 +750,7 @@ export default function DashboardClient() {
                                                                 setActiveSelectorTab('category');
                                                             }}
                                                         >
-                                                            <div className="flex items-center gap-1 text-[13px] text-[#0088cc] font-medium hover:underline">
+                                                            <div className="flex items-center gap-1 text-[15px] text-[#0088cc] font-medium hover:underline">
                                                                 {cat.icon && getImageUrl(cat.icon) ? (
                                                                     <img
                                                                         src={getImageUrl(cat.icon) || undefined}
@@ -844,7 +844,7 @@ export default function DashboardClient() {
                                                             setActiveSelectorTab('location');
                                                         }}
                                                     >
-                                                        <div className="flex items-center gap-1 text-[13px] text-[#0088cc] font-medium hover:underline">
+                                                        <div className="flex items-center gap-1 text-[15px] text-[#0088cc] font-medium hover:underline">
                                                             <span className={cn((expandedLocation === loc._id || filters.location === loc.name) && "text-black")}>{loc.name}</span>
                                                             <span className="text-black font-normal ml-0.5">({totalAds.filter(ad => ad.location === loc.name).length.toLocaleString()})</span>
                                                         </div>
@@ -1070,7 +1070,7 @@ export default function DashboardClient() {
                 {/* Category Selector Card */}
                 <div className="bg-white rounded-none lg:rounded-lg overflow-hidden">
                     {/* Selector Header Tabs */}
-                    <div className="px-3 lg:px-5 pt-2.5 lg:pt-4 flex items-center justify-between border-b border-slate-50">
+                    <div className="pl-2 pr-0 lg:px-5 pt-2.5 lg:pt-4 flex items-center justify-between border-b border-slate-50">
                         <div className="flex items-center gap-5 lg:gap-8">
                             <div
                                 className="relative pb-1.5 lg:pb-2 cursor-pointer"
@@ -1104,7 +1104,7 @@ export default function DashboardClient() {
                     </div>
 
                     {/* Category/Location Bubbles */}
-                    <div className="px-2 lg:px-5 pb-3 lg:pb-5 pt-1 lg:pt-2 relative group/bubbles flex items-center">
+                    <div className="pl-2 pr-0 lg:px-5 pb-3 lg:pb-5 pt-1 lg:pt-2 relative group/bubbles flex items-center">
                         {/* Left Scroll Arrow */}
                         <button
                             onClick={scrollLeft}
@@ -1390,7 +1390,7 @@ export default function DashboardClient() {
 
                         return (
                             <div className="space-y-1">
-                                <div className="flex items-center justify-between px-2.5 lg:px-0">
+                                <div className="flex items-center justify-between px-0 lg:px-0">
                                     <div className="text-xs lg:text-sm text-black flex items-center gap-1">
                                         <span className="font-medium">
                                             {language === 'bn'
@@ -1439,7 +1439,7 @@ export default function DashboardClient() {
                                                                     }
                                                                 }}
                                                                 className={cn(
-                                                                    "bg-white rounded-lg lg:rounded-xl cursor-pointer group block border shadow-sm mx-0.5 lg:mx-0",
+                                                                    "bg-white rounded-lg lg:rounded-xl cursor-pointer group block border shadow-sm mx-0 lg:mx-0",
                                                                     hasHighlightLabel(block.bigAd)
                                                                         ? "border-orange-500 shadow-[0_12px_30px_rgba(249,115,22,0.25)] ring-2 ring-orange-400/40"
                                                                         : "border-slate-100"
@@ -1535,7 +1535,7 @@ export default function DashboardClient() {
                                                                             router.push(getAdUrl(ad), { scroll: false });
                                                                         }}
                                                                         className={cn(
-                                                                            "bg-white rounded-lg lg:rounded-lg p-2.5 lg:p-3 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50 border mx-1 lg:mx-0",
+                                                                            "bg-white rounded-lg lg:rounded-lg p-2.5 lg:p-3 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50 border mx-0 lg:mx-0",
                                                                             hasHighlightLabel(ad)
                                                                                 ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-2 ring-orange-400/30"
                                                                                 : "border-transparent"
@@ -1691,7 +1691,7 @@ export default function DashboardClient() {
                                             {chunk.showCategoryBatch && premiumUsers.length > 0 && (
                                                 <div className="lg:hidden mt-2 bg-white rounded-lg p-2 pb-4">
                                                     <div className="flex items-center justify-between px-2 mb-3">
-                                                        <h3 className="text-[13px] text-black">{language === 'bn' ? 'জনপ্রিয় বিক্রেতা' : 'Popular Seller'}</h3>
+                                                        <h3 className="text-[13px] text-slate-600">{language === 'bn' ? 'জনপ্রিয় বিক্রেতা' : 'Popular Seller'}</h3>
                                                     </div>
                                                     <div className="flex gap-4 overflow-x-auto no-scrollbar pb-1 px-1">
                                                         {premiumUsers.map((user) => (
@@ -1715,10 +1715,10 @@ export default function DashboardClient() {
                                                                     )}
                                                                 </div>
                                                                 <div className="flex flex-col items-center w-full text-center">
-                                                                    <h4 className="font-bold text-black text-[11px] leading-tight line-clamp-1 w-full">
+                                                                    <h4 className="font-semibold text-slate-700 text-[11px] leading-tight line-clamp-1 w-full">
                                                                         {user.storeName || user.name}
                                                                     </h4>
-                                                                    <p className="text-[9px] text-slate-500 -mt-1 mb-1">
+                                                                    <p className="text-[9px] text-slate-500 mt-0.5 mb-1">
                                                                         {user.followers?.length || 0} {t('follower')}
                                                                     </p>
                                                                     <button
@@ -1822,7 +1822,7 @@ export default function DashboardClient() {
                                                 className="flex items-center gap-1.5 leading-tight cursor-pointer group/name"
                                                 onClick={() => handleProfileClick(user._id)}
                                             >
-                                                <h4 className="font-bold text-black text-[13px] truncate group-hover/name:text-[#0088cc] transition-colors">
+                                                <h4 className=" text-black text-[15px] truncate group-hover/name:text-[#0088cc] transition-colors">
                                                     {user.storeName || user.name}
                                                 </h4>
                                                 {user.mVerified && <VerifiedBadge className="translate-y-[0.5px]" />}

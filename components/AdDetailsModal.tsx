@@ -327,6 +327,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
         const clean = String(num || '').trim();
         return clean.startsWith('+') ? clean : `+88${clean}`;
     };
+    const otherContactRows = mobileContactRows.slice(primaryPhone ? 1 : 0);
 
     if (!isOpen || !ad) return null;
 
@@ -499,13 +500,13 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                             </button>
                                         )}
 
-                                        {showPhone && mobileContactRows.slice(primaryPhone ? 1 : 0).map((row, rowIdx) => (
+                                        {showPhone && otherContactRows.map((row, rowIdx) => (
                                             <div
                                                 key={`${row.number}-${rowIdx}`}
-                                                className="flex items-center justify-between gap-2 rounded-md bg-white border border-slate-300 px-2.5 py-2"
+                                                className="flex items-center gap-2 px-1 py-0.5"
                                             >
                                                 <span className="text-[12px] text-slate-800 font-medium truncate">{row.number}</span>
-                                                <div className="flex items-center gap-1.5 shrink-0">
+                                                <div className="flex items-center gap-1.5">
                                                     {(row.types.length > 0 ? row.types : ['mobile']).map((type, typeIdx) => {
                                                         if (type === 'whatsapp') {
                                                             return (
@@ -531,6 +532,20 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                                                 </button>
                                                             );
                                                         }
+                                                        if (type === 'imo') {
+                                                            return (
+                                                                <button
+                                                                    key={`${row.number}-imo-${typeIdx}`}
+                                                                    onClick={() => {
+                                                                        window.location.href = `tel:${row.number}`;
+                                                                    }}
+                                                                    className="w-7 h-7 rounded-full bg-[#004c99] text-white flex items-center justify-center"
+                                                                    title={`Imo: ${row.number}`}
+                                                                >
+                                                                    <BsChatDotsFill className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            );
+                                                        }
 
                                                         return (
                                                             <button
@@ -550,149 +565,116 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                         ))}
                                     </div>
 
-                                    {/* Phone & Socials */}
+                                    {/* Main Number Section */}
                                     <div className="hidden md:flex items-center gap-2 mb-4">
-                                        {/* Phone Section */}
-                                        <div className="flex items-center gap-2 shrink-0">
-                                            <div className="w-8 h-8 rounded-full bg-[#1A202C] flex items-center justify-center text-white shrink-0">
-                                                <Phone className="w-4 h-4 fill-white" />
+                                        <div className="flex flex-col leading-none justify-center min-w-0">
+                                            <div
+                                                className="flex items-center gap-1 cursor-pointer"
+                                                onClick={() => setShowPhone(!showPhone)}
+                                            >
+                                                <span className="text-slate-800 text-sm leading-none truncate">
+                                                    {showPhone ? (ad.phone || 'N/A') : '017 XXXXXXXX'}
+                                                </span>
                                             </div>
-                                            <div className="flex flex-col leading-none justify-center">
-                                                <div
-                                                    className="flex items-center gap-1 cursor-pointer"
-                                                    onClick={() => setShowPhone(!showPhone)}
-                                                >
-                                                    <span className="text-slate-800 text-sm leading-none">
-                                                        {showPhone ? (ad.phone || 'N/A') : '017 XXXXXXXX'}
-                                                    </span>
-                                                </div>
-                                                <button
-                                                    onClick={() => setShowPhone(!showPhone)}
-                                                    className="text-[10px] text-slate-500 hover:text-blue-600 hover:underline text-left mt-0.5"
-                                                >
-                                                    {showPhone ? "Hide number" : "Click to show number"}
-                                                </button>
-                                            </div>
+                                            <button
+                                                onClick={() => setShowPhone(!showPhone)}
+                                                className="text-[10px] text-slate-500 hover:text-blue-600 hover:underline text-left mt-0.5"
+                                            >
+                                                {showPhone ? "Hide number" : "Click to show number"}
+                                            </button>
                                         </div>
-
-                                        {/* Divider */}
                                         <div className="h-6 w-[3px] bg-slate-400 mx-1 shrink-0" />
-
-                                        {/* Socials */}
-                                        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-                                            {ad.additionalPhones && ad.additionalPhones.length > 0 ? (
-                                                ad.additionalPhones.flatMap((ap: any) => {
-                                                    const apObj = typeof ap === 'string' ? JSON.parse(ap) : ap;
-                                                    return (apObj?.types || []).map((type: string) => ({ type, number: apObj?.number || '' }));
-                                                }).filter((s: any) => s.number).map((social: any, sIdx: number, allSocials: any[]) => {
-                                                    let icon = null;
-                                                    let bgColor = "";
-                                                    let link = "";
-                                                    let title = "";
-
-                                                    const rawNum = social.number;
-                                                    if (!rawNum || String(rawNum) === "undefined") return null;
-                                                    const numStr = String(rawNum).trim();
-                                                    const formattedNumber = numStr.startsWith('+') ? numStr : `+88${numStr}`;
-
-                                                    if (social.type === 'whatsapp') {
-                                                        icon = <FaWhatsapp className="w-5 h-5" />;
-                                                        bgColor = "bg-[#25D366]";
-                                                        link = `https://wa.me/${formattedNumber}`;
-                                                        title = `WhatsApp: ${social.number}`;
-                                                    } else if (social.type === 'telegram') {
-                                                        icon = <FaTelegramPlane className="w-4 h-4 pr-0.5" />;
-                                                        bgColor = "bg-[#0088cc]";
-                                                        link = `https://t.me/${formattedNumber}`;
-                                                        title = `Telegram: ${social.number}`;
-                                                    } else if (social.type === 'imo') {
-                                                        icon = <BsChatDotsFill className="w-4 h-4 pb-0.5" />;
-                                                        bgColor = "bg-[#004c99]";
-                                                        link = `tel:${social.number}`; // Fallback for Imo
-                                                        title = `Imo: ${social.number}`;
-                                                    } else if (social.type === 'mobile') {
-                                                        icon = <Phone className="w-4 h-4" />;
-                                                        bgColor = "bg-slate-700";
-                                                        link = `tel:${social.number}`;
-                                                        title = `Call: ${social.number}`;
-                                                    }
-
-                                                    if (!icon) return null;
-
-                                                    return (
-                                                        <React.Fragment key={sIdx}>
-                                                            <button
-                                                                onClick={() => window.open(link, '_blank')}
-                                                                className={`w-8 h-8 rounded-full text-white flex items-center justify-center shadow-sm shrink-0 ${bgColor}`}
-                                                                title={title}
-                                                            >
-                                                                {icon}
-                                                            </button>
-                                                            {sIdx < allSocials.length - 1 && (
-                                                                <div className="h-6 w-[2px] bg-slate-300 mx-0.5 shrink-0" />
-                                                            )}
-                                                        </React.Fragment>
-                                                    );
-                                                })
-                                            ) : (
-                                                <>
-                                                    {ad.phone && String(ad.phone) !== "undefined" && (
-                                                        <>
-                                                            <button
-                                                                onClick={() => {
-                                                                    const num = String(ad.phone).trim();
-                                                                    const formatted = num.startsWith('+') ? num : `+88${num}`;
-                                                                    window.open(`https://wa.me/${formatted}`, '_blank');
-                                                                }}
-                                                                className="w-8 h-8 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-sm shrink-0"
-                                                            >
-                                                                <FaWhatsapp className="w-5 h-5" />
-                                                            </button>
-
-                                                            <div className="h-6 w-[2px] bg-slate-300 mx-0.5 shrink-0" />
-
-                                                            <button
-                                                                onClick={() => {
-                                                                    const num = String(ad.phone).trim();
-                                                                    const formatted = num.startsWith('+') ? num : `+88${num}`;
-                                                                    window.open(`https://t.me/${formatted}`, '_blank');
-                                                                }}
-                                                                className="w-8 h-8 rounded-full bg-[#0088cc] text-white flex items-center justify-center shadow-sm shrink-0"
-                                                            >
-                                                                <FaTelegramPlane className="w-4 h-4 pr-0.5" />
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                </>
-                                            )}
-                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                if (!showPhone) {
+                                                    setShowPhone(true);
+                                                    return;
+                                                }
+                                                if (primaryPhone) {
+                                                    window.location.href = `tel:${primaryPhone}`;
+                                                }
+                                            }}
+                                            className="w-8 h-8 rounded-full bg-[#1A202C] text-white flex items-center justify-center shrink-0"
+                                            title={showPhone ? `Call: ${primaryPhone || ''}` : 'Show number'}
+                                        >
+                                            <Phone className="w-4 h-4 fill-white" />
+                                        </button>
                                     </div>
 
                                     {/* Plain text display of all numbers */}
-                                    {showPhone && ad.additionalPhones && ad.additionalPhones.length > 0 && (
-                                        <div className="hidden md:block mt-3 px-1 space-y-2 border-t border-slate-300 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    {showPhone && otherContactRows.length > 0 && (
+                                        <div className="hidden md:block mt-3 mb-3 px-1 space-y-2 border-t border-slate-300 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
                                             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Other Numbers:</p>
                                             <div className="flex flex-col gap-2">
-                                                {(() => {
-                                                    const uniqueNumbers = Array.from(new Set(ad.additionalPhones.map((ap: any) => {
-                                                        const apObj = typeof ap === 'string' ? JSON.parse(ap) : ap;
-                                                        return apObj?.number || '';
-                                                    }).filter(Boolean)));
+                                                {otherContactRows.map((row, idx) => (
+                                                    <div key={`${row.number}-${idx}`} className="flex items-center gap-2 group">
+                                                        <button
+                                                            onClick={() => {
+                                                                navigator.clipboard.writeText(row.number);
+                                                                toast.success('Number copied!');
+                                                            }}
+                                                            className="text-[12px] text-slate-700 font-medium hover:text-blue-600 transition-colors text-left truncate"
+                                                            title="Copy number"
+                                                        >
+                                                            {row.number}
+                                                        </button>
+                                                        <div className="flex items-center gap-1.5">
+                                                            {(row.types.length > 0 ? row.types : ['mobile']).map((type, typeIdx) => {
+                                                                if (type === 'whatsapp') {
+                                                                    return (
+                                                                        <button
+                                                                            key={`${row.number}-desk-wa-${typeIdx}`}
+                                                                            onClick={() => window.open(`https://wa.me/${toIntlPhone(row.number)}`, '_blank')}
+                                                                            className="w-6 h-6 rounded-full bg-[#25D366] text-white flex items-center justify-center"
+                                                                            title={`WhatsApp: ${row.number}`}
+                                                                        >
+                                                                            <FaWhatsapp className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                    );
+                                                                }
+                                                                if (type === 'imo') {
+                                                                    return (
+                                                                        <button
+                                                                            key={`${row.number}-desk-imo-${typeIdx}`}
+                                                                            onClick={() => {
+                                                                                window.location.href = `tel:${row.number}`;
+                                                                            }}
+                                                                            className="w-6 h-6 rounded-full bg-[#004c99] text-white flex items-center justify-center"
+                                                                            title={`Imo: ${row.number}`}
+                                                                        >
+                                                                            <BsChatDotsFill className="w-3 h-3" />
+                                                                        </button>
+                                                                    );
+                                                                }
+                                                                if (type === 'telegram') {
+                                                                    return (
+                                                                        <button
+                                                                            key={`${row.number}-desk-tg-${typeIdx}`}
+                                                                            onClick={() => window.open(`https://t.me/${toIntlPhone(row.number)}`, '_blank')}
+                                                                            className="w-6 h-6 rounded-full bg-[#0088cc] text-white flex items-center justify-center"
+                                                                            title={`Telegram: ${row.number}`}
+                                                                        >
+                                                                            <FaTelegramPlane className="w-3 h-3" />
+                                                                        </button>
+                                                                    );
+                                                                }
 
-                                                    return uniqueNumbers.map((num: any, idx) => (
-                                                        <div key={idx} className="flex items-center gap-2 group cursor-pointer" onClick={() => {
-                                                            navigator.clipboard.writeText(num as string);
-                                                            toast.success('Number copied!');
-                                                        }}>
-                                                            <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-                                                                <Phone className="w-3.5 h-3.5" />
-                                                            </div>
-                                                            <span className="text-[12px] text-slate-700 font-medium hover:text-blue-600 transition-colors">
-                                                                {num}
-                                                            </span>
+                                                                return (
+                                                                    <button
+                                                                        key={`${row.number}-desk-ph-${typeIdx}`}
+                                                                        onClick={() => {
+                                                                            window.location.href = `tel:${row.number}`;
+                                                                        }}
+                                                                        className="w-6 h-6 rounded-full bg-slate-700 text-white flex items-center justify-center"
+                                                                        title={`Call: ${row.number}`}
+                                                                    >
+                                                                        <Phone className="w-3 h-3" />
+                                                                    </button>
+                                                                );
+                                                            })}
                                                         </div>
-                                                    ));
-                                                })()}
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
                                     )}

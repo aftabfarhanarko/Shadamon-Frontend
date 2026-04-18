@@ -79,7 +79,7 @@ export default function RootLayout({
         data-developed-by="Abtahi Md. Mahib Uddin"
       >
         <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-8E75HC4681"
+          src="https://www.googletagmanager.com/gtag/js?id=G-SEZGVZCXMT"
           strategy="afterInteractive"
         />
         <Script id="gtag-init" strategy="afterInteractive">

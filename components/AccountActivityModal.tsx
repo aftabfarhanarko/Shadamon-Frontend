@@ -2495,7 +2495,7 @@ I have sent my CV for your review.`;
                                                         }}
                                                         disabled={ad.status === 'deleted'}
                                                         className={cn(
-                                                            "w-full text-white text-[13px] font-medium py-1.5 rounded-md text-center transition-colors shadow-sm",
+                                                            "w-full text-white text-[13px] font-medium py-2.5 rounded-md text-center transition-colors shadow-sm",
                                                             ad.status === 'deleted' ? "bg-slate-400 cursor-not-allowed" : getPostButtonColorClass(ad)
                                                         )}
                                                     >

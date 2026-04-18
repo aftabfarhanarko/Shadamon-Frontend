@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, ArrowLeft, Plus, ChevronDown, Check, Trash2, Loader2, Camera, Search, MessageCircle } from 'lucide-react';
+import { X, ArrowLeft, Plus, ChevronDown, Check, Trash2, Loader2, Search, MessageCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -1397,14 +1397,14 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                                         {compressing ? (
                                                                             <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
                                                                         ) : (
-                                                                            <Camera className="w-4 h-4 text-slate-600" />
+                                                                            <img src="/gallery.png" alt="Gallery" className="w-4 h-4 object-contain" />
                                                                         )}
                                                                     </div>
-                                                                    <span className="mt-1 text-[8px] font-medium leading-none">
-                                                                        {compressing ? "..." : t('add_photos_btn')}
+                                                                    <span className="mt-1 text-[11px] font-semibold leading-none text-slate-700">
+                                                                        {compressing ? "..." : (language === 'bn' ? 'গ্যালারি' : 'Gallery')}
                                                                     </span>
-                                                                    <span className="text-[10px] font-bold  text-center">
-                                                                        {compressing ? t('processing') : t('drag_and_drop')}
+                                                                    <span className="text-[8px] font-medium text-center text-slate-500 leading-none">
+                                                                        {compressing ? t('processing') : t('add_photos_btn')}
                                                                     </span>
                                                                 </button>
 
@@ -1424,14 +1424,14 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                                         {compressing ? (
                                                                             <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
                                                                         ) : (
-                                                                            <Camera className="w-4 h-4 text-slate-600" />
+                                                                            <img src="/camera.png" alt="Camera" className="w-4 h-4 object-contain" />
                                                                         )}
                                                                     </div>
-                                                                    <span className="mt-1 text-[8px] font-medium leading-none">
-                                                                        {compressing ? "..." : t('add_cameras_btn')}
+                                                                    <span className="mt-1 text-[11px] font-semibold leading-none text-slate-700">
+                                                                        {compressing ? "..." : (language === 'bn' ? 'ক্যামেরা' : 'Camera')}
                                                                     </span>
-                                                                    <span className="text-[10px] font-bold  text-center">
-                                                                        {compressing ? t('processing') : t('drag_and_drop')}
+                                                                    <span className="text-[8px] font-medium text-center text-slate-500 leading-none">
+                                                                        {compressing ? t('processing') : t('add_cameras_btn')}
                                                                     </span>
                                                                 </button>
                                                             </>
