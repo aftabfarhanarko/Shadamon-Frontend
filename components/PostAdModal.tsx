@@ -1393,13 +1393,11 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                                             : "border-slate-200 flex flex-col items-center justify-center gap-1 text-slate-400 bg-slate-50/50 hover:bg-slate-100/80 active:scale-95"
                                                                     )}
                                                                 >
-                                                                    <div className={cn("p-1.5 rounded-lg shadow-sm", compressing ? "bg-slate-100" : "bg-slate-200")}>
-                                                                        {compressing ? (
-                                                                            <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
-                                                                        ) : (
-                                                                            <img src="/gallery.png" alt="Gallery" className="w-4 h-4 object-contain" />
-                                                                        )}
-                                                                    </div>
+                                                                    {compressing ? (
+                                                                        <Loader2 className="w-8 h-8 text-slate-400 animate-spin" />
+                                                                    ) : (
+                                                                        <img src="/gallery.png" alt="Gallery" className="w-8 h-8 object-contain" />
+                                                                    )}
                                                                     <span className="mt-1 text-[11px] font-semibold leading-none text-slate-700">
                                                                         {compressing ? "..." : (language === 'bn' ? 'গ্যালারি' : 'Gallery')}
                                                                     </span>
@@ -1420,13 +1418,11 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                                     aria-label="Capture from camera"
                                                                     title="Capture from camera"
                                                                 >
-                                                                    <div className={cn("p-1.5 rounded-lg shadow-sm", compressing ? "bg-slate-100" : "bg-slate-200")}>
-                                                                        {compressing ? (
-                                                                            <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
-                                                                        ) : (
-                                                                            <img src="/camera.png" alt="Camera" className="w-4 h-4 object-contain" />
-                                                                        )}
-                                                                    </div>
+                                                                    {compressing ? (
+                                                                        <Loader2 className="w-8 h-8 text-slate-400 animate-spin" />
+                                                                    ) : (
+                                                                        <img src="/camera.png" alt="Camera" className="w-8 h-8 object-contain" />
+                                                                    )}
                                                                     <span className="mt-1 text-[11px] font-semibold leading-none text-slate-700">
                                                                         {compressing ? "..." : (language === 'bn' ? 'ক্যামেরা' : 'Camera')}
                                                                     </span>

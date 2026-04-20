@@ -470,7 +470,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                             {!(ad.hidePhone === true || ad.hidePhone === 'true') && (
                                 <>
                                     {/* Mobile Phone Rows */}
-                                    <div className="md:hidden mb-3 space-y-2">
+                                    <div className="hidden mb-3 space-y-2">
                                         <div className="flex items-center justify-between gap-2 rounded-md bg-white border border-slate-300 px-2.5 py-2">
                                             <span className="text-[12px] text-slate-800 font-medium truncate">
                                                 {showPhone ? (primaryPhone || 'N/A') : '017 XXXXXXXX'}
@@ -566,7 +566,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                     </div>
 
                                     {/* Main Number Section */}
-                                    <div className="hidden md:flex items-center gap-2 mb-4">
+                                    <div className="flex items-center gap-2 mb-4">
                                         <div className="flex flex-col leading-none justify-center min-w-0">
                                             <div
                                                 className="flex items-center gap-1 cursor-pointer"
@@ -603,7 +603,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
 
                                     {/* Plain text display of all numbers */}
                                     {showPhone && otherContactRows.length > 0 && (
-                                        <div className="hidden md:block mt-3 mb-3 px-1 space-y-2 border-t border-slate-300 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <div className="block mt-3 mb-3 px-1 space-y-2 border-t border-slate-300 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
                                             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Other Numbers:</p>
                                             <div className="flex flex-col gap-2">
                                                 {otherContactRows.map((row, idx) => (
@@ -613,7 +613,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                                                 navigator.clipboard.writeText(row.number);
                                                                 toast.success('Number copied!');
                                                             }}
-                                                            className="text-[12px] text-slate-700 font-medium hover:text-blue-600 transition-colors text-left truncate"
+                                                            className="text-sm text-slate-700 font-medium hover:text-blue-600 transition-colors text-left truncate"
                                                             title="Copy number"
                                                         >
                                                             {row.number}
@@ -625,10 +625,10 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                                                         <button
                                                                             key={`${row.number}-desk-wa-${typeIdx}`}
                                                                             onClick={() => window.open(`https://wa.me/${toIntlPhone(row.number)}`, '_blank')}
-                                                                            className="w-6 h-6 rounded-full bg-[#25D366] text-white flex items-center justify-center"
+                                                                            className="w-8 h-8 rounded-full bg-[#25D366] text-white flex items-center justify-center"
                                                                             title={`WhatsApp: ${row.number}`}
                                                                         >
-                                                                            <FaWhatsapp className="w-3.5 h-3.5" />
+                                                                            <FaWhatsapp className="w-4 h-4" />
                                                                         </button>
                                                                     );
                                                                 }
@@ -639,10 +639,10 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                                                             onClick={() => {
                                                                                 window.location.href = `tel:${row.number}`;
                                                                             }}
-                                                                            className="w-6 h-6 rounded-full bg-[#004c99] text-white flex items-center justify-center"
+                                                                            className="w-8 h-8 rounded-full bg-[#004c99] text-white flex items-center justify-center"
                                                                             title={`Imo: ${row.number}`}
                                                                         >
-                                                                            <BsChatDotsFill className="w-3 h-3" />
+                                                                            <BsChatDotsFill className="w-4 h-4" />
                                                                         </button>
                                                                     );
                                                                 }
@@ -651,10 +651,10 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                                                         <button
                                                                             key={`${row.number}-desk-tg-${typeIdx}`}
                                                                             onClick={() => window.open(`https://t.me/${toIntlPhone(row.number)}`, '_blank')}
-                                                                            className="w-6 h-6 rounded-full bg-[#0088cc] text-white flex items-center justify-center"
+                                                                            className="w-8 h-8 rounded-full bg-[#0088cc] text-white flex items-center justify-center"
                                                                             title={`Telegram: ${row.number}`}
                                                                         >
-                                                                            <FaTelegramPlane className="w-3 h-3" />
+                                                                            <FaTelegramPlane className="w-4 h-4" />
                                                                         </button>
                                                                     );
                                                                 }
@@ -665,10 +665,10 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                                                         onClick={() => {
                                                                             window.location.href = `tel:${row.number}`;
                                                                         }}
-                                                                        className="w-6 h-6 rounded-full bg-slate-700 text-white flex items-center justify-center"
+                                                                        className="w-8 h-8 rounded-full bg-slate-700 text-white flex items-center justify-center"
                                                                         title={`Call: ${row.number}`}
                                                                     >
-                                                                        <Phone className="w-3 h-3" />
+                                                                        <Phone className="w-4 h-4" />
                                                                     </button>
                                                                 );
                                                             })}

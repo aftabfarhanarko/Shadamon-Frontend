@@ -1576,22 +1576,22 @@ export default function DashboardClient() {
                                                                             )}
                                                                         </div>
                                                                         <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                                                            <div className="flex items-center gap-1 text-[9px] lg:text-[10px] text-black mb-0.5 flex-wrap">
+                                                                            <div className="flex items-center gap-1 text-[9px] lg:text-[10px] text-slate-500 lg:text-black mb-0.5 flex-wrap">
                                                                                 <span>{ad.adType === 'Promoted' ? 'Promoted By' : 'Post By'}</span>
                                                                                 <div className="flex items-center gap-1">
                                                                                     <span className="font-bold text-black hover:text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: ad.user?._id } })); }}>{ad.user?.storeName || ad.user?.name || 'User'}</span>
                                                                                     {ad.user?.mVerified && <VerifiedBadge className="translate-y-[0.5px]" />}
                                                                                 </div>
                                                                             </div>
-                                                                            <h4 className="text-[15px]  text-black line-clamp-1 mb-0.5">{ad.headline}</h4>
-                                                                            <div className="text-[15px] lg:text-sm text-black mb-1">৳ {ad.price?.toLocaleString() || 'N/A'}</div>
-                                                                            <div className="flex items-center gap-2 text-[9px] lg:text-[10px] text-black group-hover:text-black flex-wrap">
+                                                                            <h4 className="text-[15px] text-black font-semibold line-clamp-1 mb-0.5">{ad.headline}</h4>
+                                                                            <div className="text-[15px] lg:text-sm text-black font-semibold mb-1">৳ {ad.price?.toLocaleString() || 'N/A'}</div>
+                                                                            <div className="flex items-center gap-0 text-[9px] lg:text-[10px] text-black group-hover:text-black flex-wrap">
                                                                                 <div className="flex items-center gap-2">
                                                                                     <div className="flex items-center gap-0.5 shrink-0"><MapPin className="w-2.5 h-2.5" /><span className="truncate max-w-[110px] md:max-w-[120px]">{ad.location}</span></div>
                                                                                     <div className="flex items-center gap-0.5 shrink-0"><Grid className="w-2.5 h-2.5" /><span className="truncate max-w-[110px] md:max-w-[120px]">{ad.category}</span></div>
                                                                                 </div>
                                                                                 {ad.adType !== 'Promoted' && (
-                                                                                    <div className="lg:ml-auto text-black/60 text-[9px] lg:text-[10px] whitespace-nowrap">
+                                                                                    <div className="w-full text-right mt-0 lg:mt-0 lg:w-auto lg:ml-auto text-black/60 text-[9px] lg:text-[10px] whitespace-nowrap">
                                                                                         {timeAgo(ad.createdAt, language as 'en' | 'bn')}
                                                                                     </div>
                                                                                 )}
@@ -1719,21 +1719,21 @@ export default function DashboardClient() {
                                                                             loading="lazy"
                                                                         />
                                                                     ) : (
-                                                                        <div className="w-full h-full flex items-center justify-center text-black font-bold text-lg uppercase">
+                                                                        <div className="w-full h-full flex items-center justify-center text-slate-500 font-bold text-lg uppercase">
                                                                             {(user.storeName || user.name).charAt(0)}
                                                                         </div>
                                                                     )}
                                                                 </div>
                                                                 <div className="flex flex-col items-center w-full text-center">
-                                                                    <h4 className="font-semibold text-slate-700 text-[11px] leading-tight line-clamp-1 w-full">
+                                                                    <h4 className="font-semibold text-slate-600 text-[11px] leading-tight line-clamp-1 w-full">
                                                                         {user.storeName || user.name}
                                                                     </h4>
-                                                                    <p className="text-[9px] text-slate-500 mt-0.5 mb-1">
+                                                                    <p className="text-[9px] text-slate-400 mt-0.5 mb-1">
                                                                         {user.followers?.length || 0} {t('follower')}
                                                                     </p>
                                                                     <button
                                                                         onClick={(e) => handleFollowUser(e, user._id)}
-                                                                        className="mt-1 px-3 py-1 rounded-full text-[10px] font-bold transition-all w-full bg-white text-black border border-black hover:bg-slate-50"
+                                                                        className="mt-1 px-3 py-1 rounded-full text-[10px] font-bold transition-all w-full bg-white text-slate-500 border border-slate-300 hover:bg-slate-50 hover:border-slate-400"
                                                                     >
                                                                         {user.isFollowing ? t('Unfollow') : t('Follow')}
                                                                     </button>

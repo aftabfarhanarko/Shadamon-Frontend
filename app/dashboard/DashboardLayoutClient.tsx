@@ -1007,6 +1007,17 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                 {/* Language & Action Icons */}
                                 <div className={cn("flex items-center gap-2 md:gap-3 shrink-0", isMobileSearchOpen && "hidden md:flex")}>
                                     <button
+                                        onClick={() => setIsSearchModalOpen(true)}
+                                        className="md:hidden h-7 w-[40vw] max-w-[210px] rounded-full border-[1px] border-slate-300 bg-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] px-3 flex items-center gap-2 text-left"
+                                        aria-label={language === 'bn' ? 'সার্চ খুলুন' : 'Open search'}
+                                    >
+                                        <Search className="w-4 h-4 text-slate-500 shrink-0" />
+                                        <span className="text-[11px] text-slate-400 truncate">
+                                            {language === 'bn' ? 'আপনি কী খুঁজছেন?' : 'what are you search?'}
+                                        </span>
+                                    </button>
+
+                                    <button
                                         onClick={toggleLanguage}
                                         className="w-7 h-7 md:w-10 md:h-10 bg-[#EDF2F7] rounded-full border border-slate-200 flex items-center justify-center text-[10px] md:text-[14px] text-black uppercase shadow-sm"
                                     >
