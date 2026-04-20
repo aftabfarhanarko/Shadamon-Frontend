@@ -65,10 +65,27 @@ export default function RootLayout({
         <meta name="twitter:creator" content="@shadamon" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Shadamon" />
-        <meta property="og:description" content="The ultimate marketing platform" />
+        <meta property="og:description" content="Shadamon official website" />
         <meta property="og:site_name" content="Shadamon" />
         <meta property="og:url" content="https://shadamon.com" />
-        <meta property="og:image" content="https://shadamon.com/icons/apple-touch-icon.png" />
+        <meta property="og:image" content="https://shadamon.com/og-image.jpg" />
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              name: 'Shadamon',
+              url: 'https://shadamon.com',
+              logo: 'https://shadamon.com/logo.png',
+              sameAs: [
+                'https://facebook.com/shadamondotcom',
+                'https://www.youtube.com/@ShadaMondotcom'
+              ]
+            })
+          }}
+        />
 
       </head>
       <body
