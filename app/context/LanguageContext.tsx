@@ -471,7 +471,7 @@ const translations: Record<string, Record<Language, string>> = {
     'promote_your_ad': { bn: 'আপনার অ্যাডটি প্রমোট করুন', en: 'Promote your ad' },
     'do_it_later': { bn: 'পরে করব', en: 'I will do it later' },
     'free_ad_limit_reached': { bn: 'ফ্রি অ্যাড লিমিট শেষ হবেছে!', en: 'Free ad limit reached!' },
-    'free_ad_limit_reached_desc': { bn: 'পোস্টটি তৈরি হয়েছে, কিন্তু প্রকাশ হয়নি কারণ, ফ্রি পোস্ট সীমা শেষ। এখনই প্রকাশ করে অসংখ্য কাস্টমারের কাছে পৌঁছাতে - প্রমোট করুন!', en: 'The post has been created but not published because the free post limit has been reached. Promote it now to publish and reach countless customers!' },
+    'free_ad_limit_reached_desc': { bn: 'ফ্রি পোস্ট লিমিট শেষ। এখনই পোস্টটি লাইভ করে, বেশি কাস্টমার পেতে প্রমোট করুন', en: 'Free post limit ended. Go live now and promote the post to get more customers.' },
     'go_back_btn': { bn: 'ফিরে যান', en: 'Go back' },
     'field_required': { bn: 'এই তথ্যটি প্রয়োজন', en: 'This field is required' },
     'processing': { bn: 'প্রসেসিং...', en: 'Processing...' }

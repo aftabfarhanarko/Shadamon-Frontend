@@ -35,7 +35,7 @@ import { toast } from 'react-hot-toast';
 
 import { API_BASE_URL } from '../../utils/apiConfig';
 import { getImageUrl } from '../../utils/imageUrl';
-import { INFO_CONTENT, type InfoPageType } from '../../utils/infoContent';
+import { INFO_CONTENT, getInfoContentForLanguage, type InfoPageType } from '@/utils/infoContent';
 import { div } from 'framer-motion/client';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
@@ -188,10 +188,11 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     const openInfoModal = (type: InfoPageType) => {
         const selected = INFO_CONTENT[type];
         if (selected) {
+            const localized = getInfoContentForLanguage(selected, language);
             setInfoModal({
                 isOpen: true,
-                title: selected.title,
-                content: selected.content
+                title: localized.title,
+                content: localized.content
             });
         }
     };

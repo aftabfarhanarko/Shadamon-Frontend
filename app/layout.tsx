@@ -9,9 +9,7 @@ export const metadata: Metadata = {
   title: "Shadamon",
   description: "The ultimate marketing platform",
   other: {
-    "developer": "Abtahi Md. Mahib Uddin",
-    "developer-link": "https://abtahi.vercel.app/",
-    "developer-email": "abtahimahib@gmail.com",
+
   },
 };
 
@@ -75,8 +73,7 @@ export default function RootLayout({
       </head>
       <body
         className={`antialiased`}
-        data-developer="Abtahi Md. Mahib Uddin"
-        data-developed-by="Abtahi Md. Mahib Uddin"
+
       >
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-SEZGVZCXMT"
@@ -95,21 +92,21 @@ export default function RootLayout({
             __html: `
               /**
                * ------------------------------------------------------------------
-               * DEVELOPED BY: Abtahi Md. Mahib Uddin
-               * WEBSITE:      https://abtahi.vercel.app/
-               * EMAIL:        abtahimahib@gmail.com
+               * DEVELOPED BY: 
+               * WEBSITE:     
+               * EMAIL:       
                * ------------------------------------------------------------------
                */
               console.log(
-                "%c 🛠️ Developed by Abtahi Md. Mahib Uddin ",
+                "%c  ",
                 "background: #1a1a1a; color: #00ff00; font-size: 1.2rem; font-weight: bold; padding: 10px; border-radius: 5px; border: 1px solid #00ff00;"
               );
               console.log(
-                "%c WEBSITE:      https://abtahi.vercel.app/ ",
+                "%c WEBSITE: ",
                 "background: #1a1a1a; color: #00ff00; font-size: 1.2rem; font-weight: bold; padding: 10px; border-radius: 5px; border: 1px solid #00ff00;"
               );
               console.log(
-                "%c EMAIL:        abtahimahib@gmail.com ",
+                "%c EMAIL:,
                 "background: #1a1a1a; color: #00ff00; font-size: 1.2rem; font-weight: bold; padding: 10px; border-radius: 5px; border: 1px solid #00ff00;"
               );
               console.log(

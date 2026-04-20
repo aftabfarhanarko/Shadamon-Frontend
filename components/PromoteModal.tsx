@@ -12,6 +12,7 @@ import { twMerge } from 'tailwind-merge';
 import { format } from 'date-fns';
 import AdDetailsModal from './AdDetailsModal';
 import InfoModal from './InfoModal';
+import { INFO_CONTENT, getInfoContentForLanguage } from '@/utils/infoContent';
 
 // Helper for class merging
 function cn(...inputs: ClassValue[]) {
@@ -30,7 +31,7 @@ const DIVISIONS = [
 ];
 
 export default function PromoteModal({ isOpen, onClose, ad, user }: PromoteModalProps) {
-    const { t } = useLanguage();
+    const { language } = useLanguage();
 
     // Form States
     const [promoteType, setPromoteType] = useState<'call_msg' | 'traffic'>('call_msg');
@@ -329,6 +330,7 @@ export default function PromoteModal({ isOpen, onClose, ad, user }: PromoteModal
     if (!isOpen || !ad) return null;
 
     const mainImage = (ad.images && ad.images.length > 0 ? getImageUrl(ad.images[0]) : null) || "https://via.placeholder.com/150";
+    const returnRefundContent = getInfoContentForLanguage(INFO_CONTENT.return, language);
 
     return (
         <div className="fixed inset-0 z-[1000] flex items-start justify-center pt-20">
@@ -1009,26 +1011,8 @@ Shadamon.com বাংলাদেশের আইন ও নিয়ম অন
             <InfoModal
                 isOpen={showRefund}
                 onClose={() => setShowRefund(false)}
-                title="রিটার্ন & রিফান্ড পলিসি"
-                content={`Shadamon.com-চায় ব্যবহারকারীদের অভিজ্ঞতা সহজ, সুরক্ষিত এবং কার্যকর হোক। প্রমোশনাল কার্যক্রমের ক্ষেত্রে, প্রদত্ত অর্থ এবং প্রমোশনাল ফলাফলের ধরন সম্পর্কে কিছু গুরুত্বপূর্ণ দিক বিবেচনা করা দরকার।
-
-পারফরম্যান্স ও ফলাফলের ধরন:
-প্রমোশনাল কার্যক্রমের ফলাফল অনুমানভিত্তিক। আমাদের স্বয়ংক্রিয় সিস্টেম সর্বোচ্চ চেষ্টা করবে আপনার পোস্টকে প্রাসঙ্গিক দর্শকের কাছে পৌঁছে দিতে। তবে দর্শকসংখ্যা, আগ্রহ বা ফলাফল শতভাগ নির্ধারিত নয়। এটি একটি সম্ভাব্যতা ভিত্তিক প্রক্রিয়া যা প্রমোশনাল কার্যক্রমের অবস্থা, সময় এবং দর্শকের প্রতিক্রিয়ার ওপর নির্ভরশীল।
-
-ব্যবহারকারীর দায়িত্ব:
-প্রমোট করার আগে নিশ্চিত হোন যে আপনার পোস্টে দেওয়া তথ্য সঠিক, কার্যকর এবং আপডেটেড। কোনো ভুল বা অসম্পূর্ণ তথ্যের কারণে প্রমোশনাল ফলাফলে প্রভাব পড়লে Shadamon.com কোনো ধরনের ক্ষতিপূরণ বা অর্থ ফেরতের জন্য দায়ী নয়। কোনো ভুল বা অসম্পূর্ণ তথ্যের কারণে লাইভ প্রমোশনকে বন্ধ করলে সে অর্থও ফেরত দেয়া সম্ভব হয় না।
-
-ফলাফল ট্র্যাকিং ও স্বচ্ছতা:
-প্রমোট করলে আপনি সরাসরি দেখতে পাবেন কতজন দর্শক বা কাস্টমার আপনার পোস্টে আগ্রহ দেখিয়েছে। এই তথ্য ব্যবহার করে আপনি ভবিষ্যতে প্রমোশনাল পরিকল্পনা আরও কার্যকর করতে পারেন।
-
-স্বয়ংক্রিয় এবং সহজ ব্যবহার:
-Shadamon.com-এর প্রমোশনাল সিস্টেম স্বয়ংক্রিয়ভাবে সব কার্যক্রম পরিচালনা করে। কোনো জটিল সেটআপ বা আলাদা ফিচার নির্বাচন করার প্রয়োজন নেই। প্রমোট বাটনে ক্লিক করার সঙ্গে সঙ্গে কার্যক্রম শুরু হয় এবং ফলাফল স্বয়ংক্রিয়ভাবে প্রদর্শিত হয়।
-
-প্রমোশনাল অর্থের ব্যবহার:
-প্রমোশনের প্রসেসিং শুরু হলে, প্রদত্ত অর্থ স্বয়ংক্রিয়ভাবে কার্যকর হয়। অর্থটি প্রক্রিয়াজাত হয়ে সিস্টেমের শিডিউলিং-এ চলে যায় এবং প্রমোশনাল কার্যক্রমের বিভিন্ন ধাপ অনুযায়ী পোস্ট বা বিজ্ঞাপনকে লক্ষ্য নির্ধারিত দর্শকের কাছে পৌঁছে দেয়া হয়। এর ফলে, প্রসেসিং এ চলে গেলে, সে অর্থ ফেরতের পর্যায়ে থাকে না। 
-
-মোট কথা:
-Shadamon.com-এর প্রমোশনাল সিস্টেম ব্যবহার করা সহজ, নিরাপদ এবং কার্যকর। প্রদত্ত অর্থ প্রক্রিয়াজাত হয়ে স্বয়ংক্রিয়ভাবে পোস্ট প্রদর্শনের পথে চলে যায়, সিস্টেম সর্বোচ্চ চেষ্টা করেসবোচ্ছ ভিজিটরের কাছে পোস্টটিকে পৌঁছে দিতে, এবং ব্যবহারকারী সরাসরি ফলাফল দেখতে পান।`}
+                title={returnRefundContent.title}
+                content={returnRefundContent.content}
             />
         </div>
     );

@@ -20,11 +20,12 @@ import { useLanguage } from '../context/LanguageContext';
 import { timeAgo } from '../../utils/timeAgo';
 import { getImageUrl } from '../../utils/imageUrl';
 import { getNonHighlightLabels, hasHighlightLabel } from '../../utils/labels';
-import { INFO_PAGE_ROUTES } from '../../utils/infoContent';
+import { INFO_PAGE_ROUTES } from '@/utils/infoContent';
 import Image from 'next/image';
 import LatestFreeAdPromo from '../../components/LatestFreeAdPromo';
 
 import FilterModal, { FilterState } from '../../components/FilterModal';
+import InfoModal from '../../components/InfoModal';
 import Cookies from 'js-cookie';
 import { toast } from 'react-hot-toast';
 import { useSettings } from '../context/SettingsContext';
@@ -157,6 +158,7 @@ export default function DashboardClient() {
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [filters, setFilters] = useState<FilterState>(() => getFiltersFromSearchParams());
     const [isNavVisible, setIsNavVisible] = useState(true);
+    const [showFooterPromoteModal, setShowFooterPromoteModal] = useState(false);
 
     useEffect(() => {
         const handleNavVisibility = (e: any) => {
@@ -701,6 +703,22 @@ export default function DashboardClient() {
         setExpandedLocation(expandedLocation === id ? null : id);
     };
 
+    const handleFooterPromoteClick = () => {
+        setShowFooterPromoteModal(true);
+    };
+
+    const handleFooterPromotePostAdd = () => {
+        setShowFooterPromoteModal(false);
+
+        const token = Cookies.get('token');
+        if (!token) {
+            window.dispatchEvent(new CustomEvent('open-mobile-entry-modal', { detail: { reason: 'promote' } }));
+            return;
+        }
+
+        window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { activeTab: 'Post' } }));
+    };
+
     return (
         <div className="w-full max-w-[1320px] mx-auto px-0 lg:px-4 xl:px-0 flex flex-col lg:flex-row items-start justify-center">
             {/* Left Sidebar - 300px */}
@@ -940,15 +958,7 @@ export default function DashboardClient() {
                             </Link>
                             <span>•</span>
                             <button
-                                onClick={() => {
-                                    const token = Cookies.get('token');
-                                    if (!token) {
-                                        // toast.error(language === 'bn' ? 'প্রথমে লগইন করুন তারপর প্রোমোট ট্যাব খুলুন' : "Please login first then go to promote tab");
-                                        window.dispatchEvent(new CustomEvent('open-mobile-entry-modal', { detail: { reason: 'promote' } }));
-                                    } else {
-                                        window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { activeTab: 'Post' } }));
-                                    }
-                                }}
+                                onClick={handleFooterPromoteClick}
                                 className="hover:text-black transition-colors"
                             >
                                 {t('promote')}
@@ -1853,6 +1863,34 @@ export default function DashboardClient() {
 
             {/* Balancing Spacer: 70px */}
             <div className="hidden xl:block w-[70px] flex-none" />
+
+            <InfoModal
+                isOpen={showFooterPromoteModal}
+                onClose={() => setShowFooterPromoteModal(false)}
+                title={language === 'bn' ? 'প্রমোট (Promote)' : 'Promote'}
+                content={
+                    <div className="space-y-4 text-slate-700">
+                        <p>
+                            {language === 'bn'
+                                ? 'Shadamon-এ প্রমোট করা অত্যন্ত সহজ এবং ঝামেলামুক্ত। আপনার পোস্টটি দ্রুত সঠিক ক্রেতাদের কাছে পৌঁছে দিতে আপনি সরাসরি এর ব্যাপ্তি (Reach), বাজেট এবং টার্গেটিং নিয়ন্ত্রণ করতে পারেন।'
+                                : 'Promoting on Shadamon is simple and completely hassle-free. You can directly control your reach, budget, and targeting to quickly connect your posts with the right customers.'}
+                        </p>
+                        <p>
+                            {language === 'bn'
+                                ? "'Promote' বাটনে ক্লিক করার পর আপনি পোস্ট তৈরির ধাপে যেতে পারবেন। নিচের বাটনে ক্লিক করলে Account Activity Modal-এর Post ট্যাবে নেওয়া হবে।"
+                                : "After clicking Promote, you can continue to post creation. Click the button below to open the Post tab in Account Activity modal."}
+                        </p>
+                        <div className="pt-1">
+                            <button
+                                onClick={handleFooterPromotePostAdd}
+                                className="w-full sm:w-auto px-5 py-2.5 rounded-md bg-[#4285F4] text-white font-bold hover:bg-blue-600 transition-colors"
+                            >
+                                Post Add
+                            </button>
+                        </div>
+                    </div>
+                }
+            />
         </div>
     );
 }

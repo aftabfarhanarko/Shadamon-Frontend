@@ -20,7 +20,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { timeAgo } from '../../utils/timeAgo';
 import { getImageUrl } from '../../utils/imageUrl';
 import { getNonHighlightLabels, hasHighlightLabel } from '../../utils/labels';
-import { INFO_PAGE_ROUTES } from '../../utils/infoContent';
+import { INFO_PAGE_ROUTES } from '@/utils/infoContent';
 import Image from 'next/image';
 import LatestFreeAdPromo from '../../components/LatestFreeAdPromo';
 
