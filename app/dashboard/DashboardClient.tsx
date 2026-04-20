@@ -1870,16 +1870,90 @@ export default function DashboardClient() {
                 title={language === 'bn' ? 'প্রমোট (Promote)' : 'Promote'}
                 content={
                     <div className="space-y-4 text-slate-700">
-                        <p>
-                            {language === 'bn'
-                                ? 'Shadamon-এ প্রমোট করা অত্যন্ত সহজ এবং ঝামেলামুক্ত। আপনার পোস্টটি দ্রুত সঠিক ক্রেতাদের কাছে পৌঁছে দিতে আপনি সরাসরি এর ব্যাপ্তি (Reach), বাজেট এবং টার্গেটিং নিয়ন্ত্রণ করতে পারেন।'
-                                : 'Promoting on Shadamon is simple and completely hassle-free. You can directly control your reach, budget, and targeting to quickly connect your posts with the right customers.'}
-                        </p>
-                        <p>
-                            {language === 'bn'
-                                ? "'Promote' বাটনে ক্লিক করার পর আপনি পোস্ট তৈরির ধাপে যেতে পারবেন। নিচের বাটনে ক্লিক করলে Account Activity Modal-এর Post ট্যাবে নেওয়া হবে।"
-                                : "After clicking Promote, you can continue to post creation. Click the button below to open the Post tab in Account Activity modal."}
-                        </p>
+                        {language === 'bn' ? (
+                            <>
+                                <p>
+                                    Shadamon-এ প্রমোট করা অত্যন্ত সহজ এবং ঝামেলামুক্ত। আপনার পোস্টটি দ্রুত সঠিক ক্রেতাদের কাছে পৌঁছে দিতে আপনি সরাসরি এর ব্যাপ্তি (Reach), বাজেট এবং টার্গেটিং নিয়ন্ত্রণ করতে পারেন। সবকিছু আপনার নিয়ন্ত্রণেই থাকবে-কে আপনার পোস্ট দেখবে, কতজন দেখবে এবং কত দ্রুত তাদের কাছে পৌঁছাবে, তা আপনিই ঠিক করবেন।
+                                </p>
+
+                                <div>
+                                    <h4 className="font-bold text-slate-900 mb-2">ফিচারসমূহ</h4>
+                                    <ul className="list-disc pl-5 space-y-1">
+                                        <li>অধিক ভিউ এবং রিচ - আপনার পোস্টটি বিপুল সংখ্যক সম্ভাব্য ক্রেতার কাছে পৌঁছাতে পারে, যা বিক্রির সম্ভাবনা বাড়িয়ে দেয়। পুরো প্রক্রিয়াটি সম্পূর্ণ আপনার নিয়ন্ত্রণে থাকে।</li>
+                                        <li>টার্গেটেড রিচ - আপনার পোস্ট নির্দিষ্ট ক্যাটাগরি বা লোকেশনে প্রমোট করুন যাতে আপনার কাঙ্ক্ষিত ক্রেতারা আপনাকে সহজেই খুঁজে পায়।</li>
+                                        <li>সরাসরি রেসপন্স - দ্রুত যোগাযোগের জন্য আগ্রহী ক্রেতাদের কাছ থেকে সরাসরি মেসেজ এবং কল পান।</li>
+                                        <li>তাৎক্ষণিক প্রমোশন - কোনো জটিল রিভিউ বা বিলম্ব ছাড়াই আপনার প্রমোশন সাথে সাথে লাইভ বা চালু হয়ে যায়।</li>
+                                        <li>পোস্ট হাইলাইটিং - আপনার পোস্টকে আরও আকর্ষণীয় করতে 'New', 'Offer' অথবা 'Featured'-এর মতো লেবেল ব্যবহার করুন।</li>
+                                        <li>পারফরম্যান্স ট্র্যাকিং - আপনার প্রমোশন কেমন চলছে তা রিয়েল-টাইমে সহজেই ট্র্যাক করুন।</li>
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-bold text-slate-900 mb-2">ভেরিফাইড মেম্বার হওয়ার সুবিধা</h4>
+                                    <p>
+                                        ভেরিফাইড মেম্বার হওয়া প্ল্যাটফর্মে আপনার বিশ্বাসযোগ্যতা ও গ্রহণযোগ্যতা বৃদ্ধি করে। ক্রেতাদের কাছে আপনার প্রোফাইল এবং পোস্টগুলো আরও নির্ভরযোগ্য মনে হয়, যা যোগাযোগ এবং বিক্রির হার বাড়িয়ে দেয়।
+                                    </p>
+                                    <p className="mt-2 font-semibold">আপনি আরও পাবেন:</p>
+                                    <ul className="list-disc pl-5 space-y-1 mt-1">
+                                        <li>উচ্চতর বিশ্বাসযোগ্যতা এবং প্রফেশনাল উপস্থিতি</li>
+                                        <li>ক্রেতাদের কাছ থেকে দ্রুত সাড়া</li>
+                                        <li>প্ল্যাটফর্মে আরও ভালো অবস্থান</li>
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-bold text-slate-900 mb-2">কেন Shadamon Promote ব্যবহার করবেন?</h4>
+                                    <ul className="list-disc pl-5 space-y-1">
+                                        <li>কোনো জটিল বুস্ট বা লুকানো সিস্টেম নেই</li>
+                                        <li>সম্পূর্ণ নিয়ন্ত্রণ আপনার হাতে</li>
+                                        <li>দ্রুত ফলাফল</li>
+                                        <li>সময় বাঁচায় এবং প্রমোশনকে সহজ করে</li>
+                                    </ul>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <p>
+                                    Promoting on Shadamon is simple and completely hassle-free. You can directly control your reach, budget, and targeting to quickly connect your posts with the right customers. Everything stays in your control-you decide who sees your post, how many people see it, and how fast it reaches them.
+                                </p>
+
+                                <div>
+                                    <h4 className="font-bold text-slate-900 mb-2">Features</h4>
+                                    <ul className="list-disc pl-5 space-y-1">
+                                        <li>More Views & Reach - Your post can reach a large number of potential customers, increasing your chances of engagement. The entire process is fully under your control.</li>
+                                        <li>Targeted Reach - Promote your posts to specific categories or locations so your ideal audience can easily find you.</li>
+                                        <li>Direct Responses - Get messages and calls directly from interested customers for faster communication.</li>
+                                        <li>Instant Promotion - Your promotion goes live immediately without any complex review or delay.</li>
+                                        <li>Post Highlighting - Make your post more attractive with labels like New, Offer, or Featured.</li>
+                                        <li>Performance Tracking - Easily track how your promotion is performing in real time.</li>
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-bold text-slate-900 mb-2">Verified Member Benefits</h4>
+                                    <p>
+                                        Becoming a verified member increases your trust and credibility on the platform. Your profile and posts appear more reliable to customers, increasing engagement and response rates.
+                                    </p>
+                                    <p className="mt-2 font-semibold">You also get:</p>
+                                    <ul className="list-disc pl-5 space-y-1 mt-1">
+                                        <li>Higher trust and professional visibility</li>
+                                        <li>Faster customer responses</li>
+                                        <li>Better overall platform presence</li>
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-bold text-slate-900 mb-2">Why Shadamon Promote?</h4>
+                                    <ul className="list-disc pl-5 space-y-1">
+                                        <li>No complex boost or hidden systems</li>
+                                        <li>Full control is in your hands</li>
+                                        <li>Faster results</li>
+                                        <li>Saves time and simplifies promotion</li>
+                                    </ul>
+                                </div>
+                            </>
+                        )}
+
                         <div className="pt-1">
                             <button
                                 onClick={handleFooterPromotePostAdd}

@@ -14,9 +14,9 @@ import { useLanguage } from '../app/context/LanguageContext';
 import { compressImage } from '../utils/imageCompression';
 import Image from 'next/image';
 import { toast } from 'react-hot-toast';
+import PromoteModal from './PromoteModal';
 import AdDetailsModal from './AdDetailsModal';
 import VerifyProfileModal from './VerifyProfileModal';
-import InfoModal from './InfoModal';
 import VerifiedBadge from './VerifiedBadge';
 import { Loader2 } from 'lucide-react';
 
@@ -61,9 +61,9 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
     const [isDeletingAccount, setIsDeletingAccount] = useState(false);
     const [showAboutInfo, setShowAboutInfo] = useState(false);
 
-
-    // Promote Guide Modal State
-    const [showPromoteGuideModal, setShowPromoteGuideModal] = useState(false);
+    // Promote Modal State
+    const [promoteAd, setPromoteAd] = useState<any>(null);
+    const [showPromoteModal, setShowPromoteModal] = useState(false);
 
     // CV Send State
     const [pendingCvAd, setPendingCvAd] = useState<any>(null);
@@ -222,19 +222,11 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
         }
 
         if (isOwnAccount) {
-            setShowPromoteGuideModal(true);
+            setPromoteAd(ad);
+            setShowPromoteModal(true);
         } else {
             if (onOpenPostAd) onOpenPostAd();
         }
-    };
-
-    const handlePostAdFromPromoteGuide = () => {
-        setShowPromoteGuideModal(false);
-        if (onOpenPostAd) {
-            onOpenPostAd();
-            return;
-        }
-        router.push('/dashboard/post-ad');
     };
 
     // Ad Details Modal State
@@ -2803,91 +2795,15 @@ I have sent my CV for your review.`;
                     )}
                 </div>
             </div>
-            <InfoModal
-                isOpen={showPromoteGuideModal}
-                onClose={() => setShowPromoteGuideModal(false)}
-                title={language === 'bn' ? 'প্রমোট (Promote)' : 'Promote'}
-                content={
-                    <div className="space-y-4 text-slate-700">
-                        <p>
-                            {language === 'bn'
-                                ? 'Shadamon-এ প্রমোট করা অত্যন্ত সহজ এবং ঝামেলামুক্ত। আপনার পোস্টটি দ্রুত সঠিক ক্রেতাদের কাছে পৌঁছে দিতে আপনি সরাসরি এর ব্যাপ্তি (Reach), বাজেট এবং টার্গেটিং নিয়ন্ত্রণ করতে পারেন। সবকিছু আপনার নিয়ন্ত্রণেই থাকবে-কে আপনার পোস্ট দেখবে, কতজন দেখবে এবং কত দ্রুত তাদের কাছে পৌঁছাবে, তা আপনিই ঠিক করবেন।'
-                                : 'Promoting on Shadamon is simple and completely hassle-free. You can directly control your reach, budget, and targeting to quickly connect your posts with the right customers. Everything stays in your control-you decide who sees your post, how many people see it, and how fast it reaches them.'}
-                        </p>
-
-                        <div>
-                            <h4 className="font-bold text-slate-900 mb-2">{language === 'bn' ? 'ফিচারসমূহ' : 'Features'}</h4>
-                            <ul className="list-disc pl-5 space-y-1">
-                                {(language === 'bn'
-                                    ? [
-                                        'অধিক ভিউ এবং রিচ - আপনার পোস্টটি বিপুল সংখ্যক সম্ভাব্য ক্রেতার কাছে পৌঁছাতে পারে, যা বিক্রির সম্ভাবনা বাড়িয়ে দেয়। পুরো প্রক্রিয়াটি সম্পূর্ণ আপনার নিয়ন্ত্রণে থাকে।',
-                                        'টার্গেটেড রিচ - আপনার পোস্ট নির্দিষ্ট ক্যাটাগরি বা লোকেশনে প্রমোট করুন যাতে আপনার কাঙ্ক্ষিত ক্রেতারা আপনাকে সহজেই খুঁজে পায়।',
-                                        'সরাসরি রেসপন্স - দ্রুত যোগাযোগের জন্য আগ্রহী ক্রেতাদের কাছ থেকে সরাসরি মেসেজ এবং কল পান।',
-                                        'তাৎক্ষণিক প্রমোশন - কোনো জটিল রিভিউ বা বিলম্ব ছাড়াই আপনার প্রমোশন সাথে সাথে লাইভ বা চালু হয়ে যায়।',
-                                        "পোস্ট হাইলাইটিং - আপনার পোস্টকে আরও আকর্ষণীয় করতে 'New', 'Offer' অথবা 'Featured'-এর মতো লেবেল ব্যবহার করুন।",
-                                        'পারফরম্যান্স ট্র্যাকিং - আপনার প্রমোশন কেমন চলছে তা রিয়েল-টাইমে সহজেই ট্র্যাক করুন।'
-                                    ]
-                                    : [
-                                        'More Views & Reach - Your post can reach a large number of potential customers, increasing your chances of engagement. The entire process is fully under your control.',
-                                        'Targeted Reach - Promote your posts to specific categories or locations so your ideal audience can easily find you.',
-                                        'Direct Responses - Get messages and calls directly from interested customers for faster communication.',
-                                        'Instant Promotion - Your promotion goes live immediately without any complex review or delay.',
-                                        'Post Highlighting - Make your post more attractive with labels like New, Offer, or Featured.',
-                                        'Performance Tracking - Easily track how your promotion is performing in real time.'
-                                    ]).map((item) => (
-                                        <li key={item}>{item}</li>
-                                    ))}
-                            </ul>
-                        </div>
-
-                        <div>
-                            <h4 className="font-bold text-slate-900 mb-2">{language === 'bn' ? 'ভেরিফাইড মেম্বার হওয়ার সুবিধা' : 'Verified Member Benefits'}</h4>
-                            <p>
-                                {language === 'bn'
-                                    ? 'ভেরিফাইড মেম্বার হওয়া প্ল্যাটফর্মে আপনার বিশ্বাসযোগ্যতা ও গ্রহণযোগ্যতা বৃদ্ধি করে। ক্রেতাদের কাছে আপনার প্রোফাইল এবং পোস্টগুলো আরও নির্ভরযোগ্য মনে হয়, যা যোগাযোগ এবং বিক্রির হার বাড়িয়ে দেয়।'
-                                    : 'Becoming a verified member increases your trust and credibility on the platform. Your profile and posts appear more reliable to customers, increasing engagement and response rates.'}
-                            </p>
-                            <p className="mt-2 font-semibold">{language === 'bn' ? 'আপনি আরও পাবেন:' : 'You also get:'}</p>
-                            <ul className="list-disc pl-5 space-y-1 mt-1">
-                                {(language === 'bn'
-                                    ? ['উচ্চতর বিশ্বাসযোগ্যতা এবং প্রফেশনাল উপস্থিতি', 'ক্রেতাদের কাছ থেকে দ্রুত সাড়া', 'প্ল্যাটফর্মে আরও ভালো অবস্থান']
-                                    : ['Higher trust and professional visibility', 'Faster customer responses', 'Better overall platform presence']).map((item) => (
-                                        <li key={item}>{item}</li>
-                                    ))}
-                            </ul>
-                        </div>
-
-                        <div>
-                            <h4 className="font-bold text-slate-900 mb-2">{language === 'bn' ? 'কেন Shadamon Promote ব্যবহার করবেন?' : 'Why Shadamon Promote?'}</h4>
-                            <ul className="list-disc pl-5 space-y-1">
-                                {(language === 'bn'
-                                    ? ['কোনো জটিল বুস্ট বা লুকানো সিস্টেম নেই', 'সম্পূর্ণ নিয়ন্ত্রণ আপনার হাতে', 'দ্রুত ফলাফল', 'সময় বাঁচায় এবং প্রমোশনকে সহজ করে']
-                                    : ['No complex boost or hidden systems', 'Full control is in your hands', 'Faster results', 'Saves time and simplifies promotion']).map((item) => (
-                                        <li key={item}>{item}</li>
-                                    ))}
-                            </ul>
-                        </div>
-
-                        <div>
-                            <h4 className="font-bold text-slate-900 mb-2">{language === 'bn' ? 'বাটন অ্যাকশন' : 'Button Action'}</h4>
-                            <p>
-                                {language === 'bn'
-                                    ? "'Promote' বাটনে ক্লিক করলে ব্যবহারকারী সরাসরি 'Post Ad / Product Create' পেজে চলে যাবেন, যেখানে তারা পোস্ট তৈরি করে তাৎক্ষণিকভাবে প্রমোশন শুরু করতে পারবেন।"
-                                    : 'Clicking the Promote button will take users directly to the Post Ad / Product Create page, where they can create their post and start promotion instantly.'}
-                            </p>
-                        </div>
-
-                        <div className="pt-2">
-                            <button
-                                onClick={handlePostAdFromPromoteGuide}
-                                className="w-full sm:w-auto px-5 py-2.5 rounded-md bg-[#4285F4] text-white font-bold hover:bg-blue-600 transition-colors"
-                            >
-                                POST AD
-                            </button>
-                        </div>
-                    </div>
-                }
-            />
+            {/* Promote Modal */}
+            {showPromoteModal && (
+                <PromoteModal
+                    isOpen={showPromoteModal}
+                    onClose={() => setShowPromoteModal(false)}
+                    ad={promoteAd}
+                    user={userData}
+                />
+            )}
 
             {/* Ad Details Modal */}
             {selectedDetailAd && (
