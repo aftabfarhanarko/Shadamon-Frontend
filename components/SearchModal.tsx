@@ -222,9 +222,9 @@ export default function SearchModal({
                         </div>
                         <button
                             onClick={handleSearch}
-                            className="bg-[#1A202C] text-white px-3.5 py-3 text-xs hover:bg-slate-800 transition-colors tracking-wider flex items-center gap-2 shrink-0 whitespace-nowrap"
+                            className="bg-[#1A202C] text-white px-3.5 py-3 text-xs hover:bg-slate-800 transition-colors tracking-wider flex items-center gap-0 sm:gap-2 shrink-0 whitespace-nowrap"
                         >
-                            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="hidden sm:block w-3.5 h-3.5" />}
                             <span>{translate("Search", "সার্চ")}</span>
                         </button>
                     </div>

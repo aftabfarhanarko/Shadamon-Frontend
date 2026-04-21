@@ -448,6 +448,7 @@ const translations: Record<string, Record<Language, string>> = {
     'verifying': { bn: 'যাচাই করা হচ্ছে...', en: 'VERIFYING...' },
     'verify_and_post_btn': { bn: 'যাচাই করুন এবং পোস্ট করুন', en: 'VERIFY & POST' },
     'add_photos_btn': { bn: 'গ্যালারি থেকে', en: 'From Gallery' },
+    'add_photos_btn2': { bn: 'ছবি যোগ করুন', en: 'Add Photos' },
     'drag_and_drop': { bn: 'ছবি যোগ করুন', en: 'Add Photos' },
     'add_cameras_btn': { bn: 'ক্যামেরা দিয়ে', en: 'By Camera' },
     // 'drag_and_drop': { bn: 'ছবি যোগ করুন', en: 'or drag and drop' },

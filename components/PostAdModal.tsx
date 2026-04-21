@@ -1357,7 +1357,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                 <>
                                                     <div className="mb-2">
                                                         <span className="text-[11px] font-bold uppercase text-slate-600 tracking-tight">
-                                                            {t('add_photos_btn')}
+                                                            {t('add_photos_btn2')}
                                                         </span>
                                                     </div>
 
@@ -1398,11 +1398,13 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                                     ) : (
                                                                         <img src="/gallery.png" alt="Gallery" className="w-8 h-8 object-contain" />
                                                                     )}
-                                                                    <span className="mt-1 text-[11px] font-semibold leading-none text-slate-700">
-                                                                        {compressing ? "..." : (language === 'bn' ? 'গ্যালারি' : 'Gallery')}
+                                                                    <span className="mt-1 text-[8px] font-medium leading-none text-slate-700">
+                                                                        {/* {compressing ? "..." : (language === 'bn' ? 'গ্যালারি' : 'Gallery')} */}
+                                                                        {compressing ? "..." : (language === 'bn' ? 'গ্যালারি' : 'From')}
                                                                     </span>
-                                                                    <span className="text-[8px] font-medium text-center text-slate-500 leading-none">
-                                                                        {compressing ? t('processing') : t('add_photos_btn')}
+                                                                    <span className="text-[11px] font-semibold text-center text-slate-500 leading-none">
+                                                                        {/* {compressing ? t('processing') : t('add_photos_btn')} */}
+                                                                        {compressing ? t('processing') : (language === 'bn' ? 'থেকে' : 'Gallery')}
                                                                     </span>
                                                                 </button>
 
@@ -1423,11 +1425,13 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                                     ) : (
                                                                         <img src="/camera.png" alt="Camera" className="w-8 h-8 object-contain" />
                                                                     )}
-                                                                    <span className="mt-1 text-[11px] font-semibold leading-none text-slate-700">
-                                                                        {compressing ? "..." : (language === 'bn' ? 'ক্যামেরা' : 'Camera')}
+                                                                    <span className="mt-1 text-[8px] font-medium leading-none text-slate-700">
+                                                                        {/* {compressing ? "..." : (language === 'bn' ? 'ক্যামেরা' : 'Camera')} */}
+                                                                        {compressing ? "..." : (language === 'bn' ? 'ক্যামেরা' : 'By')}
                                                                     </span>
-                                                                    <span className="text-[8px] font-medium text-center text-slate-500 leading-none">
-                                                                        {compressing ? t('processing') : t('add_cameras_btn')}
+                                                                    <span className="text-[11px] font-semibold text-center text-slate-500 leading-none">
+                                                                        {/* {compressing ? t('processing') : t('add_cameras_btn')} */}
+                                                                        {compressing ? t('processing') : (language === 'bn' ? 'দিয়ে' : 'Camera')}
                                                                     </span>
                                                                 </button>
                                                             </>

@@ -604,10 +604,10 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                     {/* Plain text display of all numbers */}
                                     {showPhone && otherContactRows.length > 0 && (
                                         <div className="block mt-3 mb-3 px-1 space-y-2 border-t border-slate-300 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Other Numbers:</p>
+                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Others Number:</p>
                                             <div className="flex flex-col gap-2">
                                                 {otherContactRows.map((row, idx) => (
-                                                    <div key={`${row.number}-${idx}`} className="flex items-center gap-2 group">
+                                                    <div key={`${row.number}-${idx}`} className="flex items-center gap-4 group">
                                                         <button
                                                             onClick={() => {
                                                                 navigator.clipboard.writeText(row.number);
@@ -618,7 +618,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                                         >
                                                             {row.number}
                                                         </button>
-                                                        <div className="flex items-center gap-1.5">
+                                                        <div className="flex items-center gap-2.5">
                                                             {(row.types.length > 0 ? row.types : ['mobile']).map((type, typeIdx) => {
                                                                 if (type === 'whatsapp') {
                                                                     return (
@@ -709,8 +709,8 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                             {/* Call Button - Only if requested and phone available */}
                                             {otherButtons.includes('Call') && !((ad.hidePhone === true || ad.hidePhone === 'true') || !ad.phone || String(ad.phone) === 'undefined') && (
                                                 <button
-                                                    onClick={() => window.location.href = `tel:${ad.phone}`}
-                                                    className="flex-1 bg-[#1A202C] text-white text-xs py-2 px-1 rounded-md hover:bg-slate-800 transition-colors"
+                                                    onClick={() => setShowPhone(!showPhone)}
+                                                    className="flex-1 bg-[#1A202C] text-white text-xs py-3 px-1 rounded-md hover:bg-slate-800 transition-colors"
                                                 >
                                                     Call
                                                 </button>
@@ -1112,10 +1112,10 @@ I have sent my CV for your review.`;
                                         <div
                                             key={sad._id}
                                             className={cn(
-                                                "flex gap-2 bg-white border rounded-lg overflow-hidden shadow-sm p-2 cursor-pointer",
+                                                "bg-white rounded-lg lg:rounded-lg p-0.5 lg:p-3 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50 border mx-[5px] lg:mx-0",
                                                 hasHighlightLabel(sad)
-                                                    ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-1 ring-orange-400/30"
-                                                    : "border-slate-100"
+                                                    ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-2 ring-orange-400/30"
+                                                    : "border-transparent"
                                             )}
                                             onClick={() => {
                                                 if (sad.adType === 'Promoted' && sad.promoteType === 'traffic' && sad.trafficLink) {
@@ -1127,13 +1127,13 @@ I have sent my CV for your review.`;
                                                 }
                                             }}
                                         >
-                                            <div className="w-24 h-20 bg-slate-100 rounded shrink-0 relative overflow-hidden">
+                                            <div className="w-[120px] h-[90px] lg:w-[160px] lg:h-[130px] rounded-lg overflow-hidden shrink-0 relative group-hover:scale-[1.02] transition-transform">
                                                 {getImageUrl(sad.images?.[0]) && (
                                                     <>
                                                         <img
                                                             src={getImageUrl(sad.images?.[0]) || ''}
                                                             alt=""
-                                                            className="absolute inset-0 w-full h-full object-contain blur-2xl scale-110 opacity-60"
+                                                            className="absolute inset-0 w-full h-full object-contain blur scale-140 opacity-80"
                                                         />
                                                         <img
                                                             src={getImageUrl(sad.images?.[0]) || ''}
@@ -1144,11 +1144,11 @@ I have sent my CV for your review.`;
                                                     </>
                                                 )}
                                                 {getNonHighlightLabels(sad).length > 0 && (
-                                                    <div className="absolute top-1 left-1 z-20 flex flex-col gap-0.5">
+                                                    <div className="absolute top-2 left-2 z-20 flex flex-col gap-1">
                                                         {getNonHighlightLabels(sad).map((label: string) => (
                                                             <span
                                                                 key={label}
-                                                                className="bg-white/90 text-[9px] font-bold text-slate-800 px-1.5 py-0.5 rounded border border-slate-200 shadow-sm leading-none"
+                                                                className="bg-white/90 text-[10px] font-bold text-slate-800 px-2 py-0.5 rounded border border-slate-200 shadow-sm"
                                                             >
                                                                 {label}
                                                             </span>
@@ -1157,25 +1157,20 @@ I have sent my CV for your review.`;
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                                <h4 className="text-[11px] md:text-xs text-slate-800 line-clamp-1 md:line-clamp-2 mb-0.5">{sad.headline}</h4>
-                                                <div className="text-[13px] md:text-sm text-slate-900 flex items-center justify-between gap-1.5 flex-wrap mb-0.5">
-                                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                                        <span>{sad.price ? `৳ ${sad.price.toLocaleString()}` : t('price_on_ask')}</span>
-                                                        {sad.price && (
-                                                            <span className="text-[10px] text-slate-500 font-normal">
-                                                                ({sad.priceType === 'Negotiable' ? t('price_negotiable') : t('price_fixed')})
-                                                            </span>
-                                                        )}
-                                                    </div>
+                                                <h4 className="text-[15px] text-black font-semibold line-clamp-1 leading-tight mb-0">{sad.headline}</h4>
+                                                <div className="text-[15px] lg:text-sm text-black font-semibold leading-tight mb-1">
+                                                    {sad.price ? `৳ ${sad.price.toLocaleString()}` : t('price_on_ask')}
                                                 </div>
-                                                <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                                                    <div className="flex items-center gap-1 min-w-0">
-                                                        <MapPin className="w-2.5 h-2.5 shrink-0" />
-                                                        <span className="truncate max-w-[82px]">{sad.location}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-1 min-w-0">
-                                                        <Grid className="w-2.5 h-2.5 shrink-0" />
-                                                        <span className="truncate max-w-[82px]">{sad.category}</span>
+                                                <div className="flex items-center gap-0 text-[9px] lg:text-[10px] text-black group-hover:text-black flex-wrap">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="flex items-center gap-0.5 shrink-0">
+                                                            <MapPin className="w-2.5 h-2.5" />
+                                                            <span className="truncate max-w-[110px] md:max-w-[120px]">{sad.location}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-0.5 shrink-0">
+                                                            <Grid className="w-2.5 h-2.5" />
+                                                            <span className="truncate max-w-[110px] md:max-w-[120px]">{sad.category}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

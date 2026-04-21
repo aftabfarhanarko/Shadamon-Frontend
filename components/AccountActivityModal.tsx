@@ -76,7 +76,7 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
     const isPromotionLive = (ad: any) => getAdStatusLower(ad) === 'active' && getAdTypeLower(ad) === 'promoted';
     const isProcessingPromotion = (ad: any) => getAdStatusLower(ad) === 'review' && isProcessingType(ad);
     const getPostButtonLabel = (ad: any) => {
-        if (isProcessingType(ad)) return 'Procesing';
+        if (isProcessingType(ad)) return 'Processing';
         if (getAdTypeLower(ad) === 'promoted') return 'Promotion Live';
         if (getAdTypeLower(ad) === 'free') return 'Promote';
         return 'Promote';
@@ -1565,7 +1565,8 @@ I have sent my CV for your review.`;
                                                                     handlePromoteClick(ad);
                                                                 }}
                                                                 className={cn(
-                                                                    "mt-auto w-full text-white text-[10px] font-bold py-2.5 rounded transition-colors",
+                                                                    "mt-auto w-full text-[10px] font-bold py-2.5 rounded transition-colors",
+                                                                    isProcessingType(ad) ? "text-black" : "text-white",
                                                                     getPostButtonColorClass(ad)
                                                                 )}
                                                             >
@@ -1648,7 +1649,10 @@ I have sent my CV for your review.`;
                                                                     }
                                                                     handlePromoteClick(ad);
                                                                 }}
-                                                                className="flex-1 text-white text-[11px] font-bold pl-1 py-1.5"
+                                                                className={cn(
+                                                                    "flex-1 text-[11px] font-bold pl-1 py-1.5",
+                                                                    isProcessingType(ad) ? "text-black" : "text-white"
+                                                                )}
                                                             >
                                                                 {getPostButtonLabel(ad)}
                                                             </button>
@@ -1728,7 +1732,8 @@ I have sent my CV for your review.`;
                                                                         handlePromoteClick(ad);
                                                                     }}
                                                                     className={cn(
-                                                                        "mt-auto w-full text-white text-[10px] font-bold py-2.5 rounded transition-colors",
+                                                                        "mt-auto w-full text-[10px] font-bold py-2.5 rounded transition-colors",
+                                                                        isProcessingType(ad) ? "text-black" : "text-white",
                                                                         getPostButtonColorClass(ad)
                                                                     )}
                                                                 >
@@ -2296,11 +2301,11 @@ I have sent my CV for your review.`;
                                                 <div className="p-3 flex flex-row md:flex-row gap-2.5 md:gap-3 items-stretch">
                                                     {/* Left: Image (Spans height of details + performance) */}
                                                     <div className="w-[138px] md:w-[150px] flex justify-center md:block shrink-0">
-                                                        <div className="w-full h-[145px] md:h-[130px] bg-slate-100 relative rounded overflow-hidden group mb-2 md:mb-0 flex items-center justify-center">
+                                                        <div className="w-full h-[190px] md:h-[130px] bg-slate-100 relative rounded overflow-hidden group mb-2 md:mb-0 flex items-center justify-center">
                                                             {ad.images && ad.images.length > 0 ? (
                                                                 <>
                                                                     <div className="absolute inset-0">
-                                                                        <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-contain blur-xl opacity-30 scale-105" loading="lazy" />
+                                                                        <img src={getImageUrl(ad.images[0]) || undefined} className="w-full h-full object-cover blur opacity-60 scale-110" loading="lazy" />
                                                                     </div>
                                                                     <img
                                                                         src={getImageUrl(ad.images[0]) || undefined}
@@ -2341,7 +2346,7 @@ I have sent my CV for your review.`;
                                                         {/* Top Details */}
                                                         <div className="flex items-start justify-between gap-2">
                                                             <div className="flex flex-col gap-0 min-w-0">
-                                                                <h3 className="text-[13px] md:text-sm text-black line-clamp-2 md:line-clamp-1" title={ad.headline}>
+                                                                <h3 className="text-[13px] md:text-sm text-black line-clamp-1" title={ad.headline}>
                                                                     {ad.headline}
                                                                 </h3>
                                                                 <div className="text-[11px] md:text-[12px] text-black truncate">
@@ -2497,7 +2502,8 @@ I have sent my CV for your review.`;
                                                         }}
                                                         disabled={ad.status === 'deleted'}
                                                         className={cn(
-                                                            "w-full text-white text-[13px] font-medium py-2.5 rounded-md text-center transition-colors shadow-sm",
+                                                            "w-full text-[13px] font-medium py-2.5 rounded-md text-center transition-colors shadow-sm",
+                                                            isProcessingType(ad) ? "text-black" : "text-white",
                                                             ad.status === 'deleted' ? "bg-slate-400 cursor-not-allowed" : getPostButtonColorClass(ad)
                                                         )}
                                                     >

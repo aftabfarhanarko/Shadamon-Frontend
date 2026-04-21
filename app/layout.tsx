@@ -26,6 +26,7 @@ export default function RootLayout({
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#ffffff" />
+        <meta name="google-site-verification" content="google971854131468af49.htm" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -101,7 +102,7 @@ export default function RootLayout({
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', 'G-8E75HC4681');
+            gtag('config', 'G-SEZGVZCXMT');
           `}
         </Script>
         <script

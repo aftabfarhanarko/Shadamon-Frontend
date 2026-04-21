@@ -683,15 +683,21 @@ export default function DashboardClient() {
             }));
         };
 
+        const handleOpenFooterPromoteModal = () => {
+            setShowFooterPromoteModal(true);
+        };
+
         window.addEventListener('refresh-ads', handleRefresh);
         window.addEventListener('user-followed', handleGlobalFollow as EventListener);
         window.addEventListener('show-search-results', handleSearch as EventListener);
         window.addEventListener('reset-saved-search', handleResetSavedSearch);
+        window.addEventListener('open-footer-promote-modal', handleOpenFooterPromoteModal);
         return () => {
             window.removeEventListener('refresh-ads', handleRefresh);
             window.removeEventListener('user-followed', handleGlobalFollow as EventListener);
             window.removeEventListener('show-search-results', handleSearch as EventListener);
             window.removeEventListener('reset-saved-search', handleResetSavedSearch);
+            window.removeEventListener('open-footer-promote-modal', handleOpenFooterPromoteModal);
         };
     }, [fetchData, fetchInitialData, handleResetSavedSearch, isViewingSavedSearch]);
 
@@ -1400,7 +1406,7 @@ export default function DashboardClient() {
 
                         return (
                             <div className="space-y-1">
-                                <div className="flex items-center justify-between px-0 lg:px-0">
+                                <div className="flex items-center justify-between px-1 lg:px-0">
                                     <div className="text-xs lg:text-sm text-black flex items-center gap-1">
                                         <span className="font-medium">
                                             {language === 'bn'
@@ -1449,20 +1455,20 @@ export default function DashboardClient() {
                                                                     }
                                                                 }}
                                                                 className={cn(
-                                                                    "bg-white rounded-lg lg:rounded-xl cursor-pointer group block border shadow-sm mx-0 lg:mx-0",
+                                                                    "bg-white rounded-lg lg:rounded-xl cursor-pointer group block border shadow-sm mx-[5px] lg:mx-0",
                                                                     hasHighlightLabel(block.bigAd)
                                                                         ? "border-orange-500 shadow-[0_12px_30px_rgba(249,115,22,0.25)] ring-2 ring-orange-400/40"
                                                                         : "border-slate-100"
                                                                 )}
                                                             >
-                                                                {/* <div className="relative h-[315px] w-full rounded-none lg:rounded-t-xl overflow-hidden group"> */}
-                                                                <div className="relative aspect-[16/9] w-full rounded-none lg:rounded-t-xl overflow-hidden group">
+                                                                {/* <div className="relative h-[315px] w-full rounded-t-lg lg:rounded-t-xl overflow-hidden group"> */}
+                                                                <div className="relative aspect-[16/9] w-full rounded-t-lg lg:rounded-t-xl overflow-hidden group">
                                                                     {getImageUrl(block.bigAd.images?.[0]) && (
                                                                         <>
                                                                             <img
                                                                                 src={getImageUrl(block.bigAd.images?.[0]) || undefined}
                                                                                 alt=""
-                                                                                className="absolute inset-0 w-full h-full object-contain blur scale-130 opacity-80"
+                                                                                className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-80"
                                                                             />
                                                                             <img
                                                                                 src={getImageUrl(block.bigAd.images?.[0]) || undefined}
@@ -1545,7 +1551,7 @@ export default function DashboardClient() {
                                                                             router.push(getAdUrl(ad), { scroll: false });
                                                                         }}
                                                                         className={cn(
-                                                                            "bg-white rounded-lg lg:rounded-lg p-2.5 lg:p-3 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50 border mx-0 lg:mx-0",
+                                                                            "bg-white rounded-lg lg:rounded-lg p-0.5 lg:p-3 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50 border mx-[5px] lg:mx-0",
                                                                             hasHighlightLabel(ad)
                                                                                 ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-2 ring-orange-400/30"
                                                                                 : "border-transparent"
@@ -1583,8 +1589,8 @@ export default function DashboardClient() {
                                                                                     {ad.user?.mVerified && <VerifiedBadge className="translate-y-[0.5px]" />}
                                                                                 </div>
                                                                             </div>
-                                                                            <h4 className="text-[15px] text-black font-semibold line-clamp-1 mb-0.5">{ad.headline}</h4>
-                                                                            <div className="text-[15px] lg:text-sm text-black font-semibold mb-1">৳ {ad.price?.toLocaleString() || 'N/A'}</div>
+                                                                            <h4 className="text-[15px] text-black font-semibold line-clamp-1 leading-tight mb-0">{ad.headline}</h4>
+                                                                            <div className="text-[15px] lg:text-sm text-black font-semibold leading-tight mb-1">৳ {ad.price?.toLocaleString() || 'N/A'}</div>
                                                                             <div className="flex items-center gap-0 text-[9px] lg:text-[10px] text-black group-hover:text-black flex-wrap">
                                                                                 <div className="flex items-center gap-2">
                                                                                     <div className="flex items-center gap-0.5 shrink-0"><MapPin className="w-2.5 h-2.5" /><span className="truncate max-w-[110px] md:max-w-[120px]">{ad.location}</span></div>

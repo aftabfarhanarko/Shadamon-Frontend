@@ -120,38 +120,38 @@ export default function VerifiedBadge({
 
       {mounted && open
         ? createPortal(
-            <div
-              ref={tooltipRef}
-              className={cn(
-                "fixed pointer-events-none z-[9999] bg-slate-50 border border-slate-200 shadow-xl rounded-xl p-3 animate-in fade-in zoom-in-95 duration-200 text-left",
-                pos ? "opacity-100" : "opacity-0",
-                tooltipWidthClassName ?? "w-[180px] sm:w-[200px]",
-                tooltipClassName
-              )}
-              style={
-                pos
-                  ? {
-                      top: pos.top,
-                      left: pos.left,
-                      transform: "translateX(-50%)",
-                    }
-                  : undefined
-              }
-            >
-              <p className="text-[13px] text-slate-700 leading-relaxed whitespace-normal font-normal">{tooltipText}</p>
+          <div
+            ref={tooltipRef}
+            className={cn(
+              "fixed pointer-events-none z-[9999] bg-white/95 backdrop-blur-[2px] border border-slate-200/90 shadow-[0_12px_26px_rgba(15,23,42,0.16)] rounded-xl px-2.5 py-2 animate-in fade-in zoom-in-95 duration-200 text-left",
+              pos ? "opacity-100" : "opacity-0",
+              tooltipWidthClassName ?? "w-[170px] sm:w-[190px]",
+              tooltipClassName
+            )}
+            style={
+              pos
+                ? {
+                  top: pos.top,
+                  left: pos.left,
+                  transform: "translateX(-50%)",
+                }
+                : undefined
+            }
+          >
+            <p className="text-[12px] text-slate-700 font-medium leading-[1.15] whitespace-normal break-words normal-case">{tooltipText}</p>
 
-              <div
-                className={cn(
-                  "absolute -translate-x-1/2",
-                  pos?.placement === "bottom" ? "bottom-full -mb-[1px]" : "top-full -mt-[1px]"
-                )}
-                style={pos ? { left: pos.arrowLeft } : undefined}
-              >
-                <div className="w-3 h-3 bg-slate-50 border-b border-r border-slate-200 transform rotate-45" />
-              </div>
-            </div>,
-            document.body
-          )
+            <div
+              className={cn(
+                "absolute -translate-x-1/2",
+                pos?.placement === "bottom" ? "bottom-full -mb-[1px]" : "top-full -mt-[1px]"
+              )}
+              style={pos ? { left: pos.arrowLeft } : undefined}
+            >
+              <div className="w-3 h-3 bg-white border-b border-r border-slate-200 transform rotate-45" />
+            </div>
+          </div>,
+          document.body
+        )
         : null}
     </span>
   );

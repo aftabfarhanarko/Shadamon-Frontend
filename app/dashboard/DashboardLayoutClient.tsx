@@ -713,15 +713,8 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
     const handlePromoteClick = (e: React.MouseEvent) => {
         e.preventDefault();
-        const token = Cookies.get('token');
-        if (!token) {
-            // toast.error(language === 'bn' ? 'প্রথমে লগইন করুন তারপর প্রোমোট ট্যাব খুলুন' : "Please login first then go to promote tab");
-            setMobileEntryReason('promote');
-            setIsMobileEntryModalOpen(true);
-        } else {
-            setAccountModalInitialTab('Post');
-            setIsAccountModalOpen(true);
-        }
+        // Open the same footer promote flow/modal used on the home page.
+        window.dispatchEvent(new Event('open-footer-promote-modal'));
     };
 
     const [headerOffset, setHeaderOffset] = useState(0);

@@ -76,7 +76,7 @@ export default function LatestFreeAdPromo() {
                 <div className="bg-white px-3 py-1 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <RiLockFill className="w-4 h-4 text-slate-500" />
-                        <span className="text-[14px] text-slate-700 font-medium">Post Preview(You See)</span>
+                        <span className="text-[14px] text-slate-700 font-medium">Visible only to you</span>
                     </div>
                     <button
                         onClick={() => window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: user?._id, activeTab: 'Post' } }))}
