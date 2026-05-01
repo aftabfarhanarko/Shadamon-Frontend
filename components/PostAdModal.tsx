@@ -1398,14 +1398,25 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                                     ) : (
                                                                         <img src="/gallery.png" alt="Gallery" className="w-8 h-8 object-contain" />
                                                                     )}
-                                                                    <span className="mt-1  text-[11px] font-semibold text-center text-slate-500 leading-none">
-                                                                        {/* {compressing ? t('processing') : t('add_photos_btn')} */}
-                                                                        {compressing ? t('processing') : (language === 'bn' ? 'থেকে' : 'Gallery')}
-                                                                    </span>
-                                                                    <span className="text-[8px] font-medium leading-none text-slate-700">
+                                                                    <span
+                                                                        className={cn(
+                                                                            "mt-1 leading-none text-slate-500",
+                                                                            language === 'bn' ? 'text-[11px] font-bold' : 'text-[8px] font-semibold'
+                                                                        )}
+                                                                    >
                                                                         {/* {compressing ? "..." : (language === 'bn' ? 'গ্যালারি' : 'Gallery')} */}
                                                                         {compressing ? "..." : (language === 'bn' ? 'গ্যালারি' : 'From')}
                                                                     </span>
+                                                                    <span
+                                                                        className={cn(
+                                                                            "text-center text-slate-700 leading-none",
+                                                                            language === 'bn' ? 'text-[8px] font-semibold' : 'text-[11px] font-bold'
+                                                                        )}
+                                                                    >
+                                                                        {/* {compressing ? t('processing') : t('add_photos_btn')} */}
+                                                                        {compressing ? t('processing') : (language === 'bn' ? 'থেকে' : 'Gallery')}
+                                                                    </span>
+
 
                                                                 </button>
 
@@ -1426,13 +1437,24 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                                     ) : (
                                                                         <img src="/camera.png" alt="Camera" className="w-8 h-8 object-contain" />
                                                                     )}
-                                                                    <span className="mt-1 text-[11px] font-semibold text-center text-slate-500 leading-none">
+                                                                    <span
+                                                                        className={cn(
+                                                                            "mt-1 text-center text-slate-500 leading-none",
+                                                                            language === 'bn' ? 'text-[11px] font-bold' : 'text-[8px] font-semibold'
+                                                                        )}
+                                                                    >
                                                                         {/* {compressing ? t('processing') : t('add_cameras_btn')} */}
-                                                                        {compressing ? t('processing') : (language === 'bn' ? 'দিয়ে' : 'Camera')}
+                                                                        {compressing ? "..." : (language === 'bn' ? 'ক্যামেরা' : 'by')}
+
                                                                     </span>
-                                                                    <span className="text-[8px] font-medium leading-none text-slate-700">
+                                                                    <span
+                                                                        className={cn(
+                                                                            "leading-none text-slate-700",
+                                                                            language === 'bn' ? 'text-[8px] font-semibold' : 'text-[11px] font-bold'
+                                                                        )}
+                                                                    >
                                                                         {/* {compressing ? "..." : (language === 'bn' ? 'ক্যামেরা' : 'Camera')} */}
-                                                                        {compressing ? "..." : (language === 'bn' ? 'ক্যামেরা' : 'By')}
+                                                                        {compressing ? t('processing') : (language === 'bn' ? 'দিয়ে' : 'Camera')}
                                                                     </span>
 
                                                                 </button>
