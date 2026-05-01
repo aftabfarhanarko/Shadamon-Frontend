@@ -1,7 +1,7 @@
 {
   "name": "Shadamon",
   "short_name": "Shadamon",
-  "start_url": "/dashboard",
+  "start_url": "/d",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",

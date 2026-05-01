@@ -297,7 +297,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             if (userId) {
                 const params = new URLSearchParams(window.location.search);
                 params.set('profile', userId);
-                router.push(`/dashboard?${params.toString()}`, { scroll: false });
+                router.push(`/d?${params.toString()}`, { scroll: false });
             }
 
         };
@@ -525,7 +525,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         }
 
         if (openUsersProfile === 'true' && token) {
-            setAccountModalInitialTab('Profile');
+            setAccountModalInitialTab('Post');
             setIsAccountModalOpen(true);
             const params = new URLSearchParams(window.location.search);
             params.delete('openUsersProfile');
@@ -569,8 +569,8 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             setSelectedAdForDetail(null);
         }
 
-        // Handle direct /dashboard/post-ad route
-        if (pathname === '/dashboard/post-ad') {
+        // Handle direct post-ad route aliases
+        if (pathname === '/dashboard/post-ad' || pathname === '/d/post-ad') {
             const token = Cookies.get('token');
             if (!token) {
                 setMobileEntryReason('post_ad');
@@ -660,7 +660,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         sessionStorage.removeItem('ad_session_view_tokens');
         window.dispatchEvent(new Event('auth-change'));
         toast.success("Logged out successfully");
-        window.location.href = '/dashboard';
+        window.location.href = '/d';
     };
 
     const toggleLanguage = () => {
@@ -729,8 +729,9 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
         return () => window.removeEventListener('center-scroll', handleCenterScroll as EventListener);
     }, []);
 
-    const isHomeNavActive = pathname === '/dashboard';
-    const isInboxNavActive = pathname.startsWith('/dashboard/inbox');
+    const isHomeNavActive = pathname === '/dashboard' || pathname === '/d' || pathname === '/';
+    const isInboxNavActive = pathname.startsWith('/dashboard/inbox') || pathname.startsWith('/d/inbox');
+    const isProfileNavActive = pathname.startsWith('/dashboard/profile') || pathname.startsWith('/d/profile');
 
     return (
         <div className="h-screen bg-[#F1F5F9] font-sans overflow-hidden flex flex-col relative">
@@ -743,13 +744,18 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
                 <div className="relative h-full flex items-end justify-between px-5 z-10 py-0">
                     {/* Home */}
-                    <Link href="/dashboard" className="flex flex-col items-center justify-center min-w-[44px] h-full gap-0">
+                    <Link
+                        href="/d"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            window.location.href = '/d';
+                        }}
+                        className="flex flex-col items-center justify-center min-w-[44px] h-full gap-0"
+                    >
                         <div
                             className={cn(
-                                "w-7 h-7 rounded-xl flex items-center justify-center transition-all duration-200",
-                                isHomeNavActive
-                                    ? "bg-[#E6F4FF] text-[#0079b8] shadow-[inset_0_0_0_1px_rgba(0,136,204,0.18)]"
-                                    : "text-slate-600"
+                                "w-7 h-7 flex items-center justify-center transition-colors duration-200",
+                                isHomeNavActive ? "text-[#0079b8]" : "text-slate-600"
                             )}
                         >
                             {isHomeNavActive ? <RiHome5Fill className="w-4.5 h-4.5" /> : <RiHome5Line className="w-4.5 h-4.5" />}
@@ -793,7 +799,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
                     {/* Inbox */}
                     <Link
-                        href="/dashboard/inbox"
+                        href="/d/inbox"
                         onClick={handleMessageClick}
                         className={cn(
                             "flex flex-col items-center justify-center min-w-[44px] h-full gap-0 relative",
@@ -816,11 +822,19 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
                     {/* Account */}
                     <Link
-                        href="/dashboard/profile"
+                        href="/d/profile"
                         onClick={handleAccountClick}
-                        className="flex flex-col items-center justify-center min-w-[44px] h-full gap-0 text-slate-600 transition-all"
+                        className={cn(
+                            "flex flex-col items-center justify-center min-w-[44px] h-full gap-0 transition-all",
+                            isProfileNavActive ? "text-[#0079b8]" : "text-slate-600"
+                        )}
                     >
-                        <div className="w-7 h-7 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden">
+                        <div className={cn(
+                            "w-7 h-7 rounded-xl flex items-center justify-center overflow-hidden transition-all duration-200",
+                            isProfileNavActive
+                                ? "bg-[#E6F4FF] shadow-[inset_0_0_0_1px_rgba(0,136,204,0.18)]"
+                                : "bg-transparent"
+                        )}>
                             {user && user.photo ? (
                                 <img
                                     src={getImageUrl(user.photo)}
@@ -831,7 +845,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                 <RiUser3Line className="w-4.5 h-4.5" />
                             )}
                         </div>
-                        <span className="text-[8px] text-slate-500 leading-none font-medium">{t('account')}</span>
+                        <span className={cn("text-[8px] leading-none font-medium", isProfileNavActive ? "text-[#0079b8]" : "text-slate-500")}>{t('account')}</span>
                     </Link>
                 </div>
             </nav>
@@ -883,7 +897,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                 </button>
 
                                 <Link
-                                    href="/dashboard"
+                                    href="/d"
                                     className="flex items-center gap-1.5 md:gap-2 shrink-0"
                                     onClick={() => {
                                         window.dispatchEvent(new Event('reset-saved-search'));
@@ -1037,7 +1051,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                                     </button>
 
                                     <Link
-                                        href="/dashboard/profile"
+                                        href="/d/profile"
                                         onClick={handleAccountClick}
                                         className={cn(
                                             "w-10 h-10 bg-[#EDF2F7] rounded-full hidden md:flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all overflow-hidden",
@@ -1061,7 +1075,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
                             <div className="w-[230px] flex-none hidden md:block">
                                 <Link
-                                    href="/dashboard/post-ad"
+                                    href="/d/post-ad"
                                     className="w-full bg-[#EDF2F7] border border-slate-400 shadow-sm text-black py-1.5 rounded text-sm uppercase tracking-widest flex items-center justify-center"
                                 >
                                     {language === 'bn' ? 'ফ্রি বিজ্ঞাপন দিন' : 'Post Free'}
@@ -1212,8 +1226,8 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 onClose={() => {
                     setIsPostAdModalOpen(false);
                     setAdToEdit(null);
-                    if (pathname === '/dashboard/post-ad') {
-                        router.push('/dashboard');
+                    if (pathname === '/dashboard/post-ad' || pathname === '/d/post-ad') {
+                        router.push('/d');
                     }
                 }}
                 editAd={adToEdit}
@@ -1227,8 +1241,8 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     setAccountModalInitialTab('Post');
                     setIsAccountModalOpen(true);
 
-                    if (pathname === '/dashboard/post-ad') {
-                        router.replace('/dashboard');
+                    if (pathname === '/dashboard/post-ad' || pathname === '/d/post-ad') {
+                        router.replace('/d');
                     }
                 }}
             />
@@ -1309,8 +1323,8 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                 isOpen={isMobileEntryModalOpen}
                 onClose={() => {
                     setIsMobileEntryModalOpen(false);
-                    if (pathname === '/dashboard/post-ad') {
-                        router.push('/dashboard');
+                    if (pathname === '/dashboard/post-ad' || pathname === '/d/post-ad') {
+                        router.push('/d');
                     }
                 }}
                 onUserExists={(mobile) => {
@@ -1374,7 +1388,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
                     setViewingUserId(undefined);
                     const params = new URLSearchParams(window.location.search);
                     params.delete('profile');
-                    router.replace(`/dashboard${params.toString() ? `?${params.toString()}` : ''}`, { scroll: false });
+                    router.replace(`/d${params.toString() ? `?${params.toString()}` : ''}`, { scroll: false });
                 }}
                 userId={viewingUserId}
                 onOpenPostAd={() => {

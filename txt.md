@@ -1,0 +1,2 @@
+After login it will redirect to http://localhost:3000/d?openUsersProfile=true and then "Account Activity" modal opened and then default "Post" will be active.
+in post tab, if there are no post available, ther shows "No posts found" text, remove it and then it will be "Create a Post" (after cliked it, it will open Post your AD modal) if there are post available no need to show "Create a Post" button

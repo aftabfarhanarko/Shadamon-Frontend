@@ -870,9 +870,9 @@ I have sent my CV for your review.`;
                 if (isOpen && resolvedUser) {
                     const userIdVal = resolvedUser._id;
                     const params = new URLSearchParams(searchStr);
-                    if (params.get('profile') !== userIdVal && currentPath === '/dashboard') {
+                    if (params.get('profile') !== userIdVal && (currentPath === '/dashboard' || currentPath === '/d' || currentPath === '/')) {
                         params.set('profile', userIdVal);
-                        router.push(`/dashboard?${params.toString()}`, { scroll: false });
+                        router.push(`/d?${params.toString()}`, { scroll: false });
                     }
                 }
 
@@ -1003,7 +1003,7 @@ I have sent my CV for your review.`;
         window.dispatchEvent(new Event('auth-change'));
         toast.success("Logged out successfully");
         onClose();
-        window.location.href = '/dashboard';
+        window.location.href = '/d';
     };
 
     const handleCheckUrl = async () => {
@@ -1274,7 +1274,7 @@ I have sent my CV for your review.`;
                         </div>
                     )}
                     {activeTab === 'Page' && (
-                        <div className="pb-40">
+                        <div className="px-1 sm:px-0 pb-40">
                             {/* Banner & Profile Section */}
                             <div className="bg-white mb-2 pb-3 shadow-sm">
                                 {/* Banner */}
@@ -1447,7 +1447,7 @@ I have sent my CV for your review.`;
 
                                         {showAboutInfo && displayUser.aboutBusiness && (
                                             <div className="mt-2 bg-slate-50 border border-slate-200 rounded-lg p-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                                                <h4 className="text-[13px] font-bold text-slate-800 mb-1">Business Information</h4>
+                                                {/* <h4 className="text-[13px] font-bold text-slate-800 mb-1">Business Information</h4> */}
                                                 <p className="text-[12px] text-slate-600 leading-relaxed whitespace-pre-wrap">
                                                     {displayUser.aboutBusiness}
                                                 </p>
@@ -1762,7 +1762,7 @@ I have sent my CV for your review.`;
                     )}
 
                     {activeTab === 'Profile' && (
-                        <div className="p-4 bg-white pb-20">
+                        <div className="px-1 py-4 sm:p-4 bg-white pb-20">
                             {/* Top Profile Section */}
                             <div className="flex items-start gap-4 mb-3">
                                 <div className="relative">
@@ -2165,7 +2165,7 @@ I have sent my CV for your review.`;
                     )}
 
                     {activeTab === 'Settings' && (
-                        <div className="p-4 space-y-3 pb-20">
+                        <div className="px-1 py-4 sm:p-4 space-y-3 pb-20">
                             {/* Change Password */}
                             <div className="bg-white rounded border border-slate-200 overflow-hidden">
                                 <div
@@ -2516,15 +2516,28 @@ I have sent my CV for your review.`;
                                     ))}
                                 </div>
                             ) : (
-                                <div className="py-20 text-center text-slate-400 text-sm">
-                                    No posts found.
+                                <div className="py-20 text-center">
+                                    {isOwnAccount && (
+                                        <button
+                                            onClick={() => {
+                                                if (onOpenPostAd) {
+                                                    onOpenPostAd();
+                                                } else {
+                                                    window.dispatchEvent(new CustomEvent('open-post-ad-modal'));
+                                                }
+                                            }}
+                                            className="bg-[#0088cc] text-white text-sm font-medium px-5 py-2.5 rounded-lg hover:bg-[#0077b5] transition-colors"
+                                        >
+                                            {language === 'bn' ? 'পোস্ট তৈরি করুন' : 'Create a Post'}
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>
                     )}
 
                     {activeTab === 'Activity' && (
-                        <div className="p-4 space-y-3 pb-20">
+                        <div className="px-1 py-4 sm:p-4 space-y-3 pb-20">
                             {/* Followed List */}
                             <div className="bg-white rounded border border-slate-200 overflow-hidden">
                                 <div

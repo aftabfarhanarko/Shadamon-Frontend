@@ -76,7 +76,9 @@ export default function LatestFreeAdPromo() {
                 <div className="bg-white px-3 py-1 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <RiLockFill className="w-4 h-4 text-slate-500" />
-                        <span className="text-[14px] text-slate-700 font-medium">Visible only to you</span>
+                        <span className="text-[14px] text-slate-700 font-medium">
+                            {language === 'bn' ? 'শুধু আপনি দেখতে পারবেন' : 'Visible only to you'}
+                        </span>
                     </div>
                     <button
                         onClick={() => window.dispatchEvent(new CustomEvent('open-account-modal', { detail: { userId: user?._id, activeTab: 'Post' } }))}
@@ -108,10 +110,10 @@ export default function LatestFreeAdPromo() {
                         </div>
                     )}
 
-                    <div className="absolute bottom-4 left-4 flex z-20">
-                        <div className="w-1 bg-white mr-2 self-stretch" />
-                        <div className="text-white drop-shadow-md">
-                            <h2 className="text-[18px] leading-tight font-medium truncate">{latestAd.headline}</h2>
+                    <div className="absolute bottom-4 left-4 right-4 flex items-end z-20">
+                        <div className="w-1 bg-white mr-2 self-stretch shrink-0" />
+                        <div className="min-w-0 flex-1 text-white drop-shadow-md">
+                            <h2 className="w-full text-[17px] sm:text-[18px] leading-tight font-medium truncate">{latestAd.headline}</h2>
                             <p className="text-[14px] mt-0">৳ {latestAd.price || '0.00'}</p>
                         </div>
                     </div>

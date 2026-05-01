@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useState } from 'react';
-import { ArrowLeft, X, Maximize2, MapPin, Grid, Eye, Share2, Phone, MessageCircle, FileText, ChevronUp, ChevronDown, Rocket, CheckCircle2, Truck, Undo2, Timer, ExternalLink, ChevronRight, Star, Bell, Search, Heart, AlertCircle, Contact, UserSquare2, SquareArrowOutUpRight, Send, SlidersHorizontal, Settings, LogOut, Inbox, Plus, Home } from 'lucide-react';
+import { ArrowLeft, X, Maximize2, MapPin, Grid, Eye, Share2, Phone, MessageCircle, ChevronUp, ChevronDown, Rocket, CheckCircle2, Truck, Undo2, Timer, ExternalLink, ChevronRight, Star, Bell, Search, Heart, AlertCircle, Contact, UserSquare2, SquareArrowOutUpRight, Send, SlidersHorizontal, Settings, LogOut, Inbox, Plus, Home } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { RiMailFill, RiShareBoxLine, RiMoreLine, RiStarFill, RiPhoneFill, RiAlarmWarningFill } from 'react-icons/ri';
 import AdDisplay from './AdDisplay';
 import { FaWhatsapp, FaTelegramPlane } from 'react-icons/fa';
-import { BsChatDotsFill } from 'react-icons/bs';
 import { API_BASE_URL } from '../utils/apiConfig';
 // Use centralized url helper
 import { getImageUrl } from '../utils/imageUrl';
@@ -245,6 +244,11 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
         onClose();
     };
 
+    const handleSellFaster = () => {
+        window.dispatchEvent(new Event('open-footer-promote-modal'));
+        onClose();
+    };
+
     const handleReportClick = () => {
         const token = Cookies.get('token');
         if (!token) {
@@ -280,7 +284,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
         }
     };
 
-    const adLink = typeof window !== 'undefined' ? `${window.location.origin}/dashboard?ad=${ad?._id}` : '';
+    const adLink = typeof window !== 'undefined' ? `${window.location.origin}/d?ad=${ad?._id}` : '';
     const primaryPhone = ad?.phone && String(ad.phone) !== 'undefined' ? String(ad.phone).trim() : '';
     const mobileContactRows = (() => {
         const map = new Map<string, Set<string>>();
@@ -425,7 +429,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                     className="flex items-center gap-1 cursor-pointer hover:text-[#0088cc] transition-colors"
                                     onClick={() => {
                                         const locVal = typeof ad.location === 'object' ? ad.location?.name : ad.location;
-                                        router.push(`/dashboard?location=${encodeURIComponent(locVal)}`);
+                                        router.push(`/d?location=${encodeURIComponent(locVal)}`);
                                     }}
                                 >
                                     <MapPin className="w-3 h-3" />
@@ -435,7 +439,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                     className="flex items-center gap-1 cursor-pointer hover:text-[#0088cc] transition-colors"
                                     onClick={() => {
                                         const catVal = typeof ad.category === 'object' ? ad.category?.name : ad.category;
-                                        router.push(`/dashboard?category=${encodeURIComponent(catVal)}`);
+                                        router.push(`/d?category=${encodeURIComponent(catVal)}`);
                                     }}
                                 >
                                     <Grid className="w-3 h-3" />
@@ -542,7 +546,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                                                     className="w-7 h-7 rounded-full bg-[#004c99] text-white flex items-center justify-center"
                                                                     title={`Imo: ${row.number}`}
                                                                 >
-                                                                    <BsChatDotsFill className="w-3.5 h-3.5" />
+                                                                    <span className="text-[9px] font-black lowercase tracking-tight leading-none">imo</span>
                                                                 </button>
                                                             );
                                                         }
@@ -642,7 +646,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                                                             className="w-8 h-8 rounded-full bg-[#004c99] text-white flex items-center justify-center"
                                                                             title={`Imo: ${row.number}`}
                                                                         >
-                                                                            <BsChatDotsFill className="w-4 h-4" />
+                                                                            <span className="text-[10px] font-black lowercase tracking-tight leading-none">imo</span>
                                                                         </button>
                                                                     );
                                                                 }
@@ -710,7 +714,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                             {otherButtons.includes('Call') && !((ad.hidePhone === true || ad.hidePhone === 'true') || !ad.phone || String(ad.phone) === 'undefined') && (
                                                 <button
                                                     onClick={() => setShowPhone(!showPhone)}
-                                                    className="flex-1 bg-[#1A202C] text-white text-xs py-3 px-1 rounded-md hover:bg-slate-800 transition-colors"
+                                                    className="flex-1 h-10 bg-[#1A202C] text-white text-xs px-1 rounded-md hover:bg-slate-800 transition-colors"
                                                 >
                                                     Call
                                                 </button>
@@ -718,7 +722,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
 
                                             {/* Chat Button - ALWAYS SHOW */}
                                             <button
-                                                className="flex-1 bg-[#1A202C] text-white text-xs py-2 px-1 rounded-md hover:bg-black transition-colors"
+                                                className="flex-1 h-10 bg-[#1A202C] text-white text-xs px-1 rounded-md hover:bg-black transition-colors"
                                                 onClick={handleChatClick}
                                             >
                                                 Chat
@@ -804,9 +808,8 @@ I have sent my CV for your review.`;
                                                             alert("An error occurred while sending your information.");
                                                         }
                                                     }}
-                                                    className="flex-1 bg-black md:bg-white border border-black md:border-slate-500 text-white md:text-slate-700 text-xs py-2 px-1 rounded-md hover:bg-slate-900 md:hover:bg-slate-50 transition-colors flex items-center justify-center gap-1"
+                                                    className="flex-1 h-10 bg-[#1A202C] border border-[#1A202C] text-white text-xs px-2 rounded-md hover:bg-black transition-colors flex items-center justify-center"
                                                 >
-                                                    <FileText className="hidden md:block w-3.5 h-3.5" />
                                                     <span className="whitespace-nowrap">Send CV</span>
                                                 </button>
                                             )}
@@ -817,9 +820,9 @@ I have sent my CV for your review.`;
                                     <button
                                         ref={optionsButtonRef}
                                         onClick={() => setShowOptionsPopup(!showOptionsPopup)}
-                                        className="w-8 h-full flex items-center justify-center"
+                                        className="w-10 h-10 rounded-md border border-slate-400 bg-white flex items-center justify-center"
                                     >
-                                        <SquareArrowOutUpRight className="w-7 h-7 stroke-[1.5]" color="#64748b" />
+                                        <SquareArrowOutUpRight className="w-5 h-5 stroke-[1.8]" color="#64748b" />
                                     </button>
                                 </div>
                             </div>
@@ -898,7 +901,7 @@ I have sent my CV for your review.`;
                                                                             const params = new URLSearchParams();
                                                                             if (parentCatName) params.set('category', parentCatName);
                                                                             params.set('subCategory', linkedSubName);
-                                                                            router.push(`/dashboard?${params.toString()}`);
+                                                                            router.push(`/d?${params.toString()}`);
                                                                         }
                                                                     }}
                                                                 >
@@ -912,7 +915,7 @@ I have sent my CV for your review.`;
                                         })()}
                                         <div className="mt-3">
                                             <h3 className="text-xs font-bold text-black mb-1.5">{t('description')}</h3>
-                                            <div className="text-xs text-slate-500 leading-relaxed relative">
+                                            <div className="text-xs text-slate-500 leading-relaxed">
                                                 <p className={`whitespace-pre-wrap ${!isDescriptionExpanded ? 'line-clamp-2' : ''}`}>
                                                     {ad.description}
                                                     {isDescriptionExpanded && (
@@ -925,12 +928,14 @@ I have sent my CV for your review.`;
                                                     )}
                                                 </p>
                                                 {!isDescriptionExpanded && (
-                                                    <button
-                                                        onClick={() => setIsDescriptionExpanded(true)}
-                                                        className="absolute bottom-0 right-0 bg-white pl-2 text-xs font-bold text-black shadow-[-20px_0_20px_white] hover:text-[#0088cc]"
-                                                    >
-                                                        ...{t('read_more')}
-                                                    </button>
+                                                    <div className="mt-0 flex justify-center">
+                                                        <button
+                                                            onClick={() => setIsDescriptionExpanded(true)}
+                                                            className="px-3 py-1 rounded-full bg-gradient-to-r from-white via-slate-100 to-white text-xs font-bold text-black shadow-sm hover:text-[#0088cc]"
+                                                        >
+                                                            {t('read_more')}
+                                                        </button>
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
@@ -939,13 +944,19 @@ I have sent my CV for your review.`;
                             )}
                         </div>
 
-                        {/* 7. Promote Button (Moved inside scroll) */}
-                        <div className="mt-4 mb-4">
+                        {/* 7. Post Actions */}
+                        <div className="mt-4 mb-4 grid grid-cols-2 gap-2">
                             <button
                                 onClick={handlePromotePost}
-                                className="w-full bg-[#0088cc] text-white text-sm rounded-lg py-2 flex flex-col items-center justify-center transition-colors shadow-sm hover:bg-[#0077b5] active:scale-[0.99]"
+                                className="w-full bg-[#1A202C] text-white text-sm rounded-lg py-2 flex items-center justify-center transition-colors shadow-sm hover:bg-black active:scale-[0.99]"
                             >
-                                Promote This Post
+                                Add Free Post
+                            </button>
+                            <button
+                                onClick={handleSellFaster}
+                                className="w-full bg-[#0088cc] text-white text-sm rounded-lg py-2 flex items-center justify-center transition-colors shadow-sm hover:bg-[#0077b5] active:scale-[0.99]"
+                            >
+                                Sell Faster
                             </button>
                         </div>
 
@@ -967,7 +978,7 @@ I have sent my CV for your review.`;
                                                 } else {
                                                     const params = new URLSearchParams(window.location.search);
                                                     params.set('ad', pad._id);
-                                                    router.push(`/dashboard?${params.toString()}`, { scroll: false });
+                                                    router.push(`/d?${params.toString()}`, { scroll: false });
                                                 }
                                             }}
                                         >
@@ -1123,7 +1134,7 @@ I have sent my CV for your review.`;
                                                 } else {
                                                     const params = new URLSearchParams(window.location.search);
                                                     params.set('ad', sad._id);
-                                                    router.push(`/dashboard?${params.toString()}`, { scroll: false });
+                                                    router.push(`/d?${params.toString()}`, { scroll: false });
                                                 }
                                             }}
                                         >
@@ -1284,7 +1295,7 @@ I have sent my CV for your review.`;
                                         if (sub) params.set('subCategory', sub);
                                         if (loc) params.set('location', loc);
 
-                                        window.location.href = `/dashboard?${params.toString()}`;
+                                        window.location.href = `/d?${params.toString()}`;
                                     }}
                                     className="flex flex-col items-center gap-1 cursor-pointer group"
                                 >

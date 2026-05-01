@@ -67,7 +67,7 @@ export default function VerificationModal({ isOpen, onClose, onSuccess, verifica
                     onClose();
                 } else {
                     setShowOtpInput(true);
-                    setOtpTimer(60);
+                    setOtpTimer(120);
                     setOtpAttempts(prev => prev + 1);
                     toast.success("OTP sent to your email!");
                 }

@@ -1407,7 +1407,7 @@ export default function DashboardClient() {
                         return (
                             <div className="space-y-1">
                                 <div className="flex items-center justify-between px-1 lg:px-0">
-                                    <div className="text-xs lg:text-sm text-black flex items-center gap-1">
+                                    <div className="text-xs lg:text-sm text-black flex items-center gap-1 px-1 lg:px-0">
                                         <span className="font-medium">
                                             {language === 'bn'
                                                 ? `${filteredTotalAdsCount.toLocaleString('bn-BD')} টি বিজ্ঞাপন দেখছেন`
@@ -1597,7 +1597,7 @@ export default function DashboardClient() {
                                                                                     <div className="flex items-center gap-0.5 shrink-0"><Grid className="w-2.5 h-2.5" /><span className="truncate max-w-[110px] md:max-w-[120px]">{ad.category}</span></div>
                                                                                 </div>
                                                                                 {ad.adType !== 'Promoted' && (
-                                                                                    <div className="w-full text-right mt-0 lg:mt-0 lg:w-auto lg:ml-auto text-black/60 text-[9px] lg:text-[10px] whitespace-nowrap">
+                                                                                    <div className="w-full text-right text-black/60 text-[9px] lg:text-[10px] whitespace-nowrap">
                                                                                         {timeAgo(ad.createdAt, language as 'en' | 'bn')}
                                                                                     </div>
                                                                                 )}
@@ -1787,6 +1787,17 @@ export default function DashboardClient() {
                         }
                     }}
                 />
+            </div>
+
+            {/* Mobile Scroll-To-Top */}
+            <div className="fixed md:hidden right-3 bottom-[70px] z-40">
+                <button
+                    onClick={() => document.getElementById('main-dashboard-scroller')?.scrollTo({ top: 0, behavior: 'smooth' })}
+                    className="w-10 h-10 bg-[#0088cc] rounded-full shadow-md flex items-center justify-center hover:bg-[#0077b5] transition-colors"
+                    aria-label="Scroll to top"
+                >
+                    <ArrowUp className="w-6 h-6 text-white" strokeWidth={2.5} />
+                </button>
             </div>
 
             {/* Gap 2: 50px */}

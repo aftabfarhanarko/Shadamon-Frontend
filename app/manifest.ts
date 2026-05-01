@@ -5,7 +5,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     name: 'Shadamon',
     short_name: 'Shadamon',
     description: 'The ultimate marketing platform',
-    start_url: '/dashboard',
+    start_url: '/d',
     display: 'standalone',
     display_override: ['standalone', 'minimal-ui'],
     background_color: '#ffffff',
