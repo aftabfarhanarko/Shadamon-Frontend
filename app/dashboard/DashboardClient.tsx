@@ -170,6 +170,47 @@ export default function DashboardClient() {
 
     const [isViewingSavedSearch, setIsViewingSavedSearch] = useState(false);
     const [savedAdsData, setSavedAdsData] = useState<ActiveAd[]>([]);
+    const hasHandledAdminLoginRef = useRef(false);
+
+    useEffect(() => {
+        const adminLoginToken = searchParams.get('adminLoginToken');
+        if (!adminLoginToken || hasHandledAdminLoginRef.current) {
+            return;
+        }
+
+        hasHandledAdminLoginRef.current = true;
+
+        const clearAdminLoginParams = () => {
+            const params = new URLSearchParams(searchParams.toString());
+            params.delete('adminLoginToken');
+            params.delete('adminLogin');
+            const query = params.toString();
+            router.replace(query ? `/d?${query}` : '/d', { scroll: false });
+        };
+
+        const applyAdminLogin = async () => {
+            try {
+                const meRes = await fetch(`${API_BASE_URL}/api/user/me`, {
+                    headers: { 'Authorization': `Bearer ${adminLoginToken}` }
+                });
+
+                if (!meRes.ok) {
+                    throw new Error('Invalid admin login token');
+                }
+
+                Cookies.set('token', adminLoginToken, { expires: 7 });
+                window.dispatchEvent(new Event('auth-change'));
+                toast.success(language === 'bn' ? 'অ্যাডমিন লগইন সফল হয়েছে' : 'Admin login successful');
+            } catch (error) {
+                console.error('Admin redirect login failed', error);
+                toast.error(language === 'bn' ? 'অ্যাডমিন লগইন লিংকটি কাজ করেনি' : 'Admin login link is invalid or expired');
+            } finally {
+                clearAdminLoginParams();
+            }
+        };
+
+        applyAdminLogin();
+    }, [language, router, searchParams]);
 
     const hasFetchedMetaRef = useRef(false);
     const seenAdIdsRef = useRef<Set<string>>(new Set());
