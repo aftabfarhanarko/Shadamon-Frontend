@@ -264,7 +264,7 @@ export default function FilterModal({
     const topPrioritySubLocations = selectedLocationSubLocations.slice(0, 5);
 
     const subLocationOptions = useMemo(
-        () => selectedLocationSubLocations.map((sub) => {
+        () => selectedLocationSubLocations.slice(5).map((sub) => {
             const count = subLocationCountMap.get(sub.name) || 0;
             return {
                 value: sub.name,

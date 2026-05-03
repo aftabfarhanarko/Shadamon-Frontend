@@ -836,7 +836,7 @@ export default function DashboardClient() {
                                 <div className="h-[1px] bg-slate-100 w-full" />
 
                                 {/* Location Section */}
-                                <div className="">
+                                {/* <div className="">
                                     <div className="flex items-center justify-between group cursor-pointer" onClick={() => setExpandedLocation(expandedLocation === 'main' ? null : 'main')}>
                                         <h3 className="text-[13px] text-black">{t('location')}</h3>
                                         <ChevronDown className={cn("w-5 h-5 text-black group-hover:text-black transition-all", expandedLocation !== null && "rotate-180")} />
@@ -877,7 +877,7 @@ export default function DashboardClient() {
                                                         )}
                                                     </Link>
 
-                                                    {/* Dynamic Sub-locations matching image style */}
+                                                   
                                                     {expandedLocation === loc._id && loc.subLocations.length > 0 && (
                                                         <div className="pl-6 space-y-0.5 border-l border-slate-100 ml-2 animate-in fade-in slide-in-from-top-1 duration-200">
                                                             {loc.subLocations.map(sub => (
@@ -912,7 +912,7 @@ export default function DashboardClient() {
                                             ))}
                                         </div>
                                     )}
-                                </div>
+                                </div> */}
                             </div>
                         </div>
 

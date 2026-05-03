@@ -126,6 +126,8 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [showTnC, setShowTnC] = useState(false);
     const [showPrivacy, setShowPrivacy] = useState(false);
     const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+    const categoryListRef = useRef<HTMLDivElement | null>(null);
+    const categoryRowRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
     const hasBanglaChars = (value: string) => /[\u0980-\u09FF]/.test(value);
 
@@ -402,6 +404,29 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         setSelectedSubCategory(sub);
 
         setView('location');
+    };
+
+    const handleCategoryAccordionToggle = (categoryId: string) => {
+        const willExpand = expandedCategory !== categoryId;
+        setExpandedCategory(willExpand ? categoryId : null);
+
+        if (!willExpand) return;
+
+        requestAnimationFrame(() => {
+            const listEl = categoryListRef.current;
+            const rowEl = categoryRowRefs.current[categoryId];
+            if (!listEl || !rowEl) return;
+
+            const listRect = listEl.getBoundingClientRect();
+            const rowRect = rowEl.getBoundingClientRect();
+            const desiredTopOffset = 44;
+            const targetScrollTop = listEl.scrollTop + (rowRect.top - listRect.top) - desiredTopOffset;
+
+            listEl.scrollTo({
+                top: Math.max(targetScrollTop, 0),
+                behavior: 'smooth'
+            });
+        });
     };
 
     const handleLocationSelect = (sub?: string) => {
@@ -952,7 +977,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                 />
                             </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto">
+                        <div ref={categoryListRef} className="flex-1 overflow-y-auto">
                             <div className="divide-y divide-slate-100">
                                 {categories.filter((c) => {
                                     const query = searchQuery.toLowerCase();
@@ -964,9 +989,15 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                         getLocalizedAreaName(c.name, c.categoryNameBn).toLowerCase().includes(query)
                                     );
                                 }).map(cat => (
-                                    <div key={cat._id} className="flex flex-col bg-white">
+                                    <div
+                                        key={cat._id}
+                                        ref={(el) => {
+                                            categoryRowRefs.current[cat._id] = el;
+                                        }}
+                                        className="flex flex-col bg-white"
+                                    >
                                         <button
-                                            onClick={() => setExpandedCategory(expandedCategory === cat._id ? null : cat._id)}
+                                            onClick={() => handleCategoryAccordionToggle(cat._id)}
                                             className={cn(
                                                 "w-full flex items-center justify-between py-1.5 px-4 hover:bg-slate-50 transition-colors",
                                                 expandedCategory === cat._id && "bg-slate-50"

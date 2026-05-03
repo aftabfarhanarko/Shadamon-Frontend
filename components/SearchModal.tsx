@@ -56,6 +56,7 @@ export default function SearchModal({
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
+    const showInlineFilters = searchQuery.trim().length === 0;
 
     const getFilterQueryValue = (longKey: string, shortKey: string) => {
         return searchParams.get(longKey) || searchParams.get(shortKey);
@@ -229,17 +230,19 @@ export default function SearchModal({
                         </button>
                     </div>
 
-                    <div className="mt-2">
-                        <FilterModal
-                            mode="inline"
-                            isOpen={isOpen}
-                            onClose={() => { }}
-                            onApply={handleApplyInlineFilters}
-                            initialFilters={{ ...filters, search: searchQuery.trim() }}
-                            categories={categories}
-                            locations={locations}
-                        />
-                    </div>
+                    {showInlineFilters && (
+                        <div className="mt-2">
+                            <FilterModal
+                                mode="inline"
+                                isOpen={isOpen}
+                                onClose={() => { }}
+                                onApply={handleApplyInlineFilters}
+                                initialFilters={{ ...filters, search: searchQuery.trim() }}
+                                categories={categories}
+                                locations={locations}
+                            />
+                        </div>
+                    )}
 
                 </div>
 

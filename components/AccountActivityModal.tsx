@@ -1764,40 +1764,41 @@ I have sent my CV for your review.`;
                     {activeTab === 'Profile' && (
                         <div className="px-1 py-4 sm:p-4 bg-white pb-20">
                             {/* Top Profile Section */}
-                            <div className="flex items-start gap-4 mb-3">
-                                <div className="relative">
-                                    <div className="w-16 h-16 rounded-full overflow-hidden border border-slate-200 bg-slate-100 relative flex items-center justify-center">
-                                        {displayUser.photo ? (
-                                            <>
-                                                <div className="absolute inset-0">
-                                                    <img src={displayUser.photo} className="w-full h-full object-cover blur-xl opacity-30 scale-105" loading="lazy" />
-                                                </div>
-                                                <img src={displayUser.photo} className="relative max-w-full max-h-full object-contain z-10" loading="lazy" />
-                                            </>
-                                        ) : (
-                                            <div className="w-full h-full bg-[#1e8e7f]" />
-                                            /* Matching the green color in image roughly */
-                                        )}
+                            <div className="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-4">
+                                <div className="flex flex-col items-center text-center">
+                                    <div className="relative">
+                                        <div className="w-16 h-16 rounded-full overflow-hidden border border-slate-200 bg-slate-100 relative flex items-center justify-center">
+                                            {displayUser.photo ? (
+                                                <>
+                                                    <div className="absolute inset-0">
+                                                        <img src={displayUser.photo} className="w-full h-full object-cover blur-xl opacity-30 scale-105" loading="lazy" />
+                                                    </div>
+                                                    <img src={displayUser.photo} className="relative max-w-full max-h-full object-contain z-10" loading="lazy" />
+                                                </>
+                                            ) : (
+                                                <div className="w-full h-full bg-[#1e8e7f]" />
+                                                /* Matching the green color in image roughly */
+                                            )}
+                                        </div>
+                                        <input
+                                            type="file"
+                                            ref={logoInputRef}
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={(e) => handleImageUpload(e, 'logo')}
+                                        />
+                                        <button
+                                            onClick={() => isOwnAccount && logoInputRef.current?.click()}
+                                            className={cn(
+                                                "absolute bottom-0 right-0 w-5 h-5 bg-[#FF004D] rounded-full flex items-center justify-center border-[2px] border-white text-white shadow-sm z-20",
+                                                !isOwnAccount && "hidden"
+                                            )}
+                                        >
+                                            <Plus className="w-3 h-3" />
+                                        </button>
                                     </div>
-                                    <input
-                                        type="file"
-                                        ref={logoInputRef}
-                                        className="hidden"
-                                        accept="image/*"
-                                        onChange={(e) => handleImageUpload(e, 'logo')}
-                                    />
-                                    <button
-                                        onClick={() => isOwnAccount && logoInputRef.current?.click()}
-                                        className={cn(
-                                            "absolute bottom-0 right-0 w-5 h-5 bg-[#FF004D] rounded-full flex items-center justify-center border-[2px] border-white text-white shadow-sm z-20",
-                                            !isOwnAccount && "hidden"
-                                        )}
-                                    >
-                                        <Plus className="w-3 h-3" />
-                                    </button>
-                                </div>
-                                <div className="flex-1">
-                                    <h2 className="text-[16px] text-slate-700 flex items-center gap-1">
+
+                                    <h2 className="mt-3 text-[16px] text-slate-700 flex items-center justify-center gap-1">
                                         {displayUser.name}
                                         {displayUser.mVerified && (
                                             <div className="w-3.5 h-3.5 bg-blue-500 rounded-full flex items-center justify-center shrink-0" title="Verified Seller">
@@ -1805,17 +1806,9 @@ I have sent my CV for your review.`;
                                             </div>
                                         )}
                                     </h2>
-                                    {/* <div className="flex items-center gap-1 text-[11px] text-slate-500">
-                                        <span>{profileForm.mobile}</span>
-                                        <User className="w-3 h-3 ml-1" />
-                                    </div> */}
-                                    {!displayUser.mVerified && (
-                                        <p className="text-[14px] text-slate-400 leading-tight mt-0.5">
-                                            Add a Verification Badge to your profile to become a trusted Customer or Seller.
-                                        </p>
-                                    )}
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <p className="text-[14px] font-bold text-slate-400 leading-tight shrink-0">
+
+                                    <div className="mt-1 flex items-center justify-center gap-1.5">
+                                        <p className="text-[14px] font-bold text-slate-400 leading-tight break-all">
                                             {displayUser._id}
                                         </p>
                                         <button
@@ -1829,194 +1822,216 @@ I have sent my CV for your review.`;
                                             <Copy className="w-3.5 h-3.5" />
                                         </button>
                                     </div>
-                                </div>
-                            </div>
 
-                            {isOwnAccount && !displayUser.mVerified && (
-                                <button
-                                    onClick={() => setIsVerifyModalOpen(true)}
-                                    className="w-full bg-[#EBF5FF] text-slate-800 text-sm py-2 rounded mb-3 hover:bg-blue-100 transition-colors"
-                                >
-                                    Get Verified Badge
-                                </button>
-                            )}
+                                    {!displayUser.mVerified && (
+                                        <p className="mt-1 text-[14px] text-slate-400 leading-tight max-w-[420px]">
+                                            Add a Verification Badge to your profile to become a trusted Customer or Seller.
+                                        </p>
+                                    )}
+                                </div>
+
+                                {isOwnAccount && !displayUser.mVerified && (
+                                    <button
+                                        onClick={() => setIsVerifyModalOpen(true)}
+                                        className="mt-3 mx-auto block w-full sm:w-auto sm:min-w-[220px] bg-[#EBF5FF] text-slate-800 text-sm py-2 px-4 rounded hover:bg-blue-100 transition-colors"
+                                    >
+                                        Get Verified Badge
+                                    </button>
+                                )}
+                            </div>
 
                             {/* Personal Information */}
                             <div className="mb-4">
                                 <h3 className="text-base text-slate-800 mb-2">Personal Information</h3>
-                                <div className="grid grid-cols-2 gap-2 mb-3">
+                                <div className="grid grid-cols-2 gap-2.5 mb-3">
                                     {/* Name */}
-                                    <div className="col-span-1">
-                                        <label className="block text-xs text-slate-500 mb-0.5">Name</label>
+                                    <div className="relative col-span-1">
                                         <input
                                             type="text"
                                             readOnly={!isOwnAccount}
                                             value={profileForm.name}
                                             onChange={(e) => handleProfileChange('name', e.target.value)}
-                                            className="w-full border border-slate-200 rounded px-2 py-1 text-sm text-black outline-none focus:border-blue-500 bg-slate-50/50"
+                                            placeholder=" "
+                                            className="peer w-full border border-slate-300 rounded-md px-2.5 pt-3 pb-2 text-sm text-black outline-none focus:border-[#0088cc] bg-slate-50/40"
                                         />
+                                        <label className="pointer-events-none absolute left-2 top-0 -translate-y-1/2 bg-white px-1 text-[11px] text-slate-500 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:scale-90 peer-focus:text-[#0088cc]">
+                                            Name
+                                        </label>
                                     </div>
                                     {/* DOB */}
-                                    <div className="col-span-1">
-                                        <label className="block text-xs text-slate-500 mb-0.5">Date of Birth</label>
+                                    <div className="relative col-span-1">
                                         <input
                                             type="date"
                                             readOnly={!isOwnAccount}
                                             value={profileForm.dob}
                                             onChange={(e) => handleProfileChange('dob', e.target.value)}
                                             className={cn(
-                                                "w-full border rounded px-2 py-1 text-sm text-black outline-none bg-slate-50/50",
-                                                isCvFieldMissing('dob') ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:border-blue-500"
+                                                "peer w-full border rounded-md px-2.5 pt-3 pb-2 text-sm text-black outline-none bg-slate-50/40",
+                                                isCvFieldMissing('dob') ? "border-red-500 ring-1 ring-red-500" : "border-slate-300 focus:border-[#0088cc]"
                                             )}
                                         />
+                                        <label className="pointer-events-none absolute left-2 top-0 -translate-y-1/2 scale-90 bg-white px-1 text-[11px] text-slate-500 transition-colors peer-focus:text-[#0088cc]">
+                                            Date of Birth
+                                        </label>
                                     </div>
 
                                     {/* Gender */}
-                                    <div className="col-span-1">
-                                        <label className="block text-xs text-slate-500 mb-0.5">Gender</label>
-                                        <div className="relative">
-                                            <select
-                                                disabled={!isOwnAccount}
-                                                value={profileForm.gender}
-                                                onChange={(e) => handleProfileChange('gender', e.target.value)}
-                                                className={cn(
-                                                    "w-full border rounded px-2 py-1 text-sm text-black outline-none bg-slate-50/50 appearance-none",
-                                                    isCvFieldMissing('gender') ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:border-blue-500"
-                                                )}
-                                            >
-                                                <option value="">Select Gender</option>
-                                                <option value="Male">Male</option>
-                                                <option value="Female">Female</option>
-                                                <option value="Other">Other</option>
-                                            </select>
-                                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                                        </div>
+                                    <div className="relative col-span-1">
+                                        <select
+                                            disabled={!isOwnAccount}
+                                            value={profileForm.gender}
+                                            onChange={(e) => handleProfileChange('gender', e.target.value)}
+                                            className={cn(
+                                                "peer w-full border rounded-md px-2.5 pt-3 pb-2 text-sm text-black outline-none bg-slate-50/40 appearance-none",
+                                                isCvFieldMissing('gender') ? "border-red-500 ring-1 ring-red-500" : "border-slate-300 focus:border-[#0088cc]"
+                                            )}
+                                        >
+                                            <option value="">Select Gender</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                        <label className="pointer-events-none absolute left-2 top-0 -translate-y-1/2 scale-90 bg-white px-1 text-[11px] text-slate-500 transition-colors peer-focus:text-[#0088cc]">
+                                            Gender
+                                        </label>
+                                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                     </div>
+
                                     {/* Location */}
-                                    <div className="col-span-1">
-                                        <label className="block text-xs text-slate-500 mb-0.5">Location</label>
-                                        <div className="relative">
-                                            <select
-                                                disabled={!isOwnAccount}
-                                                value={profileForm.location}
-                                                onChange={(e) => handleProfileChange('location', e.target.value)}
-                                                className={cn(
-                                                    "w-full border rounded px-2 py-1 text-sm text-black outline-none bg-slate-50/50 appearance-none",
-                                                    isCvFieldMissing('location') ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:border-blue-500"
-                                                )}
-                                            >
-                                                <option value="">Select Location</option>
-                                                {locations.map((loc: any) => (
-                                                    <option key={loc._id} value={loc.name}>{getLocalizedLocationName(loc.name, loc.locationNameBn)}</option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                                        </div>
+                                    <div className="relative col-span-1">
+                                        <select
+                                            disabled={!isOwnAccount}
+                                            value={profileForm.location}
+                                            onChange={(e) => handleProfileChange('location', e.target.value)}
+                                            className={cn(
+                                                "peer w-full border rounded-md px-2.5 pt-3 pb-2 text-sm text-black outline-none bg-slate-50/40 appearance-none",
+                                                isCvFieldMissing('location') ? "border-red-500 ring-1 ring-red-500" : "border-slate-300 focus:border-[#0088cc]"
+                                            )}
+                                        >
+                                            <option value="">Select Location</option>
+                                            {locations.map((loc: any) => (
+                                                <option key={loc._id} value={loc.name}>{getLocalizedLocationName(loc.name, loc.locationNameBn)}</option>
+                                            ))}
+                                        </select>
+                                        <label className="pointer-events-none absolute left-2 top-0 -translate-y-1/2 scale-90 bg-white px-1 text-[11px] text-slate-500 transition-colors peer-focus:text-[#0088cc]">
+                                            Location
+                                        </label>
+                                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                     </div>
 
                                     {/* Education */}
-                                    <div className="col-span-1">
-                                        <label className="block text-xs text-slate-500 mb-0.5">Education</label>
-                                        <div className="relative">
-                                            <select
-                                                disabled={!isOwnAccount}
-                                                value={profileForm.education}
-                                                onChange={(e) => handleProfileChange('education', e.target.value)}
-                                                className={cn(
-                                                    "w-full border rounded px-2 py-1 text-sm text-black outline-none bg-slate-50/50 appearance-none",
-                                                    isCvFieldMissing('education') ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:border-blue-500"
-                                                )}
-                                            >
-                                                <option value="">Select Education</option>
-                                                {['Less than high school', 'SSC', 'Inter', 'Diploma', 'Undergraduate', 'Associate degree', 'Bachelor', 'Masters', 'Doctorate'].map(edu => (
-                                                    <option key={edu} value={edu}>{edu}</option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                                        </div>
-                                    </div>
-                                    {/* About Yourself */}
-                                    <div className="col-span-1">
-                                        <label className="block text-xs text-slate-500 mb-0.5">Write About Yourself</label>
-                                        <textarea
-                                            readOnly={!isOwnAccount}
-                                            value={profileForm.aboutYourself}
-                                            onChange={(e) => handleProfileChange('aboutYourself', e.target.value)}
-                                            rows={2}
+                                    <div className="relative col-span-1">
+                                        <select
+                                            disabled={!isOwnAccount}
+                                            value={profileForm.education}
+                                            onChange={(e) => handleProfileChange('education', e.target.value)}
                                             className={cn(
-                                                "w-full border rounded px-2 py-1 text-sm text-black outline-none bg-slate-50/50 resize-y min-h-[40px]",
-                                                isCvFieldMissing('aboutYourself') ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:border-blue-500"
+                                                "peer w-full border rounded-md px-2.5 pt-3 pb-2 text-sm text-black outline-none bg-slate-50/40 appearance-none",
+                                                isCvFieldMissing('education') ? "border-red-500 ring-1 ring-red-500" : "border-slate-300 focus:border-[#0088cc]"
                                             )}
-                                        />
-                                    </div>
-
-                                    {/* Profession */}
-                                    <div className="col-span-1">
-                                        <label className="block text-xs text-slate-500 mb-0.5">Current Profession</label>
-                                        <input
-                                            type="text"
-                                            readOnly={!isOwnAccount}
-                                            value={profileForm.profession}
-                                            onChange={(e) => handleProfileChange('profession', e.target.value)}
-                                            className={cn(
-                                                "w-full border rounded px-2 py-1 text-sm text-black outline-none bg-slate-50/50",
-                                                isCvFieldMissing('profession') ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:border-blue-500"
-                                            )}
-                                        />
-                                    </div>
-                                    {/* Experience */}
-                                    <div className="col-span-1">
-                                        <label className="block text-xs text-slate-500 mb-0.5">Professional Experiance detail</label>
-                                        <textarea
-                                            readOnly={!isOwnAccount}
-                                            value={profileForm.professionalExperience}
-                                            onChange={(e) => handleProfileChange('professionalExperience', e.target.value)}
-                                            rows={2}
-                                            className={cn(
-                                                "w-full border rounded px-2 py-1 text-sm text-black outline-none bg-slate-50/50 resize-y min-h-[40px]",
-                                                isCvFieldMissing('professionalExperience') ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:border-blue-500"
-                                            )}
-                                        />
-                                    </div>
-
-                                    {/* Mobile (Editable) */}
-                                    <div className="col-span-1">
-                                        <label className="block text-xs text-slate-500 mb-0.5">Mobile</label>
-                                        <div className="flex items-center relative">
-                                            <input
-                                                type="tel"
-                                                readOnly={!!userData?.mobile || !isOwnAccount}
-                                                value={profileForm.mobile}
-                                                onChange={(e) => handleProfileChange('mobile', e.target.value)}
-                                                className={cn(
-                                                    "w-full border rounded px-2 py-1 text-xs text-slate-500 outline-none pr-8 bg-slate-50/50",
-                                                    isCvFieldMissing('mobile') ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:border-blue-500"
-                                                )}
-                                            />
-                                            <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                                                {/* Keep the toggle or indicator if needed, or just the check if strictly verified. 
-                                                    User just said 'cant edit', implying they want to. 
-                                                    If previously it was a div with checkcircle, I'll keep the checkcircle if it was meaningful, 
-                                                    but maybe as an icon inside the input? 
-                                                */}
-                                                <CheckCircle2 className="w-4 h-4 text-blue-500 fill-white" />
-                                            </div>
-                                        </div>
+                                        >
+                                            <option value="">Select Education</option>
+                                            {['Less than high school', 'SSC', 'Inter', 'Diploma', 'Undergraduate', 'Associate degree', 'Bachelor', 'Masters', 'Doctorate'].map(edu => (
+                                                <option key={edu} value={edu}>{edu}</option>
+                                            ))}
+                                        </select>
+                                        <label className="pointer-events-none absolute left-2 top-0 -translate-y-1/2 scale-90 bg-white px-1 text-[11px] text-slate-500 transition-colors peer-focus:text-[#0088cc]">
+                                            Education
+                                        </label>
+                                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                     </div>
 
                                     {/* Email */}
-                                    <div className="col-span-1">
-                                        <label className="block text-xs text-slate-500 mb-0.5">Email</label>
+                                    <div className="relative col-span-1">
                                         <input
                                             type="email"
                                             readOnly={!isOwnAccount}
                                             value={profileForm.email}
                                             onChange={(e) => handleProfileChange('email', e.target.value)}
+                                            placeholder=" "
                                             className={cn(
-                                                "w-full border rounded px-2 py-1 text-xs text-slate-500 outline-none bg-slate-50/50",
-                                                isCvFieldMissing('email') ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:border-blue-500"
+                                                "peer w-full border rounded-md px-2.5 pt-3 pb-2 text-sm text-black outline-none bg-slate-50/40",
+                                                isCvFieldMissing('email') ? "border-red-500 ring-1 ring-red-500" : "border-slate-300 focus:border-[#0088cc]"
                                             )}
                                         />
+                                        <label className="pointer-events-none absolute left-2 top-0 -translate-y-1/2 bg-white px-1 text-[11px] text-slate-500 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:scale-90 peer-focus:text-[#0088cc]">
+                                            Email
+                                        </label>
+                                    </div>
+
+                                    {/* About Yourself */}
+                                    <div className="relative col-span-2">
+                                        <textarea
+                                            readOnly={!isOwnAccount}
+                                            value={profileForm.aboutYourself}
+                                            onChange={(e) => handleProfileChange('aboutYourself', e.target.value)}
+                                            placeholder=" "
+                                            rows={2}
+                                            className={cn(
+                                                "peer w-full border rounded-md px-2.5 pt-3 pb-2 text-sm text-black outline-none bg-slate-50/40 resize-y min-h-[56px]",
+                                                isCvFieldMissing('aboutYourself') ? "border-red-500 ring-1 ring-red-500" : "border-slate-300 focus:border-[#0088cc]"
+                                            )}
+                                        />
+                                        <label className="pointer-events-none absolute left-2 top-0 -translate-y-1/2 bg-white px-1 text-[11px] text-slate-500 transition-all peer-placeholder-shown:top-5 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:scale-90 peer-focus:text-[#0088cc]">
+                                            Write About Yourself
+                                        </label>
+                                    </div>
+
+                                    {/* Experience */}
+                                    <div className="relative col-span-2">
+                                        <textarea
+                                            readOnly={!isOwnAccount}
+                                            value={profileForm.professionalExperience}
+                                            onChange={(e) => handleProfileChange('professionalExperience', e.target.value)}
+                                            placeholder=" "
+                                            rows={2}
+                                            className={cn(
+                                                "peer w-full border rounded-md px-2.5 pt-3 pb-2 text-sm text-black outline-none bg-slate-50/40 resize-y min-h-[56px]",
+                                                isCvFieldMissing('professionalExperience') ? "border-red-500 ring-1 ring-red-500" : "border-slate-300 focus:border-[#0088cc]"
+                                            )}
+                                        />
+                                        <label className="pointer-events-none absolute left-2 top-0 -translate-y-1/2 bg-white px-1 text-[11px] text-slate-500 transition-all peer-placeholder-shown:top-5 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:scale-90 peer-focus:text-[#0088cc]">
+                                            Professional Experience
+                                        </label>
+                                    </div>
+
+                                    {/* Mobile (Editable) */}
+                                    <div className="relative col-span-1">
+                                        <input
+                                            type="tel"
+                                            readOnly={!!userData?.mobile || !isOwnAccount}
+                                            value={profileForm.mobile}
+                                            onChange={(e) => handleProfileChange('mobile', e.target.value)}
+                                            placeholder=" "
+                                            className={cn(
+                                                "peer w-full border rounded-md px-2.5 pt-3 pb-2 text-sm text-black outline-none pr-8 bg-slate-50/40",
+                                                isCvFieldMissing('mobile') ? "border-red-500 ring-1 ring-red-500" : "border-slate-300 focus:border-[#0088cc]"
+                                            )}
+                                        />
+                                        <label className="pointer-events-none absolute left-2 top-0 -translate-y-1/2 bg-white px-1 text-[11px] text-slate-500 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:scale-90 peer-focus:text-[#0088cc]">
+                                            Mobile
+                                        </label>
+                                        <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                            <CheckCircle2 className="w-4 h-4 text-blue-500 fill-white" />
+                                        </div>
+                                    </div>
+
+                                    {/* Profession */}
+                                    <div className="relative col-span-1">
+                                        <input
+                                            type="text"
+                                            readOnly={!isOwnAccount}
+                                            value={profileForm.profession}
+                                            onChange={(e) => handleProfileChange('profession', e.target.value)}
+                                            placeholder=" "
+                                            className={cn(
+                                                "peer w-full border rounded-md px-2.5 pt-3 pb-2 text-sm text-black outline-none bg-slate-50/40",
+                                                isCvFieldMissing('profession') ? "border-red-500 ring-1 ring-red-500" : "border-slate-300 focus:border-[#0088cc]"
+                                            )}
+                                        />
+                                        <label className="pointer-events-none absolute left-2 top-0 -translate-y-1/2 bg-white px-1 text-[11px] text-slate-500 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:scale-90 peer-focus:text-[#0088cc]">
+                                            Current Profession
+                                        </label>
                                     </div>
                                 </div>
 
@@ -2024,14 +2039,19 @@ I have sent my CV for your review.`;
                                 <div className="mb-3">
                                     {profileForm.additionalMobiles.map((mob, idx) => (
                                         <div key={idx} className="flex items-center gap-2 mb-2">
-                                            <input
-                                                type="tel"
-                                                readOnly={!isOwnAccount}
-                                                placeholder="Add Another Mobile/WhatsApp"
-                                                value={mob}
-                                                onChange={(e) => handleMobileArrayChange(idx, e.target.value)}
-                                                className="flex-1 border border-slate-200 rounded px-2 py-1 text-sm text-black outline-none focus:border-blue-500 bg-slate-50/50"
-                                            />
+                                            <div className="relative flex-1">
+                                                <input
+                                                    type="tel"
+                                                    readOnly={!isOwnAccount}
+                                                    placeholder=" "
+                                                    value={mob}
+                                                    onChange={(e) => handleMobileArrayChange(idx, e.target.value)}
+                                                    className="peer w-full border border-slate-300 rounded-md px-2.5 pt-3 pb-2 text-sm text-black outline-none focus:border-[#0088cc] bg-slate-50/40"
+                                                />
+                                                <label className="pointer-events-none absolute left-2 top-0 -translate-y-1/2 bg-white px-1 text-[11px] text-slate-500 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:scale-90 peer-focus:text-[#0088cc]">
+                                                    Add Another Mobile/WhatsApp
+                                                </label>
+                                            </div>
                                             {isOwnAccount && (
                                                 idx === profileForm.additionalMobiles.length - 1 ? (
                                                     <button onClick={addMobileSlot} className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center hover:scale-105 transition-transform"><Plus className="w-4 h-4" /></button>
