@@ -1044,7 +1044,7 @@ export default function DashboardClient() {
                                 &copy; {new Date().getFullYear()} shadamon.com
                             </p>
                             <p className="text-[11px] text-slate-500 leading-tight">
-                                A Product added by Shadamon
+                                Manage by Shadamon
                             </p>
                         </div>
                     </div>

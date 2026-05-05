@@ -887,26 +887,48 @@ I have sent my CV for your review.`;
                                                         const parentCatId = linkedSub?.category?._id || linkedSub?.category;
                                                         const parentCat = categories.find((c: any) => c._id === parentCatId);
                                                         const parentCatName = parentCat?.name;
+                                                        const rawValue = String(value ?? '').trim();
+                                                        const valueParts = rawValue
+                                                            .split(',')
+                                                            .map((item) => item.trim())
+                                                            .filter(Boolean);
+                                                        const clickableValues = valueParts.length > 0 ? valueParts : [rawValue];
+
+                                                        const goToFilter = (selectedValue: string, searchOnly: boolean) => {
+                                                            const params = new URLSearchParams();
+
+                                                            if (searchOnly) {
+                                                                params.set('search', selectedValue);
+                                                            } else if (linkedSubName) {
+                                                                if (parentCatName) params.set('category', parentCatName);
+                                                                params.set('subCategory', linkedSubName);
+                                                            } else {
+                                                                if (ad?.category) params.set('category', ad.category);
+                                                                params.set('search', selectedValue);
+                                                            }
+
+                                                            router.push(`/d?${params.toString()}`);
+                                                        };
 
                                                         return (
-                                                            <div key={key} className="flex items-center gap-1.5">
+                                                            <div key={key} className="w-fit flex items-start gap-1.5 text-left rounded px-1 -mx-1">
                                                                 <span className="text-xs text-black whitespace-nowrap shrink-0">{key}:</span>
-                                                                <span
-                                                                    className={cn(
-                                                                        "text-xs text-black font-bold outline-none",
-                                                                        linkedSubName && "cursor-pointer hover:text-[#0088cc] hover:underline transition-colors"
-                                                                    )}
-                                                                    onClick={() => {
-                                                                        if (linkedSubName) {
-                                                                            const params = new URLSearchParams();
-                                                                            if (parentCatName) params.set('category', parentCatName);
-                                                                            params.set('subCategory', linkedSubName);
-                                                                            router.push(`/d?${params.toString()}`);
-                                                                        }
-                                                                    }}
-                                                                >
-                                                                    {String(value)}
-                                                                </span>
+                                                                <div className="flex flex-wrap items-center gap-x-1 gap-y-0.5">
+                                                                    {clickableValues.map((item, idx) => (
+                                                                        <React.Fragment key={`${key}-${item}-${idx}`}>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => goToFilter(item, clickableValues.length > 1)}
+                                                                                className="text-xs font-bold text-black outline-none underline-offset-2 hover:text-[#0088cc] hover:underline transition-colors cursor-pointer"
+                                                                            >
+                                                                                {item}
+                                                                            </button>
+                                                                            {idx < clickableValues.length - 1 && (
+                                                                                <span className="text-xs text-slate-400">,</span>
+                                                                            )}
+                                                                        </React.Fragment>
+                                                                    ))}
+                                                                </div>
                                                             </div>
                                                         );
                                                     })}
@@ -931,9 +953,10 @@ I have sent my CV for your review.`;
                                                     <div className="mt-0 flex justify-center">
                                                         <button
                                                             onClick={() => setIsDescriptionExpanded(true)}
-                                                            className="px-3 py-1 rounded-full bg-gradient-to-r from-white via-slate-100 to-white text-xs font-bold text-black shadow-sm hover:text-[#0088cc]"
+                                                            className="px-3 py-1 rounded-full bg-gradient-to-r from-white via-slate-100 to-white text-xs font-bold text-black shadow-sm hover:text-[#0088cc] inline-flex items-center gap-1"
                                                         >
                                                             {t('read_more')}
+                                                            <ChevronDown className="w-3.5 h-3.5" />
                                                         </button>
                                                     </div>
                                                 )}
@@ -948,13 +971,13 @@ I have sent my CV for your review.`;
                         <div className="mt-4 mb-4 grid grid-cols-2 gap-2">
                             <button
                                 onClick={handlePromotePost}
-                                className="w-full bg-[#1A202C] text-white text-sm rounded-lg py-2 flex items-center justify-center transition-colors shadow-sm hover:bg-black active:scale-[0.99]"
+                                className="w-full bg-white border border-black text-black text-sm rounded-lg py-2 flex items-center justify-center transition-colors shadow-sm hover:bg-slate-50 active:scale-[0.99]"
                             >
                                 Add Free Post
                             </button>
                             <button
                                 onClick={handleSellFaster}
-                                className="w-full bg-[#0088cc] text-white text-sm rounded-lg py-2 flex items-center justify-center transition-colors shadow-sm hover:bg-[#0077b5] active:scale-[0.99]"
+                                className="w-full bg-white border border-black text-black text-sm rounded-lg py-2 flex items-center justify-center transition-colors shadow-sm hover:bg-slate-50 active:scale-[0.99]"
                             >
                                 Sell Faster
                             </button>

@@ -15,9 +15,9 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     prefer_related_applications: false,
     icons: [
       {
-        src: '/favicon.ico',
-        sizes: 'any',
-        type: 'image/x-icon',
+        src: '/web-app-manifest-192x192.png',
+        sizes: '192x192',
+        type: 'image/png',
         purpose: 'any',
       },
       {
