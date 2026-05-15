@@ -7,6 +7,9 @@ import { API_BASE_URL } from '../utils/apiConfig';
 import Cookies from 'js-cookie';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import InfoModal from './InfoModal';
+import { INFO_CONTENT, getInfoContentForLanguage } from '@/utils/infoContent';
+import { useLanguage } from '../app/context/LanguageContext';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -19,9 +22,17 @@ interface VerifyProfileModalProps {
 }
 
 export default function VerifyProfileModal({ isOpen, onClose, user }: VerifyProfileModalProps) {
+    const { language } = useLanguage();
     const [isVerifyBadge, setIsVerifyBadge] = useState(true);
     const [showManualPayment, setShowManualPayment] = useState(false);
     const [showHelpline, setShowHelpline] = useState(false);
+    const [showPrivacy, setShowPrivacy] = useState(false);
+    const [showTnC, setShowTnC] = useState(false);
+    const [showRefund, setShowRefund] = useState(false);
+
+    const privacyContent = getInfoContentForLanguage(INFO_CONTENT.privacy, language);
+    const termsContent = getInfoContentForLanguage(INFO_CONTENT.terms, language);
+    const returnRefundContent = getInfoContentForLanguage(INFO_CONTENT.return, language);
 
     const [premierSettings, setPremierSettings] = useState<any>({
         verifyBadgePrice: 500,
@@ -154,11 +165,11 @@ export default function VerifyProfileModal({ isOpen, onClose, user }: VerifyProf
 
                     <p className="text-[12px] text-slate-600 text-center pt-1">
                         By Proceeding you agree to the{' '}
-                        <span className="text-slate-800 font-medium cursor-pointer hover:underline">Privacy</span>
+                        <span className="text-[#0088cc] cursor-pointer hover:underline" onClick={() => setShowPrivacy(true)}>Privacy</span>
                         {', '}
-                        <span className="text-slate-800 font-medium cursor-pointer hover:underline">T & C</span>
+                        <span className="text-[#0088cc] cursor-pointer hover:underline" onClick={() => setShowTnC(true)}>T & C</span>
                         {', '}
-                        <span className="text-slate-800 font-medium cursor-pointer hover:underline">Return & Refund</span>
+                        <span className="text-[#0088cc] cursor-pointer hover:underline" onClick={() => setShowRefund(true)}>Return & Refund</span>
                     </p>
 
                     {/* Support & Manual Pay */}
@@ -207,6 +218,25 @@ export default function VerifyProfileModal({ isOpen, onClose, user }: VerifyProf
 
                 </div>
             </div>
+
+            <InfoModal
+                isOpen={showPrivacy}
+                onClose={() => setShowPrivacy(false)}
+                title={privacyContent.title}
+                content={privacyContent.content}
+            />
+            <InfoModal
+                isOpen={showTnC}
+                onClose={() => setShowTnC(false)}
+                title={termsContent.title}
+                content={termsContent.content}
+            />
+            <InfoModal
+                isOpen={showRefund}
+                onClose={() => setShowRefund(false)}
+                title={returnRefundContent.title}
+                content={returnRefundContent.content}
+            />
         </div>
     );
 }

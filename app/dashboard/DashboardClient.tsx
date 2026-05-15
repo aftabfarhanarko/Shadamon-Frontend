@@ -431,6 +431,8 @@ export default function DashboardClient() {
         try {
             const AD_SESSION_VIEWS_KEY = 'ad_session_views';
             const AD_SESSION_VIEW_TOKENS_KEY = 'ad_session_view_tokens';
+            const AD_SESSION_RESHOW_AT_KEY = 'ad_session_reshow_at'; // absolute ms timestamp per ad
+            const AD_SESSION_LIMIT_KEY = 'ad_session_limit';
 
             const readSessionJson = <T,>(key: string, fallback: T): T => {
                 try {
@@ -505,12 +507,39 @@ export default function DashboardClient() {
             }
 
             const limit = settings.userRepeatAdViewTime || 0;
+            const reShowAfterMs = (settings.adReShowAfterMinutes || 0) * 60 * 1000;
             const isFiltering = !!(filters.category || filters.location || filters.search || (filters.promoteTag && filters.promoteTag !== 'All'));
 
             type SessionViews = Record<string, number>;
             type SessionViewTokens = Record<string, string>;
+            type SessionReShowAt = Record<string, number>;
             const sessionViews = readSessionJson<SessionViews>(AD_SESSION_VIEWS_KEY, {});
             const sessionTokens = readSessionJson<SessionViewTokens>(AD_SESSION_VIEW_TOKENS_KEY, {});
+            // sessionReShowAt: absolute ms timestamp when each ad should become visible again
+            // 0 = permanently blocked this session; >0 = re-show at that epoch ms
+            const sessionReShowAt = readSessionJson<SessionReShowAt>(AD_SESSION_RESHOW_AT_KEY, {});
+            const storedLimit = readSessionJson<number>(AD_SESSION_LIMIT_KEY, 0);
+            const effectiveLimit = limit > 0 ? limit : storedLimit;
+
+            // Pre-loop: reset any ad whose absolute re-show timestamp has passed
+            {
+                const now = Date.now();
+                let changed = false;
+                Object.keys(sessionReShowAt).forEach(adId => {
+                    const reshowAt = sessionReShowAt[adId];
+                    if (reshowAt > 0 && now >= reshowAt) {
+                        delete sessionViews[adId];
+                        delete sessionTokens[adId];
+                        delete sessionReShowAt[adId];
+                        changed = true;
+                    }
+                });
+                if (changed) {
+                    writeSessionJson(AD_SESSION_VIEWS_KEY, sessionViews);
+                    writeSessionJson(AD_SESSION_VIEW_TOKENS_KEY, sessionTokens);
+                    writeSessionJson(AD_SESSION_RESHOW_AT_KEY, sessionReShowAt);
+                }
+            }
 
             const collectAds: ActiveAd[] = [];
             const collectedIds = new Set<string>();
@@ -531,8 +560,13 @@ export default function DashboardClient() {
                 const rawAds: ActiveAd[] = adsRes.data || [];
 
                 let eligible = rawAds;
-                if (limit > 0 && !isFiltering) {
-                    eligible = rawAds.filter((ad: ActiveAd) => (sessionViews[ad._id] || 0) < limit);
+                if (!isFiltering) {
+                    eligible = rawAds.filter((ad: ActiveAd) => {
+                        // Block any ad that has a re-show record (blocked until timer fires or forever)
+                        if (sessionReShowAt[ad._id] !== undefined) return false;
+                        if (effectiveLimit > 0) return (sessionViews[ad._id] || 0) < effectiveLimit;
+                        return true;
+                    });
                 }
 
                 const alreadySeen = append ? seenAdIdsRef.current : new Set<string>();
@@ -551,12 +585,33 @@ export default function DashboardClient() {
             if (limit > 0 && !isFiltering) {
                 collectAds.forEach((ad: ActiveAd) => {
                     if (sessionTokens[ad._id] === pageToken && (sessionViews[ad._id] || 0) > 0) return;
-                    sessionViews[ad._id] = Math.min(limit, (sessionViews[ad._id] || 0) + 1);
+                    const prevCount = sessionViews[ad._id] || 0;
+                    const newCount = Math.min(limit, prevCount + 1);
+                    sessionViews[ad._id] = newCount;
                     sessionTokens[ad._id] = pageToken;
+                    // Only set reshowAt when reShowAfterMs>0; otherwise blocked by count alone
+                    if (newCount >= limit && reShowAfterMs > 0 && sessionReShowAt[ad._id] === undefined) {
+                        sessionReShowAt[ad._id] = Date.now() + reShowAfterMs;
+                    }
                 });
+
+                // Upgrade any ad at the limit without a timer now that reShowAfterMs is known,
+                // and fix legacy reshowAt=0 entries (set when settings hadn't loaded yet)
+                if (reShowAfterMs > 0) {
+                    Object.keys(sessionViews).forEach(adId => {
+                        if (sessionViews[adId] >= limit && sessionReShowAt[adId] === undefined) {
+                            sessionReShowAt[adId] = Date.now() + reShowAfterMs;
+                        }
+                        if (sessionReShowAt[adId] === 0) {
+                            sessionReShowAt[adId] = Date.now() + reShowAfterMs;
+                        }
+                    });
+                }
 
                 writeSessionJson(AD_SESSION_VIEWS_KEY, sessionViews);
                 writeSessionJson(AD_SESSION_VIEW_TOKENS_KEY, sessionTokens);
+                writeSessionJson(AD_SESSION_RESHOW_AT_KEY, sessionReShowAt);
+                writeSessionJson(AD_SESSION_LIMIT_KEY, limit);
             }
 
             setAds(prev => (append ? [...prev, ...collectAds] : collectAds));
@@ -571,7 +626,7 @@ export default function DashboardClient() {
             if (!append) setLoading(false);
             else setIsLoadingMore(false);
         }
-    }, [filters, settings.userRepeatAdViewTime]);
+    }, [filters, settings.userRepeatAdViewTime, settings.adReShowAfterMinutes]);
 
     const fetchInitialData = React.useCallback(async () => {
         try {

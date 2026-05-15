@@ -1762,7 +1762,7 @@ I have sent my CV for your review.`;
                     )}
 
                     {activeTab === 'Profile' && (
-                        <div className="px-1 py-4 sm:p-4 bg-white pb-20">
+                        <div className="px-1 sm:px-4 py-4 sm:pt-4 bg-white pb-20">
                             {/* Top Profile Section */}
                             <div className="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-4">
                                 <div className="flex flex-col items-center text-center">

@@ -5,7 +5,7 @@ import { ArrowLeft, X, Maximize2, MapPin, Grid, Eye, Share2, Phone, MessageCircl
 import toast from 'react-hot-toast';
 import { RiMailFill, RiShareBoxLine, RiMoreLine, RiStarFill, RiPhoneFill, RiAlarmWarningFill } from 'react-icons/ri';
 import AdDisplay from './AdDisplay';
-import { FaWhatsapp, FaTelegramPlane } from 'react-icons/fa';
+import { FaWhatsapp, FaTelegramPlane, FaFacebookMessenger } from 'react-icons/fa';
 import { API_BASE_URL } from '../utils/apiConfig';
 // Use centralized url helper
 import { getImageUrl } from '../utils/imageUrl';
@@ -51,6 +51,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
     const [isExpanded, setIsExpanded] = useState(false);
     const [isDetailsOpen, setIsDetailsOpen] = useState(true);
     const [showOptionsPopup, setShowOptionsPopup] = useState(false);
+    const [showShareOptions, setShowShareOptions] = useState(false);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [isHeadlineExpanded, setIsHeadlineExpanded] = useState(false);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -60,11 +61,11 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
     const [showShippingModal, setShowShippingModal] = useState(false);
     const [subcategories, setSubcategories] = useState<any[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
-
-
+    const [locations, setLocations] = useState<any[]>([]);
+    const [subLocations, setSubLocations] = useState<any[]>([]);
 
     const [actionButtons, setActionButtons] = useState<string[]>(['Call', 'Chat']);
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const router = useRouter();
     const { settings } = useSettings();
     const popupRef = useRef<HTMLDivElement>(null);
@@ -94,6 +95,7 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
             if (popupRef.current && !popupRef.current.contains(event.target as Node) &&
                 optionsButtonRef.current && !optionsButtonRef.current.contains(event.target as Node)) {
                 setShowOptionsPopup(false);
+                setShowShareOptions(false);
             }
         }
         document.addEventListener("mousedown", handleClickOutside);
@@ -190,6 +192,16 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                     }
                 })
                 .catch(err => console.error("Error fetching categories:", err));
+
+            // Fetch Locations and SubLocations for Bangla name support
+            fetch(`${API_BASE_URL}/api/locations`)
+                .then(res => res.json())
+                .then(data => { if (data.success) setLocations(data.data); })
+                .catch(() => {});
+            fetch(`${API_BASE_URL}/api/locations/sub`)
+                .then(res => res.json())
+                .then(data => { if (data.success) setSubLocations(data.data); })
+                .catch(() => {});
 
             // Fetch current user if token exists to check ownership and favorites
             const token = Cookies.get('token');
@@ -424,26 +436,53 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                 <span className="mr-1">{ad.deliveryCount || 0} Delivered</span>
                                 <span>{ad.views || 0} Views</span>
                             </div>
-                            <div className="flex items-center gap-3 sm:order-1">
+                            <div className="flex items-center gap-3 sm:order-1 min-w-0 overflow-hidden">
                                 <div
-                                    className="flex items-center gap-1 cursor-pointer hover:text-[#0088cc] transition-colors"
+                                    className="flex items-center gap-1 cursor-pointer hover:text-[#0088cc] transition-colors min-w-0"
                                     onClick={() => {
                                         const locVal = typeof ad.location === 'object' ? ad.location?.name : ad.location;
                                         router.push(`/d?location=${encodeURIComponent(locVal)}`);
                                     }}
                                 >
-                                    <MapPin className="w-3 h-3" />
-                                    <span>{typeof ad.location === 'object' ? ad.location?.name : ad.location}</span>
+                                    <MapPin className="w-3 h-3 shrink-0" />
+                                    <span className="truncate">
+                                        {(() => {
+                                            const subLocName = typeof ad.subLocation === 'object' ? ad.subLocation?.name : ad.subLocation;
+                                            const locName = typeof ad.location === 'object' ? ad.location?.name : ad.location;
+                                            if (language === 'bn') {
+                                                const matchedSubLoc = subLocations.find((s: any) => s.name === subLocName || s._id === ad.subLocation);
+                                                const matchedLoc = locations.find((l: any) => l.name === locName || l._id === ad.location);
+                                                const subLocDisplay = matchedSubLoc?.subLocationNameBn || subLocName;
+                                                const locDisplay = matchedLoc?.locationNameBn || locName;
+                                                return [subLocDisplay, locDisplay].filter(Boolean).join(', ');
+                                            }
+                                            return [subLocName, locName].filter(Boolean).join(', ');
+                                        })()}
+                                    </span>
                                 </div>
                                 <div
-                                    className="flex items-center gap-1 cursor-pointer hover:text-[#0088cc] transition-colors"
+                                    className="flex items-center gap-1 cursor-pointer hover:text-[#0088cc] transition-colors min-w-0"
                                     onClick={() => {
                                         const catVal = typeof ad.category === 'object' ? ad.category?.name : ad.category;
                                         router.push(`/d?category=${encodeURIComponent(catVal)}`);
                                     }}
                                 >
-                                    <Grid className="w-3 h-3" />
-                                    <span>{typeof ad.category === 'object' ? ad.category?.name : ad.category}</span>
+                                    <Grid className="w-3 h-3 shrink-0" />
+                                    <span className="truncate">
+                                        {(() => {
+                                            const subCatId = typeof ad.subCategory === 'object' ? ad.subCategory?._id : ad.subCategory;
+                                            const subCatName = typeof ad.subCategory === 'object' ? ad.subCategory?.name : ad.subCategory;
+                                            const catName = typeof ad.category === 'object' ? ad.category?.name : ad.category;
+                                            if (language === 'bn') {
+                                                const matchedSubCat = subcategories.find((s: any) => s._id === subCatId || s.name === subCatName);
+                                                const matchedCat = categories.find((c: any) => c.name === catName || c._id === ad.category);
+                                                const subCatDisplay = matchedSubCat?.subCategoryNameBn || subCatName;
+                                                const catDisplay = matchedCat?.categoryNameBn || catName;
+                                                return [subCatDisplay, catDisplay].filter(Boolean).join(', ');
+                                            }
+                                            return [subCatName, catName].filter(Boolean).join(', ');
+                                        })()}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -1328,46 +1367,71 @@ I have sent my CV for your review.`;
                                     <span className="text-[10px] text-slate-600 font-medium">Similar</span>
                                 </div>
                                 <div
-                                    onClick={async () => {
-                                        if (navigator.share) {
-                                            try {
-                                                const shareData: any = {
-                                                    title: ad.headline,
-                                                    text: ad.headline,
-                                                    url: adLink
-                                                };
-
-                                                // Try to include the first image if available
-                                                if (ad.images && ad.images.length > 0) {
-                                                    try {
-                                                        const imgUrl = getImageUrl(ad.images[0]);
-                                                        const response = await fetch(imgUrl);
-                                                        const blob = await response.blob();
-                                                        const file = new File([blob], 'ad-image.jpg', { type: blob.type });
-
-                                                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                                                            shareData.files = [file];
-                                                        }
-                                                    } catch (imageErr) {
-                                                        console.error("Error preparing image for share:", imageErr);
-                                                        // Fallback to basic share below
-                                                    }
-                                                }
-
-                                                await navigator.share(shareData);
-                                            } catch (err) {
-                                                console.error("Error sharing:", err);
-                                            }
-                                        }
-                                    }}
+                                    onClick={() => setShowShareOptions(v => !v)}
                                     className="flex flex-col items-center gap-1 cursor-pointer group"
                                 >
-                                    <div className="w-10 h-10 rounded-full bg-slate-200 shadow-sm border border-slate-200 flex items-center justify-center group-hover:bg-slate-300 transition-colors">
-                                        <Share2 className="w-5 h-5 text-slate-700 fill-black" />
+                                    <div className={cn(
+                                        "w-10 h-10 rounded-full shadow-sm border flex items-center justify-center transition-colors",
+                                        showShareOptions ? "bg-slate-700 border-slate-700" : "bg-slate-200 border-slate-200 group-hover:bg-slate-300"
+                                    )}>
+                                        <Share2 className={cn("w-5 h-5", showShareOptions ? "text-white fill-white" : "text-slate-700 fill-black")} />
                                     </div>
                                     <span className="text-[10px] text-slate-600 font-medium">Share</span>
                                 </div>
                             </div>
+
+                            {/* Share Options Sub-panel */}
+                            {showShareOptions && (
+                                <div className="flex items-center justify-center gap-4 py-3 border-t border-slate-200 animate-in fade-in slide-in-from-top-1 duration-150">
+                                    <button
+                                        onClick={() => {
+                                            window.open(`https://wa.me/?text=${encodeURIComponent(adLink)}`, '_blank');
+                                        }}
+                                        className="flex flex-col items-center gap-1 group"
+                                    >
+                                        <div className="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center shadow-sm group-hover:opacity-90 transition-opacity">
+                                            <FaWhatsapp className="w-5 h-5 text-white" />
+                                        </div>
+                                        <span className="text-[10px] text-slate-600 font-medium">WhatsApp</span>
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            window.open(`https://www.messenger.com/share?link=${encodeURIComponent(adLink)}`, '_blank');
+                                        }}
+                                        className="flex flex-col items-center gap-1 group"
+                                    >
+                                        <div className="w-10 h-10 rounded-full bg-[#0099FF] flex items-center justify-center shadow-sm group-hover:opacity-90 transition-opacity">
+                                            <FaFacebookMessenger className="w-5 h-5 text-white" />
+                                        </div>
+                                        <span className="text-[10px] text-slate-600 font-medium">Messenger</span>
+                                    </button>
+                                    {typeof navigator !== 'undefined' && !!navigator.share && (
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    const shareData: any = { title: ad.headline, text: ad.headline, url: adLink };
+                                                    if (ad.images && ad.images.length > 0) {
+                                                        try {
+                                                            const imgUrl = getImageUrl(ad.images[0]);
+                                                            const response = await fetch(imgUrl);
+                                                            const blob = await response.blob();
+                                                            const file = new File([blob], 'ad-image.jpg', { type: blob.type });
+                                                            if (navigator.canShare && navigator.canShare({ files: [file] })) shareData.files = [file];
+                                                        } catch {}
+                                                    }
+                                                    await navigator.share(shareData);
+                                                } catch {}
+                                            }}
+                                            className="flex flex-col items-center gap-1 group"
+                                        >
+                                            <div className="w-10 h-10 rounded-full bg-slate-200 border border-slate-200 flex items-center justify-center shadow-sm group-hover:bg-slate-300 transition-colors">
+                                                <Share2 className="w-5 h-5 text-slate-700 fill-black" />
+                                            </div>
+                                            <span className="text-[10px] text-slate-600 font-medium">More</span>
+                                        </button>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Bottom Row */}
                             <div className="grid grid-cols-4 gap-2">

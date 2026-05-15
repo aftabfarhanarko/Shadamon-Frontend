@@ -77,7 +77,7 @@ export default function LatestFreeAdPromo() {
                     <div className="flex items-center gap-2">
                         <RiLockFill className="w-4 h-4 text-slate-500" />
                         <span className="text-[14px] text-slate-700 font-medium">
-                            {language === 'bn' ? 'শুধু আপনি দেখতে পারবেন' : 'Visible only to you'}
+                            {language === 'bn' ? 'শুধু আপনি দেখছেন' : 'Only you are watching'}
                         </span>
                     </div>
                     <button
