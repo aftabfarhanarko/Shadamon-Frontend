@@ -24,7 +24,7 @@ export default function RootLayout({
   return (
     <html lang="bn">
       <head>
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="theme-color" content="#ffffff" />
         <meta name="google-site-verification" content="google971854131468af49.htm" />
         <meta name="mobile-web-app-capable" content="yes" />
@@ -53,7 +53,7 @@ export default function RootLayout({
 
         <link rel="icon" type="image/png" sizes="32x32" href="/web-app-manifest-192x192.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/web-app-manifest-192x192.png" />
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="manifest" href="/manifest.webmanifest" />
         <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5" />
         <link rel="shortcut icon" href="/web-app-manifest-192x192.png" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" />

@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next';
 
-const API_BASE_URL = 'https://api.shadamon.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.shadamon.com';
 
 function buildIconUrl(path: string | null | undefined): string | null {
   if (!path) return null;

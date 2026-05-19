@@ -5,7 +5,7 @@ import { ArrowLeft, X, Maximize2, MapPin, Grid, Eye, Share2, Phone, MessageCircl
 import toast from 'react-hot-toast';
 import { RiMailFill, RiShareBoxLine, RiMoreLine, RiStarFill, RiPhoneFill, RiAlarmWarningFill } from 'react-icons/ri';
 import AdDisplay from './AdDisplay';
-import { FaWhatsapp, FaTelegramPlane, FaFacebookMessenger } from 'react-icons/fa';
+import { FaWhatsapp, FaTelegramPlane, FaFacebookMessenger, FaFacebook } from 'react-icons/fa';
 import { API_BASE_URL } from '../utils/apiConfig';
 // Use centralized url helper
 import { getImageUrl } from '../utils/imageUrl';
@@ -1367,7 +1367,14 @@ I have sent my CV for your review.`;
                                     <span className="text-[10px] text-slate-600 font-medium">Similar</span>
                                 </div>
                                 <div
-                                    onClick={() => setShowShareOptions(v => !v)}
+                                    onClick={() => {
+                                        const isMobile = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+                                        if (isMobile && navigator.share) {
+                                            navigator.share({ title: ad.headline, text: ad.headline, url: adLink }).catch(() => {});
+                                        } else {
+                                            setShowShareOptions(v => !v);
+                                        }
+                                    }}
                                     className="flex flex-col items-center gap-1 cursor-pointer group"
                                 >
                                     <div className={cn(
@@ -1396,7 +1403,11 @@ I have sent my CV for your review.`;
                                     </button>
                                     <button
                                         onClick={() => {
-                                            window.open(`https://www.messenger.com/share?link=${encodeURIComponent(adLink)}`, '_blank');
+                                            const appId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
+                                            const url = appId
+                                                ? `https://www.facebook.com/dialog/send?app_id=${appId}&link=${encodeURIComponent(adLink)}&redirect_uri=${encodeURIComponent(adLink)}`
+                                                : `https://www.facebook.com/dialog/send?link=${encodeURIComponent(adLink)}&redirect_uri=${encodeURIComponent(adLink)}`;
+                                            window.open(url, '_blank');
                                         }}
                                         className="flex flex-col items-center gap-1 group"
                                     >
@@ -1405,31 +1416,17 @@ I have sent my CV for your review.`;
                                         </div>
                                         <span className="text-[10px] text-slate-600 font-medium">Messenger</span>
                                     </button>
-                                    {typeof navigator !== 'undefined' && !!navigator.share && (
-                                        <button
-                                            onClick={async () => {
-                                                try {
-                                                    const shareData: any = { title: ad.headline, text: ad.headline, url: adLink };
-                                                    if (ad.images && ad.images.length > 0) {
-                                                        try {
-                                                            const imgUrl = getImageUrl(ad.images[0]);
-                                                            const response = await fetch(imgUrl);
-                                                            const blob = await response.blob();
-                                                            const file = new File([blob], 'ad-image.jpg', { type: blob.type });
-                                                            if (navigator.canShare && navigator.canShare({ files: [file] })) shareData.files = [file];
-                                                        } catch {}
-                                                    }
-                                                    await navigator.share(shareData);
-                                                } catch {}
-                                            }}
-                                            className="flex flex-col items-center gap-1 group"
-                                        >
-                                            <div className="w-10 h-10 rounded-full bg-slate-200 border border-slate-200 flex items-center justify-center shadow-sm group-hover:bg-slate-300 transition-colors">
-                                                <Share2 className="w-5 h-5 text-slate-700 fill-black" />
-                                            </div>
-                                            <span className="text-[10px] text-slate-600 font-medium">More</span>
-                                        </button>
-                                    )}
+                                    <button
+                                        onClick={() => {
+                                            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(adLink)}`, '_blank');
+                                        }}
+                                        className="flex flex-col items-center gap-1 group"
+                                    >
+                                        <div className="w-10 h-10 rounded-full bg-[#1877F2] flex items-center justify-center shadow-sm group-hover:opacity-90 transition-opacity">
+                                            <FaFacebook className="w-5 h-5 text-white" />
+                                        </div>
+                                        <span className="text-[10px] text-slate-600 font-medium">Facebook</span>
+                                    </button>
                                 </div>
                             )}
 
