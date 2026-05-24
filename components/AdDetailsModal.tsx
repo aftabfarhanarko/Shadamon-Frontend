@@ -437,52 +437,70 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
                                 <span>{ad.views || 0} Views</span>
                             </div>
                             <div className="flex items-center gap-3 sm:order-1 min-w-0 overflow-hidden">
-                                <div
-                                    className="flex items-center gap-1 cursor-pointer hover:text-[#0088cc] transition-colors min-w-0"
-                                    onClick={() => {
-                                        const locVal = typeof ad.location === 'object' ? ad.location?.name : ad.location;
-                                        router.push(`/d?location=${encodeURIComponent(locVal)}`);
-                                    }}
-                                >
-                                    <MapPin className="w-3 h-3 shrink-0" />
-                                    <span className="truncate">
-                                        {(() => {
-                                            const subLocName = typeof ad.subLocation === 'object' ? ad.subLocation?.name : ad.subLocation;
-                                            const locName = typeof ad.location === 'object' ? ad.location?.name : ad.location;
-                                            if (language === 'bn') {
-                                                const matchedSubLoc = subLocations.find((s: any) => s.name === subLocName || s._id === ad.subLocation);
-                                                const matchedLoc = locations.find((l: any) => l.name === locName || l._id === ad.location);
-                                                const subLocDisplay = matchedSubLoc?.subLocationNameBn || subLocName;
-                                                const locDisplay = matchedLoc?.locationNameBn || locName;
-                                                return [subLocDisplay, locDisplay].filter(Boolean).join(', ');
-                                            }
-                                            return [subLocName, locName].filter(Boolean).join(', ');
-                                        })()}
-                                    </span>
+                                <div className="flex items-center gap-1 min-w-0">
+                                    <MapPin className="w-3 h-3 shrink-0 text-slate-500" />
+                                    {(() => {
+                                        const subLocName = typeof ad.subLocation === 'object' ? ad.subLocation?.name : ad.subLocation;
+                                        const locName = typeof ad.location === 'object' ? ad.location?.name : ad.location;
+                                        let subLocDisplay = subLocName;
+                                        let locDisplay = locName;
+                                        if (language === 'bn') {
+                                            const matchedSubLoc = subLocations.find((s: any) => s.name === subLocName || s._id === ad.subLocation);
+                                            const matchedLoc = locations.find((l: any) => l.name === locName || l._id === ad.location);
+                                            subLocDisplay = matchedSubLoc?.subLocationNameBn || subLocName;
+                                            locDisplay = matchedLoc?.locationNameBn || locName;
+                                        }
+                                        return (
+                                            <>
+                                                {subLocDisplay && (
+                                                    <span
+                                                        className="truncate cursor-pointer hover:text-[#0088cc] transition-colors"
+                                                        onClick={() => router.push(`/d?subLocation=${encodeURIComponent(subLocName || '')}`)}
+                                                    >{subLocDisplay}</span>
+                                                )}
+                                                {subLocDisplay && locDisplay && <span className="shrink-0">,</span>}
+                                                {locDisplay && (
+                                                    <span
+                                                        className="truncate cursor-pointer hover:text-[#0088cc] transition-colors"
+                                                        onClick={() => router.push(`/d?location=${encodeURIComponent(locName || '')}`)}
+                                                    >{locDisplay}</span>
+                                                )}
+                                            </>
+                                        );
+                                    })()}
                                 </div>
-                                <div
-                                    className="flex items-center gap-1 cursor-pointer hover:text-[#0088cc] transition-colors min-w-0"
-                                    onClick={() => {
-                                        const catVal = typeof ad.category === 'object' ? ad.category?.name : ad.category;
-                                        router.push(`/d?category=${encodeURIComponent(catVal)}`);
-                                    }}
-                                >
-                                    <Grid className="w-3 h-3 shrink-0" />
-                                    <span className="truncate">
-                                        {(() => {
-                                            const subCatId = typeof ad.subCategory === 'object' ? ad.subCategory?._id : ad.subCategory;
-                                            const subCatName = typeof ad.subCategory === 'object' ? ad.subCategory?.name : ad.subCategory;
-                                            const catName = typeof ad.category === 'object' ? ad.category?.name : ad.category;
-                                            if (language === 'bn') {
-                                                const matchedSubCat = subcategories.find((s: any) => s._id === subCatId || s.name === subCatName);
-                                                const matchedCat = categories.find((c: any) => c.name === catName || c._id === ad.category);
-                                                const subCatDisplay = matchedSubCat?.subCategoryNameBn || subCatName;
-                                                const catDisplay = matchedCat?.categoryNameBn || catName;
-                                                return [subCatDisplay, catDisplay].filter(Boolean).join(', ');
-                                            }
-                                            return [subCatName, catName].filter(Boolean).join(', ');
-                                        })()}
-                                    </span>
+                                <div className="flex items-center gap-1 min-w-0">
+                                    <Grid className="w-3 h-3 shrink-0 text-slate-500" />
+                                    {(() => {
+                                        const subCatId = typeof ad.subCategory === 'object' ? ad.subCategory?._id : ad.subCategory;
+                                        const subCatName = typeof ad.subCategory === 'object' ? ad.subCategory?.name : ad.subCategory;
+                                        const catName = typeof ad.category === 'object' ? ad.category?.name : ad.category;
+                                        let subCatDisplay = subCatName;
+                                        let catDisplay = catName;
+                                        if (language === 'bn') {
+                                            const matchedSubCat = subcategories.find((s: any) => s._id === subCatId || s.name === subCatName);
+                                            const matchedCat = categories.find((c: any) => c.name === catName || c._id === ad.category);
+                                            subCatDisplay = matchedSubCat?.subCategoryNameBn || subCatName;
+                                            catDisplay = matchedCat?.categoryNameBn || catName;
+                                        }
+                                        return (
+                                            <>
+                                                {subCatDisplay && (
+                                                    <span
+                                                        className="truncate cursor-pointer hover:text-[#0088cc] transition-colors"
+                                                        onClick={() => router.push(`/d?subCategory=${encodeURIComponent(subCatName || '')}`)}
+                                                    >{subCatDisplay}</span>
+                                                )}
+                                                {subCatDisplay && catDisplay && <span className="shrink-0">,</span>}
+                                                {catDisplay && (
+                                                    <span
+                                                        className="truncate cursor-pointer hover:text-[#0088cc] transition-colors"
+                                                        onClick={() => router.push(`/d?category=${encodeURIComponent(catName || '')}`)}
+                                                    >{catDisplay}</span>
+                                                )}
+                                            </>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         </div>

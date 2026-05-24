@@ -49,6 +49,7 @@ interface Category {
 interface Location {
     _id: string;
     name: string;
+    locationNameBn?: string;
     image?: string; // Changed from photo
     subLocations: SubItem[];
 }
@@ -1389,7 +1390,7 @@ export default function DashboardClient() {
                                                 <span className={cn(
                                                     "text-[10px] lg:text-[11px] font-bold text-center max-w-[62px] lg:max-w-[70px] truncate transition-colors",
                                                     loc.name === filters.location ? "text-[#0088cc]" : "text-black"
-                                                )}>{loc.name}</span>
+                                                )}>{language === 'bn' && loc.locationNameBn ? loc.locationNameBn : loc.name}</span>
                                             </Link>
                                         ))
                                     }
