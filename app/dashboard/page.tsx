@@ -14,7 +14,7 @@ export async function generateMetadata(
     const adId = params?.ad;
 
     if (!adId) {
-        return { title: 'Shadamon', description: 'The ultimate marketing platform' };
+        return { title: 'Shadamon.com | দ্রুত ও সহজ কেনাবেচার স্মার্ট মার্কেটপ্লেস', description: 'The ultimate marketing platform' };
     }
 
     try {
@@ -51,7 +51,7 @@ export async function generateMetadata(
             },
         };
     } catch {
-        return { title: 'Shadamon', description: 'The ultimate marketing platform' };
+        return { title: 'Shadamon.com | দ্রুত ও সহজ কেনাবেচার স্মার্ট মার্কেটপ্লেস', description: 'The ultimate marketing platform' };
     }
 }
 
