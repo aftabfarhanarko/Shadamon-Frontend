@@ -6,10 +6,10 @@ import { Toaster } from "react-hot-toast";
 import RegisterServiceWorker from "@/components/RegisterServiceWorker"
 
 export const metadata: Metadata = {
-  title: "Shadamon",
+  title: "Shadamon.com | দ্রুত ও সহজ কেনাবেচার স্মার্ট মার্কেটপ্লেস",
   description: "The ultimate marketing platform",
   openGraph: {
-    title: "Shadamon",
+    title: "Shadamon.com | দ্রুত ও সহজ কেনাবেচার স্মার্ট মার্কেটপ্লেস",
     description: "The ultimate marketing platform",
     url: "https://shadamon.com",
     siteName: "Shadamon",
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Shadamon",
+    title: "Shadamon.com | দ্রুত ও সহজ কেনাবেচার স্মার্ট মার্কেটপ্লেস",
     description: "The ultimate marketing platform",
     images: ["https://shadamon.com/og.png"],
   },
@@ -71,12 +71,12 @@ export default function RootLayout({
 
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:url" content="https://shadamon.com" />
-        <meta name="twitter:title" content="Shadamon" />
+        <meta name="twitter:title" content="Shadamon.com | দ্রুত ও সহজ কেনাবেচার স্মার্ট মার্কেটপ্লেস" />
         <meta name="twitter:description" content="The ultimate marketing platform" />
         <meta name="twitter:image" content="https://shadamon.com/og.png" />
         <meta name="twitter:creator" content="@shadamon" />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="Shadamon" />
+        <meta property="og:title" content="Shadamon.com | দ্রুত ও সহজ কেনাবেচার স্মার্ট মার্কেটপ্লেস" />
         <meta property="og:description" content="The ultimate marketing platform" />
         <meta property="og:site_name" content="Shadamon" />
         <meta property="og:url" content="https://shadamon.com" />
