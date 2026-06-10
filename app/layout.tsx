@@ -8,8 +8,19 @@ import RegisterServiceWorker from "@/components/RegisterServiceWorker"
 export const metadata: Metadata = {
   title: "Shadamon",
   description: "The ultimate marketing platform",
-  other: {
-
+  openGraph: {
+    title: "Shadamon",
+    description: "The ultimate marketing platform",
+    url: "https://shadamon.com",
+    siteName: "Shadamon",
+    images: [{ url: "https://shadamon.com/og.png", width: 1200, height: 630, alt: "Shadamon" }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Shadamon",
+    description: "The ultimate marketing platform",
+    images: ["https://shadamon.com/og.png"],
   },
 };
 
@@ -58,18 +69,20 @@ export default function RootLayout({
         <link rel="shortcut icon" href="/web-app-manifest-192x192.png" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" />
 
-        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:url" content="https://shadamon.com" />
         <meta name="twitter:title" content="Shadamon" />
         <meta name="twitter:description" content="The ultimate marketing platform" />
-        <meta name="twitter:image" content="https://shadamon.com/icons/android-chrome-192x192.png" />
+        <meta name="twitter:image" content="https://shadamon.com/og.png" />
         <meta name="twitter:creator" content="@shadamon" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Shadamon" />
-        <meta property="og:description" content="Shadamon official website" />
+        <meta property="og:description" content="The ultimate marketing platform" />
         <meta property="og:site_name" content="Shadamon" />
         <meta property="og:url" content="https://shadamon.com" />
-        <meta property="og:image" content="https://shadamon.com/og-image.jpg" />
+        <meta property="og:image" content="https://shadamon.com/og.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
 
         <script
           type="application/ld+json"
