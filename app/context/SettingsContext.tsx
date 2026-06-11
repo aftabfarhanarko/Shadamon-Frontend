@@ -22,6 +22,7 @@ interface Settings {
     siteLogo?: string;
     favIcon?: string;
     watermarkLogo?: string;
+    ogImage?: string;
     userRepeatAdViewTime?: number;
     adReShowAfterMinutes?: number;
     productPhotoLimit?: number;

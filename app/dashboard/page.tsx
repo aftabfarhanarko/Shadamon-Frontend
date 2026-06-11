@@ -11,11 +11,14 @@ export async function generateMetadata(
     { searchParams }: { searchParams: Promise<{ ad?: string }> }
 ): Promise<Metadata> {
     const params = await searchParams;
-    const adId = params?.ad;
+    const adRaw = params?.ad;
 
-    if (!adId) {
+    if (!adRaw) {
         return { title: 'Shadamon.com | দ্রুত ও সহজ কেনাবেচার স্মার্ট মার্কেটপ্লেস', description: 'The ultimate marketing platform' };
     }
+
+    const idMatch = adRaw.match(/--([a-f\d]{24})$/i);
+    const adId = idMatch ? idMatch[1] : adRaw;
 
     try {
         const res = await fetch(`${API_URL}/api/ads/public/${adId}`, {

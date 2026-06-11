@@ -11,7 +11,6 @@ export default function SettingsHead() {
         if (settings.favIcon) {
             const iconUrl = getImageUrl(settings.favIcon);
             if (iconUrl) {
-                // Update all icon links (rel="icon" and rel="shortcut icon")
                 const iconLinks = document.querySelectorAll<HTMLLinkElement>("link[rel='icon'], link[rel='shortcut icon']");
                 if (iconLinks.length > 0) {
                     iconLinks.forEach(link => { link.href = iconUrl; });
@@ -22,7 +21,6 @@ export default function SettingsHead() {
                     link.href = iconUrl;
                 }
 
-                // Update all apple-touch-icon links
                 const appleLinks = document.querySelectorAll<HTMLLinkElement>("link[rel='apple-touch-icon']");
                 if (appleLinks.length > 0) {
                     appleLinks.forEach(link => { link.href = iconUrl; });
@@ -35,6 +33,30 @@ export default function SettingsHead() {
             }
         }
     }, [settings.favIcon]);
+
+    useEffect(() => {
+        if (settings.ogImage) {
+            const ogUrl = getImageUrl(settings.ogImage);
+            if (ogUrl) {
+                const setMetaContent = (selector: string, content: string) => {
+                    const el = document.querySelector<HTMLMetaElement>(selector);
+                    if (el) {
+                        el.content = content;
+                    } else {
+                        const meta = document.createElement('meta');
+                        const [attr, val] = selector.includes('property')
+                            ? ['property', selector.match(/\[property="([^"]+)"\]/)?.[1] || '']
+                            : ['name', selector.match(/\[name="([^"]+)"\]/)?.[1] || ''];
+                        meta.setAttribute(attr, val);
+                        meta.content = content;
+                        document.head.appendChild(meta);
+                    }
+                };
+                setMetaContent('meta[property="og:image"]', ogUrl);
+                setMetaContent('meta[name="twitter:image"]', ogUrl);
+            }
+        }
+    }, [settings.ogImage]);
 
     return null;
 }

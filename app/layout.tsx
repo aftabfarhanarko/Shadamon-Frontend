@@ -5,24 +5,45 @@ import { LanguageProvider } from "./context/LanguageContext";
 import { Toaster } from "react-hot-toast";
 import RegisterServiceWorker from "@/components/RegisterServiceWorker"
 
-export const metadata: Metadata = {
-  title: "Shadamon.com | দ্রুত ও সহজ কেনাবেচার স্মার্ট মার্কেটপ্লেস",
-  description: "The ultimate marketing platform",
-  openGraph: {
-    title: "Shadamon.com | দ্রুত ও সহজ কেনাবেচার স্মার্ট মার্কেটপ্লেস",
-    description: "The ultimate marketing platform",
-    url: "https://shadamon.com",
-    siteName: "Shadamon",
-    images: [{ url: "https://shadamon.com/og.png", width: 1200, height: 630, alt: "Shadamon" }],
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Shadamon.com | দ্রুত ও সহজ কেনাবেচার স্মার্ট মার্কেটপ্লেস",
-    description: "The ultimate marketing platform",
-    images: ["https://shadamon.com/og.png"],
-  },
-};
+const SITE_TITLE = "Shadamon.com | দ্রুত ও সহজ কেনাবেচার স্মার্ট মার্কেটপ্লেস";
+const SITE_DESCRIPTION = "The ultimate marketing platform";
+const FALLBACK_OG_IMAGE = "https://shadamon.com/og.png";
+
+async function fetchOgImageUrl(): Promise<string> {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const res = await fetch(`${apiUrl}/api/settings/dashboard`, { next: { revalidate: 3600 } });
+    const data = await res.json();
+    if (data.success && data.data?.ogImage) {
+      const p = data.data.ogImage as string;
+      if (p.startsWith('http')) return p;
+      return `${apiUrl}/${p.startsWith('/') ? p.slice(1) : p}`;
+    }
+  } catch {}
+  return FALLBACK_OG_IMAGE;
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const ogImageUrl = await fetchOgImageUrl();
+  return {
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    openGraph: {
+      title: SITE_TITLE,
+      description: SITE_DESCRIPTION,
+      url: "https://shadamon.com",
+      siteName: "Shadamon",
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: "Shadamon" }],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: SITE_TITLE,
+      description: SITE_DESCRIPTION,
+      images: [ogImageUrl],
+    },
+  };
+}
 
 import { SettingsProvider } from "./context/SettingsContext";
 import SettingsHead from "./components/SettingsHead";
@@ -69,20 +90,7 @@ export default function RootLayout({
         <link rel="shortcut icon" href="/web-app-manifest-192x192.png" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" />
 
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:url" content="https://shadamon.com" />
-        <meta name="twitter:title" content="Shadamon.com | দ্রুত ও সহজ কেনাবেচার স্মার্ট মার্কেটপ্লেস" />
-        <meta name="twitter:description" content="The ultimate marketing platform" />
-        <meta name="twitter:image" content="https://shadamon.com/og.png" />
         <meta name="twitter:creator" content="@shadamon" />
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="Shadamon.com | দ্রুত ও সহজ কেনাবেচার স্মার্ট মার্কেটপ্লেস" />
-        <meta property="og:description" content="The ultimate marketing platform" />
-        <meta property="og:site_name" content="Shadamon" />
-        <meta property="og:url" content="https://shadamon.com" />
-        <meta property="og:image" content="https://shadamon.com/og.png" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
 
         <script
           type="application/ld+json"
