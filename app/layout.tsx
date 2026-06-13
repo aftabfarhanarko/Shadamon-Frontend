@@ -11,7 +11,8 @@ const FALLBACK_OG_IMAGE = "https://shadamon.com/og.png";
 
 async function fetchOgImageUrl(): Promise<string> {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    // const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const apiUrl = 'https://shadamon.com';
     const res = await fetch(`${apiUrl}/api/settings/dashboard`, { next: { revalidate: 3600 } });
     const data = await res.json();
     if (data.success && data.data?.ogImage) {
@@ -19,7 +20,7 @@ async function fetchOgImageUrl(): Promise<string> {
       if (p.startsWith('http')) return p;
       return `${apiUrl}/${p.startsWith('/') ? p.slice(1) : p}`;
     }
-  } catch {}
+  } catch { }
   return FALLBACK_OG_IMAGE;
 }
 
