@@ -197,11 +197,11 @@ export default function AdDetailsModal({ isOpen, onClose, ad, initialReportOpen 
             fetch(`${API_BASE_URL}/api/locations`)
                 .then(res => res.json())
                 .then(data => { if (data.success) setLocations(data.data); })
-                .catch(() => {});
+                .catch(() => { });
             fetch(`${API_BASE_URL}/api/locations/sub`)
                 .then(res => res.json())
                 .then(data => { if (data.success) setSubLocations(data.data); })
-                .catch(() => {});
+                .catch(() => { });
 
             // Fetch current user if token exists to check ownership and favorites
             const token = Cookies.get('token');
@@ -1388,7 +1388,7 @@ I have sent my CV for your review.`;
                                     onClick={() => {
                                         const isMobile = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
                                         if (isMobile && navigator.share) {
-                                            navigator.share({ title: ad.headline, text: ad.headline, url: adLink }).catch(() => {});
+                                            navigator.share({ title: ad.headline, text: ad.headline, url: adLink }).catch(() => { });
                                         } else {
                                             setShowShareOptions(v => !v);
                                         }
@@ -1421,7 +1421,7 @@ I have sent my CV for your review.`;
                                     </button>
                                     <button
                                         onClick={() => {
-                                            const appId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
+                                            const appId = '352947546661410'; // Replace with your Facebook App ID if you have one
                                             const url = appId
                                                 ? `https://www.facebook.com/dialog/send?app_id=${appId}&link=${encodeURIComponent(adLink)}&redirect_uri=${encodeURIComponent(adLink)}`
                                                 : `https://www.facebook.com/dialog/send?link=${encodeURIComponent(adLink)}&redirect_uri=${encodeURIComponent(adLink)}`;

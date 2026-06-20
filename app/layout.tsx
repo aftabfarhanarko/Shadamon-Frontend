@@ -7,12 +7,12 @@ import RegisterServiceWorker from "@/components/RegisterServiceWorker"
 
 const SITE_TITLE = "Shadamon.com | দ্রুত ও সহজ কেনাবেচার স্মার্ট মার্কেটপ্লেস";
 const SITE_DESCRIPTION = "The ultimate marketing platform";
-const FALLBACK_OG_IMAGE = "https://shadamon.com/og.png";
+const FALLBACK_OG_IMAGE = "https://shadamon.com/og.jfif";
 
 async function fetchOgImageUrl(): Promise<string> {
   try {
-    // const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-    const apiUrl = 'https://shadamon.com';
+    // const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.shadamon.com';
+    const apiUrl = 'https://api.shadamon.com';
     const res = await fetch(`${apiUrl}/api/settings/dashboard`, { next: { revalidate: 3600 } });
     const data = await res.json();
     if (data.success && data.data?.ogImage) {
@@ -57,38 +57,27 @@ export default function RootLayout({
   return (
     <html lang="bn">
       <head>
-        <link rel="manifest" href="/manifest.webmanifest" />
-        <meta name="theme-color" content="#ffffff" />
         <meta name="google-site-verification" content="google971854131468af49.htm" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Shadamon" />
-
-        <link rel="icon" href="/web-app-manifest-192x192.png" sizes="192x192" type="image/png" />
-        <link rel="apple-touch-icon" href="/apple-icon.png" />
-
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Shadamon" />
+        <meta name="theme-color" content="#ffffff" />
         <meta name="description" content="The ultimate marketing platform" />
         <meta name="format-detection" content="telephone=no" />
+
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="msapplication-config" content="/icons/browserconfig.xml" />
-        <meta name="msapplication-TileColor" content="#2B5797" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Shadamon" />
+        <meta name="msapplication-TileColor" content="#ffffff" />
         <meta name="msapplication-tap-highlight" content="no" />
-        <meta name="theme-color" content="#000000" />
 
-        <link rel="apple-touch-icon" href="/icons/touch-icon-iphone.png" />
-        <link rel="apple-touch-icon" sizes="152x152" href="/icons/touch-icon-ipad.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/icons/touch-icon-iphone-retina.png" />
-        <link rel="apple-touch-icon" sizes="167x167" href="/icons/touch-icon-ipad-retina.png" />
-
-        <link rel="icon" type="image/png" sizes="32x32" href="/web-app-manifest-192x192.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/web-app-manifest-192x192.png" />
         <link rel="manifest" href="/manifest.webmanifest" />
-        <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5" />
-        <link rel="shortcut icon" href="/web-app-manifest-192x192.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/hc.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/hc.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/hc.png" />
+        <link rel="shortcut icon" href="/hc.png" />
+        <link rel="apple-touch-icon" href="/hc.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/hc.png" />
+        <link rel="apple-touch-icon" sizes="167x167" href="/hc.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/hc.png" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" />
 
         <meta name="twitter:creator" content="@shadamon" />
@@ -162,8 +151,8 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{
           __html: `
             window.fbAsyncInit = function() {
-              FB.init({
-                appId      : '${process.env.NEXT_PUBLIC_FACEBOOK_APP_ID}',
+              FB.init({,
+                appId      : '352947546661410',
                 cookie     : true,
                 xfbml      : true,
                 version    : 'v18.0'
