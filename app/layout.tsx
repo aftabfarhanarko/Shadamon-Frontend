@@ -7,18 +7,18 @@ import RegisterServiceWorker from "@/components/RegisterServiceWorker"
 
 const SITE_TITLE = "Shadamon.com | দ্রুত ও সহজ কেনাবেচার স্মার্ট মার্কেটপ্লেস";
 const SITE_DESCRIPTION = "The ultimate marketing platform";
-const FALLBACK_OG_IMAGE = "https://shadamon.com/og.jfif";
+const FALLBACK_OG_IMAGE = "https://shadamon.com/og.png";
+const API_URL = 'https://api.shadamon.com';
 
 async function fetchOgImageUrl(): Promise<string> {
   try {
-    // const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.shadamon.com';
-    const apiUrl = 'https://api.shadamon.com';
-    const res = await fetch(`${apiUrl}/api/settings/dashboard`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${API_URL}/api/settings/dashboard`, { next: { revalidate: 3600 } });
+    if (!res.ok) return FALLBACK_OG_IMAGE;
     const data = await res.json();
     if (data.success && data.data?.ogImage) {
       const p = data.data.ogImage as string;
       if (p.startsWith('http')) return p;
-      return `${apiUrl}/${p.startsWith('/') ? p.slice(1) : p}`;
+      return `${API_URL}/${p.startsWith('/') ? p.slice(1) : p}`;
     }
   } catch { }
   return FALLBACK_OG_IMAGE;
@@ -42,6 +42,9 @@ export async function generateMetadata(): Promise<Metadata> {
       title: SITE_TITLE,
       description: SITE_DESCRIPTION,
       images: [ogImageUrl],
+    },
+    other: {
+      "fb:app_id": "352947546661410",
     },
   };
 }
