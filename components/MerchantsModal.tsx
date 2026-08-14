@@ -46,9 +46,12 @@ export default function MerchantsModal({
   const { t, language } = useLanguage();
   const [currentPage, setCurrentPage] = useState(1);
 
-  const promotedMerchants = premiumUsers.filter(
-    (user) => user.hasPromotedAds === true,
-  );
+  // const promotedMerchants = premiumUsers.filter(
+  //   (user) => user.hasPromotedAds === true,
+  // );
+
+  // uncomment this line to show all merchants instead of only promoted ones
+  const promotedMerchants = premiumUsers;
 
   const totalPages = Math.max(
     1,
@@ -93,7 +96,7 @@ export default function MerchantsModal({
               <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
             </button>
             <h2 className="text-[16px] text-black font-medium">
-              {language === "bn" ? "বিক্রেতা" : "Merchants"}
+              {language === "bn" ? "জনপ্রিয় বিক্রেতা" : "Popular Merchants"}
             </h2>
           </div>
           <button
@@ -196,11 +199,11 @@ export default function MerchantsModal({
               {language === "bn" ? "পূর্ববর্তী" : "Prev"}
             </button>
 
-            <span className="text-[11px] text-slate-500 font-medium">
+            {/* <span className="text-[11px] text-slate-500 font-medium">
               {language === "bn"
                 ? `পৃষ্ঠা ${currentPage} / ${totalPages}`
                 : `Page ${currentPage} of ${totalPages}`}
-            </span>
+            </span> */}
 
             <button
               onClick={goNext}

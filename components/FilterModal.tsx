@@ -466,7 +466,7 @@ export default function FilterModal({
             </div>
 
             {/* Promoted Listing */}
-            <div className="space-y-4 pt-2">
+            {/* <div className="space-y-4 pt-2">
               <h3 className="text-[14px] font-bold text-black">
                 {translate("Promoted Listing", "প্রোমোটেড লিস্টিং")}
               </h3>
@@ -500,7 +500,7 @@ export default function FilterModal({
                   </span>
                 </label>
 
-                {/* Dynamic Labels from Premier Opportunity */}
+                {/* Dynamic Labels from Premier Opportunity 
                 {premierData?.labels?.map((label) => (
                   <label
                     key={label._id}
@@ -530,9 +530,9 @@ export default function FilterModal({
                   </label>
                 ))}
               </div>
-            </div>
+            </div> */}
 
-            <div className="mt-2 h-px bg-slate-400 w-full" />
+            {/* <div className="mt-2 h-px bg-slate-400 w-full" /> */}
 
             {/* Sort By */}
             {/* <div className="space-y-3 pt-2">

@@ -2362,7 +2362,7 @@ export default function DashboardClient() {
                             </h3>
                           </div>
                           <div className="flex gap-4 overflow-x-auto no-scrollbar pb-1 px-1">
-                            {premiumUsers.map((user) => (
+                            {premiumUsers.slice(0, 5).map((user) => (
                               <div
                                 key={user._id}
                                 className="flex-none flex flex-col items-center w-[90px] gap-2 cursor-pointer"
