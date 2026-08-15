@@ -1682,21 +1682,20 @@ export default function DashboardLayoutClient({
         }}
       />
 
-      <AdDetailsModal
-        isOpen={!!selectedAdForDetail}
-        ad={selectedAdForDetail}
-        onClose={() => {
-          setSelectedAdForDetail(null);
-          setShouldOpenReportAfterLogin(false);
-          const params = new URLSearchParams(window.location.search);
-          params.delete("ad");
-          const queryString = params.toString();
-          router.push(queryString ? `${pathname}?${queryString}` : pathname, {
-            scroll: false,
-          });
-        }}
-        initialReportOpen={shouldOpenReportAfterLogin}
-      />
+<AdDetailsModal
+    isOpen={!!selectedAdForDetail}
+    ad={selectedAdForDetail}
+    onClose={() => {
+        setSelectedAdForDetail(null);
+        setShouldOpenReportAfterLogin(false);
+        const params = new URLSearchParams(window.location.search);
+        params.delete('ad');
+        const queryString = params.toString();
+        const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+        window.history.replaceState(null, '', newUrl); // instead of router.push
+    }}
+    initialReportOpen={shouldOpenReportAfterLogin}
+/>
 
       <MessageModal
         isOpen={isMessageModalOpen}
