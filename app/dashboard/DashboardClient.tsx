@@ -390,7 +390,8 @@ export default function DashboardClient() {
   // async fetch + re-render), the live scroller may already have jumped,
   // so reading it there is unreliable. Capturing it here at the moment of
   // the click is the fix.
-  const openAdFromFeed = (ad: ActiveAd) => {
+  const openAdFromFeed = (ad: ActiveAd | null) => {
+    if (!ad) return;
     try {
       const scroller = document.getElementById("main-dashboard-scroller");
       if (scroller) {
