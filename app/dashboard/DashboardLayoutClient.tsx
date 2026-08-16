@@ -818,6 +818,402 @@ closeAdDetail();
     setIsMobileSearchOpen(false);
   };
 
+<<<<<<< Updated upstream
+    const handleLogout = () => {
+        Cookies.remove('token');
+        Cookies.remove('user');
+=======
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const [socket, setSocket] = useState<any>(null);
+
+  const { settings, fetchDashboardSettings ,fetchAdPositions} = useSettings();
+
+  // Socket.io for notifications and Auth Sync
+  useEffect(() => {
+    const fetchUserAndSetupSocket = async () => {
+      const token = Cookies.get("token");
+      if (!token) {
+>>>>>>> Stashed changes
+        setUser(null);
+        setUnreadCount(0);
+        if (socket) {
+            socket.disconnect();
+            setSocket(null);
+        }
+        sessionStorage.removeItem('ad_session_views');
+        sessionStorage.removeItem('ad_session_view_tokens');
+        window.dispatchEvent(new Event('auth-change'));
+        toast.success("Logged out successfully");
+        window.location.href = '/d';
+    };
+
+  const toggleLanguage = () => {
+    setLanguage(language === "en" ? "bn" : "en");
+  };
+
+  const toggleCategory = (id: string) => {
+    setExpandedCategory(expandedCategory === id ? null : id);
+  };
+
+  const toggleLocation = (id: string) => {
+    setExpandedLocation(expandedLocation === id ? null : id);
+  };
+
+  const handleAddAdClick = () => {
+    const token = Cookies.get("token");
+    if (!token) {
+      setMobileEntryReason("post_ad");
+      setIsMobileEntryModalOpen(true);
+    } else {
+      setTempMobile(""); // Clear previous temp mobile if user is logged in
+      setIsPostAdModalOpen(true);
+    }
+  };
+
+  const handleAccountClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const token = Cookies.get("token");
+    if (!token) {
+      setMobileEntryReason("account");
+      setIsMobileEntryModalOpen(true);
+    } else {
+      setViewingUserId(undefined);
+      setAccountModalInitialTab("Post");
+      setIsAccountModalOpen(true);
+    }
+  };
+
+  const handleMessageClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const token = Cookies.get("token");
+    if (!token) {
+      setMobileEntryReason("message");
+      setIsMobileEntryModalOpen(true);
+    } else {
+      setIsMessageModalOpen(true);
+      fetchUnreadCount();
+    }
+  };
+
+  const handlePromoteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // Open the same footer promote flow/modal used on the home page.
+    window.dispatchEvent(new Event("open-footer-promote-modal"));
+  };
+
+  const [headerOffset, setHeaderOffset] = useState(0);
+  const [isNavbarVisible, setIsNavbarVisible] = useState(true);
+  const [lastScrollTop, setLastScrollTop] = useState(0);
+
+  useEffect(() => {
+    const handleCenterScroll = (e: any) => {
+      setHeaderOffset(e.detail?.offset || 0);
+    };
+    window.addEventListener(
+      "center-scroll",
+      handleCenterScroll as EventListener,
+    );
+    return () =>
+      window.removeEventListener(
+        "center-scroll",
+        handleCenterScroll as EventListener,
+      );
+  }, []);
+
+  const isHomeNavActive =
+    pathname === "/dashboard" || pathname === "/d" || pathname === "/";
+  const isInboxNavActive =
+    pathname.startsWith("/dashboard/inbox") || pathname.startsWith("/d/inbox");
+  const isProfileNavActive =
+    pathname.startsWith("/dashboard/profile") ||
+    pathname.startsWith("/d/profile");
+
+<<<<<<< Updated upstream
+    return (
+        <div className="h-screen bg-[#F1F5F9] font-sans overflow-hidden flex flex-col relative">
+            <AdPopup />
+            <nav className={cn(
+                "md:hidden fixed bottom-0 inset-x-0 z-[60] h-[52px] pb-[max(1px,env(safe-area-inset-bottom))] transition-transform duration-300",
+                !isNavbarVisible && "translate-y-[115%]"
+            )}>
+                <div className="absolute inset-x-0 top-0 bottom-0 rounded-t-[22px] rounded-b-none bg-gradient-to-b from-white to-[#F6FAFF] border-t border-slate-200 shadow-[0_-12px_24px_-10px_rgba(15,23,42,0.45)]" />
+=======
+  useEffect(() => {
+    fetchDashboardSettings();
+    fetchAdPositions();
+  }, [fetchDashboardSettings]);
+>>>>>>> Stashed changes
+
+        <div className="relative h-full flex items-end justify-between px-5 z-10 py-0">
+          {/* Home */}
+          <Link
+            href="/d"
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.href = "/d";
+            }}
+            className="flex flex-col items-center justify-center min-w-[44px] h-full gap-0"
+          >
+            <div
+              className={cn(
+                "w-7 h-7 flex items-center justify-center transition-colors duration-200",
+                isHomeNavActive ? "text-[#0079b8]" : "text-slate-600",
+              )}
+            >
+              {isHomeNavActive ? (
+                <RiHome5Fill className="w-4.5 h-4.5" />
+              ) : (
+                <RiHome5Line className="w-4.5 h-4.5" />
+              )}
+            </div>
+            <span
+              className={cn(
+                "text-[8px] leading-none font-medium",
+                isHomeNavActive ? "text-[#0079b8]" : "text-slate-500",
+              )}
+            >
+              {t("home")}
+            </span>
+          </Link>
+
+          {/* Search */}
+          <button
+            onClick={() => setIsSearchModalOpen(true)}
+            className={cn(
+              "flex flex-col items-center justify-center min-w-[44px] h-full gap-0 transition-colors",
+              isSearchModalOpen ? "text-[#0079b8]" : "text-slate-600",
+            )}
+          >
+            <div
+              className={cn(
+                "w-7 h-7 rounded-xl flex items-center justify-center transition-all duration-200",
+                isSearchModalOpen &&
+                  "bg-[#E6F4FF] shadow-[inset_0_0_0_1px_rgba(0,136,204,0.18)]",
+              )}
+            >
+              <RiSearchLine className="w-4.5 h-4.5" />
+            </div>
+            <span
+              className={cn(
+                "text-[8px] leading-none font-medium",
+                isSearchModalOpen ? "text-[#0079b8]" : "text-slate-500",
+              )}
+            >
+              {t("search_nav")}
+            </span>
+          </button>
+
+<<<<<<< Updated upstream
+                    {/* Centered Floating Post Ad Button */}
+                    <div className="relative h-full flex flex-col items-center justify-end">
+                        <button
+                            onClick={handleAddAdClick}
+                            className="absolute -top-0.5 w-10 h-10 bg-[#0088cc] rounded-full flex items-center justify-center text-white shadow-[0_7px_14px_-6px_rgba(0,136,204,0.65)] active:scale-95 transition-transform"
+                        >
+                            <RiAddLine className="w-5.5 h-5.5" />
+                        </button>
+                        <div className="w-10 flex flex-col items-center">
+                            <span className="text-[8px] text-transparent leading-none mb-0 mt-0.5">.</span>
+                        </div>
+=======
+        if (locRes.success && subLocRes.success) {
+          const locs = locRes.data
+            .map((l: any) => ({
+              ...l,
+              subLocations: subLocRes.data
+                .filter(
+                  (sl: any) => (sl.location?._id || sl.location) === l._id,
+                )
+                .sort((a: any, b: any) => (a.order || 0) - (b.order || 0)),
+            }))
+            .sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+          setLocations(locs);
+        }
+      } catch (error) {
+        console.error("Failed to load menu data", error);
+      }
+    };
+    fetchData();
+
+    // Auto-open modal if openModal=true or profile=ID is in URL
+    const openModal = searchParams.get("openModal");
+    const openUsersProfile = searchParams.get("openUsersProfile");
+    const openMessageModal = searchParams.get("openMessageModal");
+    const profileId = searchParams.get("profile");
+    const openPromoteTab = searchParams.get("openPromoteTab");
+    const token = Cookies.get("token");
+
+    if (openPromoteTab === "true" && token) {
+      setAccountModalInitialTab("Post");
+      setIsAccountModalOpen(true);
+      const params = new URLSearchParams(window.location.search);
+      params.delete("openPromoteTab");
+      router.replace(`${window.location.pathname}?${params.toString()}`, {
+        scroll: false,
+      });
+    }
+
+    if (openMessageModal === "true" && token) {
+      setIsMessageModalOpen(true);
+      const params = new URLSearchParams(window.location.search);
+      params.delete("openMessageModal");
+      router.replace(`${window.location.pathname}?${params.toString()}`, {
+        scroll: false,
+      });
+    }
+
+    if (openUsersProfile === "true" && token) {
+      setAccountModalInitialTab("Post");
+      setIsAccountModalOpen(true);
+      const params = new URLSearchParams(window.location.search);
+      params.delete("openUsersProfile");
+      router.replace(`${window.location.pathname}?${params.toString()}`, {
+        scroll: false,
+      });
+    }
+
+    if (openModal === "true" && token) {
+      setIsPostAdModalOpen(true);
+      const params = new URLSearchParams(window.location.search);
+      params.delete("openModal");
+      router.replace(`${window.location.pathname}?${params.toString()}`, {
+        scroll: false,
+      });
+    }
+
+    if (profileId) {
+      setViewingUserId(profileId);
+      setIsAccountModalOpen(true);
+    }
+
+    const adParam = searchParams.get("ad");
+    if (adParam) {
+      const idMatch = adParam.match(/--([a-f\d]{24})$/i);
+      const adId = idMatch ? idMatch[1] : adParam;
+      fetch(`${API_BASE_URL}/api/ads/public/${adId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            const ad = data.data;
+            if (ad.promoteType === "traffic" && ad.trafficLink) {
+              const directLink = ad.trafficLink.startsWith("http")
+                ? ad.trafficLink
+                : `https://${ad.trafficLink}`;
+              window.open(directLink, "_blank");
+              // Clear param
+              const params = new URLSearchParams(searchParams.toString());
+              params.delete("ad");
+              router.replace(
+                params.toString()
+                  ? `${pathname}?${params.toString()}`
+                  : pathname,
+                { scroll: false },
+              );
+            }
+            //new logic for opening ad details modal 
+openAdDetail(ad);
+          }
+        })
+        .catch((err) => console.error("Error fetching ad from URL:", err));
+    } else {
+      //new logic for closing ad details modal 
+closeAdDetail();
+    }
+
+    // Handle direct post-ad route aliases
+    if (pathname === "/dashboard/post-ad" || pathname === "/d/post-ad") {
+      const token = Cookies.get("token");
+      if (!token) {
+        setMobileEntryReason("post_ad");
+        setIsMobileEntryModalOpen(true);
+      } else {
+        setTempMobile("");
+        setIsPostAdModalOpen(true);
+      }
+    }
+  }, [searchParams, pathname]);
+
+  // Apply Site Settings (Favicon, etc)
+  useEffect(() => {
+    if (settings.favIcon) {
+      const faviconUrl = getImageUrl(settings.favIcon);
+
+      // Standard favicon
+      let link: HTMLLinkElement | null =
+        document.querySelector("link[rel*='icon']");
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "icon";
+        document.getElementsByTagName("head")[0].appendChild(link);
+      }
+      link.href = faviconUrl;
+
+      // Apple Touch Icon
+      let appleIcon: HTMLLinkElement | null = document.querySelector(
+        "link[rel='apple-touch-icon']",
+      );
+      if (!appleIcon) {
+        appleIcon = document.createElement("link");
+        appleIcon.rel = "apple-touch-icon";
+        document.getElementsByTagName("head")[0].appendChild(appleIcon);
+      }
+      appleIcon.href = faviconUrl;
+
+      // Shortcut icon
+      let shortcutIcon: HTMLLinkElement | null = document.querySelector(
+        "link[rel='shortcut icon']",
+      );
+      if (!shortcutIcon) {
+        shortcutIcon = document.createElement("link");
+        shortcutIcon.rel = "shortcut icon";
+        document.getElementsByTagName("head")[0].appendChild(shortcutIcon);
+      }
+      shortcutIcon.href = faviconUrl;
+    }
+  }, [settings.favIcon]);
+
+  // Handle Search Suggestions
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (searchQuery.trim().length >= 2) {
+        try {
+          const res = await fetch(
+            `${API_BASE_URL}/api/ads/public/all?search=${encodeURIComponent(searchQuery)}&limit=5`,
+          );
+          const data = await res.json();
+          console.log("Search suggestions API response:", data);
+          if (data.success) {
+            setSuggestions(data.data);
+            setShowSuggestions(true);
+          }
+        } catch (err) {
+          console.error("Suggestion fetch error:", err);
+        }
+      } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    };
+
+    const timeoutId = setTimeout(fetchSuggestions, 50);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  const handleSearchExecution = () => {
+    window.dispatchEvent(
+      new CustomEvent("show-search-results", {
+        detail: { query: searchQuery },
+      }),
+    );
+    setShowSuggestions(false);
+    setIsMobileSearchOpen(false);
+  };
+
   const handleLogout = () => {
     Cookies.remove("token");
     Cookies.remove("user");
@@ -999,6 +1395,165 @@ closeAdDetail();
               </span>
             </div>
           </div>
+
+          {/* Inbox */}
+          <Link
+            href="/d/inbox"
+            onClick={handleMessageClick}
+            className={cn(
+              "flex flex-col items-center justify-center min-w-[44px] h-full gap-0 relative",
+              isInboxNavActive ? "text-[#0079b8]" : "text-slate-600",
+            )}
+          >
+            <div
+              className={cn(
+                "relative w-7 h-7 rounded-xl flex items-center justify-center transition-all duration-200",
+                isInboxNavActive &&
+                  "bg-[#E6F4FF] shadow-[inset_0_0_0_1px_rgba(0,136,204,0.18)]",
+              )}
+            >
+              {isInboxNavActive ? (
+                <RiMailFill className="w-4.5 h-4.5" />
+              ) : (
+                <RiMailLine className="w-4.5 h-4.5" />
+              )}
+              {unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-2 bg-red-600 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-white">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </div>
+            <span
+              className={cn(
+                "text-[8px] leading-none font-medium",
+                isInboxNavActive ? "text-[#0079b8]" : "text-slate-500",
+              )}
+            >
+              {t("inbox")}
+            </span>
+          </Link>
+
+          {/* Account */}
+          <Link
+            href="/d/profile"
+            onClick={handleAccountClick}
+            className={cn(
+              "flex flex-col items-center justify-center min-w-[44px] h-full gap-0 transition-all",
+              isProfileNavActive ? "text-[#0079b8]" : "text-slate-600",
+            )}
+          >
+            <div
+              className={cn(
+                "w-7 h-7 rounded-xl flex items-center justify-center overflow-hidden transition-all duration-200",
+                isProfileNavActive
+                  ? "bg-[#E6F4FF] shadow-[inset_0_0_0_1px_rgba(0,136,204,0.18)]"
+                  : "bg-transparent",
+              )}
+            >
+              {user && user.photo ? (
+                <img
+                  src={getImageUrl(user.photo)}
+                  alt={user.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <RiUser3Line className="w-4.5 h-4.5" />
+              )}
+            </div>
+            <span
+              className={cn(
+                "text-[8px] leading-none font-medium",
+                isProfileNavActive ? "text-[#0079b8]" : "text-slate-500",
+              )}
+            >
+              {t("account")}
+            </span>
+          </Link>
+        </div>
+      </nav>
+
+      {/* Main Content Area - Full width scroller to show scrollbar on the far right edge of the screen */}
+      <main
+        id="main-dashboard-scroller"
+        className="flex-1 w-full overflow-y-auto overflow-x-hidden"
+        onScroll={(e) => {
+          const scrollTop = e.currentTarget.scrollTop;
+          const clamped = Math.min(scrollTop, 64);
+          setHeaderOffset(clamped);
+          window.dispatchEvent(
+            new CustomEvent("center-scroll", { detail: { offset: clamped } }),
+          );
+
+          // Mobile Navbar hide/show logic
+          if (scrollTop > lastScrollTop && scrollTop > 100) {
+            if (isNavbarVisible) {
+              setIsNavbarVisible(false);
+              window.dispatchEvent(
+                new CustomEvent("nav-visibility", {
+                  detail: { visible: false },
+                }),
+              );
+            }
+          } else if (scrollTop < lastScrollTop) {
+            if (!isNavbarVisible) {
+              setIsNavbarVisible(true);
+              window.dispatchEvent(
+                new CustomEvent("nav-visibility", {
+                  detail: { visible: true },
+                }),
+              );
+            }
+          }
+          setLastScrollTop(scrollTop);
+        }}
+      >
+        {/* Pos 1: Website Top - Inside scroller so it scrolls up */}
+        {settings.adPositions && settings.adPositions.length > 0 && (
+  <AdDisplay positionId={1} className="bg-white border-b border-slate-100" />
+)}
+
+        {/* Header Wrapper */}
+        <div
+          className={cn(
+            "z-50 sticky top-0 transition-transform duration-300",
+            !isNavbarVisible && "-translate-y-full",
+          )}
+        >
+          {/* Top Navigation Bar */}
+          <header className="bg-white border-b border-slate-200 h-14 md:h-16 w-full">
+            <div className="max-w-[1320px] mx-auto px-2.5 md:px-4 h-full flex items-center justify-between md:justify-center">
+              {/* Section 1: 300px (Logo & Ad Count) */}
+              <div
+                className={cn(
+                  "md:w-[300px] flex-none flex items-center gap-1.5 md:gap-2",
+                  isMobileSearchOpen && "hidden md:flex",
+                )}
+              >
+                {/* Mobile Menu Button - Hidden as requested */}
+                <button
+                  className="hidden p-2 -ml-2 text-black hover:bg-slate-100 rounded-full transition-colors"
+                  onClick={() => setIsMobileMenuOpen(true)}
+                >
+                  <Menu className="w-6 h-6" />
+                </button>
+
+                <Link
+                  href="/d"
+                  className="flex items-center gap-1.5 md:gap-2 shrink-0"
+                  onClick={() => {
+                    // window.dispatchEvent(new Event("reset-saved-search"));
+                    window.dispatchEvent(new Event("refresh-ads"));
+                  }}
+                >
+                  {settings.siteLogo ? (
+                    <div className="h-6 md:h-10 w-auto">
+                      <img
+                        src={getImageUrl(settings.siteLogo)}
+                        alt="Logo"
+                        className="h-full w-auto object-contain"
+                      />
+>>>>>>> Stashed changes
+                    </div>
 
           {/* Inbox */}
           <Link
@@ -1783,6 +2338,417 @@ openAdDetail(ad);
         }}
       />
 
+            <FilterModal
+                isOpen={isGlobalFilterModalOpen}
+                onClose={() => setIsGlobalFilterModalOpen(false)}
+                categories={categories}
+                locations={locations}
+                initialFilters={globalFilters}
+                onApply={applyGlobalFilters}
+            />
+
+
+        </div>
+<<<<<<< Updated upstream
+    );
+=======
+
+        {/* Pos 2: Bottom of Header - Scrolls up before content */}
+        {settings.adPositions && settings.adPositions.length > 0 && (
+  <AdDisplay positionId={2} className="bg-white border-b border-slate-100" />
+)}
+
+        <div className="max-w-[1320px] mx-auto px-0 lg:px-4 pt-0 lg:pt-4">
+          {children}
+        </div>
+      </main>
+
+      {/* Mobile Sidebar (Drawer) */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-[100] md:hidden">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+
+          {/* Sidebar Content */}
+          <div className="absolute inset-y-0 left-0 w-[80%] max-w-sm bg-white shadow-2xl flex flex-col animate-in slide-in-from-left duration-300">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <span className="font-bold text-lg text-black">Menu</span>
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-2 -mr-2 text-black hover:bg-slate-200 rounded-full"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+              {/* Categories */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-black font-bold border-b border-slate-100 pb-2">
+                  <Grid className="w-5 h-5 text-brand-600" />
+                  <h3>{t("category")}</h3>
+                </div>
+                <div className="space-y-1">
+                  {categories.map((cat) => (
+                    <div key={cat._id}>
+                      <button
+                        onClick={() => toggleCategory(cat._id)}
+                        className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 text-black transition-colors text-sm font-medium"
+                      >
+                        <span>
+                          {getLocalizedCategoryName(
+                            cat.name,
+                            cat.categoryNameBn,
+                          )}
+                        </span>
+                        {cat.subcategories.length > 0 &&
+                          (expandedCategory === cat._id ? (
+                            <ChevronDown className="w-4 h-4 text-black" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4 text-black" />
+                          ))}
+                      </button>
+                      {expandedCategory === cat._id &&
+                        cat.subcategories.length > 0 && (
+                          <div className="ml-4 pl-4 border-l border-slate-100 mt-1 space-y-1">
+                            {cat.subcategories.map((sub) => (
+                              <button
+                                key={sub._id}
+                                className="flex items-center gap-2 w-full text-left py-1.5 text-xs text-black hover:text-brand-600"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                              >
+                                {sub.image && (
+                                  <img
+                                    src={getImageUrl(sub.image)}
+                                    className="w-4 h-4 object-contain rounded shrink-0"
+                                    alt=""
+                                  />
+                                )}
+                                {getLocalizedCategoryName(
+                                  sub.name,
+                                  sub.subCategoryNameBn,
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Locations */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-black font-bold border-b border-slate-100 pb-2">
+                  <MapPin className="w-5 h-5 text-brand-600" />
+                  <h3>{t("location")}</h3>
+                </div>
+                <div className="space-y-1">
+                  {locations.map((loc) => (
+                    <div key={loc._id}>
+                      <button
+                        onClick={() => toggleLocation(loc._id)}
+                        className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 text-black transition-colors text-sm font-medium"
+                      >
+                        <span>{loc.name}</span>
+                        {loc.subLocations.length > 0 &&
+                          (expandedLocation === loc._id ? (
+                            <ChevronDown className="w-4 h-4 text-black" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4 text-black" />
+                          ))}
+                      </button>
+                      {expandedLocation === loc._id &&
+                        loc.subLocations.length > 0 && (
+                          <div className="ml-4 pl-4 border-l border-slate-100 mt-1 space-y-1">
+                            {loc.subLocations.map((sub) => (
+                              <button
+                                key={sub._id}
+                                className="flex items-center gap-2 w-full text-left py-1.5 text-xs text-black hover:text-brand-600"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                              >
+                                {sub.image && (
+                                  <img
+                                    src={getImageUrl(sub.image)}
+                                    className="w-4 h-4 object-contain rounded shrink-0"
+                                    alt=""
+                                  />
+                                )}
+                                {sub.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer (Logout) */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center gap-2 p-2.5 bg-white border border-slate-200 text-black rounded-xl hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all font-bold text-sm"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>{t("logout")}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <PostAdModal
+        isOpen={isPostAdModalOpen}
+        onClose={() => {
+          setIsPostAdModalOpen(false);
+          setAdToEdit(null);
+          if (pathname === "/dashboard/post-ad" || pathname === "/d/post-ad") {
+            router.push("/d");
+          }
+        }}
+        editAd={adToEdit}
+        initialMobile={tempMobile} // Pass temp mobile
+        onSuccess={(newAd) => {
+          setIsPostAdModalOpen(false);
+          // Dispatch custom event to tell Dashboard to refetch
+          window.dispatchEvent(new Event("refresh-ads"));
+
+          // Open Account Activity Modal and go to Post tab
+          setAccountModalInitialTab("Post");
+          setIsAccountModalOpen(true);
+
+          if (pathname === "/dashboard/post-ad" || pathname === "/d/post-ad") {
+            router.replace("/d");
+          }
+        }}
+      />
+
+      <PromoteModal
+        isOpen={isPromoteModalOpen}
+        onClose={() => {
+          setIsPromoteModalOpen(false);
+          setAdToPromote(null);
+        }}
+        ad={adToPromote}
+      />
+
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onSwitchToRegister={() => {
+          setIsLoginModalOpen(false);
+          setIsRegisterModalOpen(true);
+        }}
+        initialMobile={initialMobile}
+        onSuccess={() => {
+          if (mobileEntryReason === "report") {
+            setIsLoginModalOpen(false);
+            //new logic for closing ad details modal 
+openAdDetail(reportAd);
+            setShouldOpenReportAfterLogin(true);
+            window.dispatchEvent(new Event("auth-change"));
+            return;
+          }
+          // Navigate to profile or message after login by reloading with param
+          const url = new URL(window.location.href);
+          if (mobileEntryReason === "message") {
+            url.searchParams.set("openMessageModal", "true");
+          } else {
+            url.searchParams.set("openUsersProfile", "true");
+          }
+          window.location.href = url.toString();
+        }}
+      />
+
+      <RegisterModal
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
+        onSwitchToLogin={() => {
+          setIsRegisterModalOpen(false);
+          setIsLoginModalOpen(true);
+        }}
+        initialMobile={initialMobile}
+        onSuccess={(needsVerification = true, token) => {
+          setIsRegisterModalOpen(false);
+          if (needsVerification && token) {
+            setVerificationToken(token);
+            setIsVerificationModalOpen(true);
+          } else {
+            if (mobileEntryReason === "report") {
+              //new logic for closing ad details modal 
+openAdDetail(reportAd);
+              setShouldOpenReportAfterLogin(true);
+              window.dispatchEvent(new Event("auth-change"));
+              return;
+            }
+            // Direct to profile or message
+            const url = new URL(window.location.href);
+            if (mobileEntryReason === "message") {
+              url.searchParams.set("openMessageModal", "true");
+            } else {
+              url.searchParams.set("openUsersProfile", "true");
+            }
+            window.location.href = url.toString();
+          }
+        }}
+      />
+
+      <MobileEntryModal
+        isOpen={isMobileEntryModalOpen}
+        onClose={() => {
+          setIsMobileEntryModalOpen(false);
+          if (pathname === "/dashboard/post-ad" || pathname === "/d/post-ad") {
+            router.push("/d");
+          }
+        }}
+        onUserExists={(mobile) => {
+          setTempMobile(mobile);
+          setIsMobileEntryModalOpen(false);
+          if (mobileEntryReason === "post_ad") {
+            setIsPostAdModalOpen(true);
+          } else {
+            setInitialMobile(mobile);
+            setIsLoginModalOpen(true);
+          }
+        }}
+        onUserNew={(mobile) => {
+          setTempMobile(mobile);
+          setIsMobileEntryModalOpen(false);
+          if (mobileEntryReason === "post_ad") {
+            setIsPostAdModalOpen(true);
+          } else {
+            setInitialMobile(mobile);
+            setIsRegisterModalOpen(true);
+          }
+        }}
+      />
+
+      <VerificationModal
+        isOpen={isVerificationModalOpen}
+        onClose={() => {
+          setIsVerificationModalOpen(false);
+          setVerificationToken(undefined);
+        }}
+        verificationToken={verificationToken}
+        onSuccess={() => {
+          setIsVerificationModalOpen(false);
+          if (mobileEntryReason === "report") {
+            //new logic for closing ad details modal 
+openAdDetail(reportAd);
+            setShouldOpenReportAfterLogin(true);
+            window.dispatchEvent(new Event("auth-change"));
+            return;
+          }
+          // Reload to refresh auth state and open profile or message
+          const url = new URL(window.location.href);
+          if (mobileEntryReason === "message") {
+            url.searchParams.set("openMessageModal", "true");
+          } else {
+            url.searchParams.set("openUsersProfile", "true");
+          }
+          window.location.href = url.toString();
+        }}
+      />
+      <AccountActivityModal
+        isOpen={isAccountModalOpen}
+        initialTab={accountModalInitialTab}
+        onClose={() => {
+          setIsAccountModalOpen(false);
+          setAccountModalInitialTab("Page"); // Reset to default
+          setViewingUserId(undefined);
+          const params = new URLSearchParams(window.location.search);
+          params.delete("profile");
+          router.replace(
+            `/d${params.toString() ? `?${params.toString()}` : ""}`,
+            { scroll: false },
+          );
+        }}
+        userId={viewingUserId}
+        onOpenPostAd={() => {
+          setIsAccountModalOpen(false);
+          setIsPostAdModalOpen(true);
+        }}
+        onEditAd={(ad) => {
+          setIsAccountModalOpen(false);
+          setAdToEdit(ad);
+          setIsPostAdModalOpen(true);
+        }}
+      />
+
+<AdDetailsModal
+    isOpen={!!selectedAdForDetail}
+    ad={selectedAdForDetail}
+    onClose={() => {
+        //new logic for closing ad details modal 
+closeAdDetail();
+        setShouldOpenReportAfterLogin(false);
+        const params = new URLSearchParams(window.location.search);
+        params.delete('ad');
+        const queryString = params.toString();
+        const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+        window.history.replaceState(null, '', newUrl); // instead of router.push
+    }}
+    initialReportOpen={shouldOpenReportAfterLogin}
+/>
+
+      <MessageModal
+        isOpen={isMessageModalOpen}
+        onClose={() => setIsMessageModalOpen(false)}
+        onOpenChat={(ad, otherUser) => {
+          setIsMessageModalOpen(false);
+          setChatAd(ad);
+          setChatOtherUser(otherUser);
+          setIsChatMessageModalOpen(true);
+        }}
+      />
+
+      <ChatMessageModal
+        isOpen={isChatMessageModalOpen}
+        onClose={() => {
+          setIsChatMessageModalOpen(false);
+          fetchUnreadCount();
+        }}
+        onBack={() => {
+          setIsChatMessageModalOpen(false);
+          setIsMessageModalOpen(true);
+        }}
+        ad={chatAd}
+        otherUser={chatOtherUser}
+      />
+
+      <InfoModal
+        isOpen={infoModal.isOpen}
+        onClose={() => setInfoModal((prev) => ({ ...prev, isOpen: false }))}
+        title={infoModal.title}
+        content={infoModal.content}
+      />
+
+      <SearchModal
+        isOpen={isSearchModalOpen}
+        onClose={() => setIsSearchModalOpen(false)}
+        onSearch={(query) => {
+          window.dispatchEvent(
+            new CustomEvent("show-search-results", { detail: { query } }),
+          );
+        }}
+        categories={categories}
+        locations={locations}
+        onSelectAd={(ad) => {
+          //new logic for opening ad details modal 
+openAdDetail(ad);
+          if (ad?._id) {
+            const params = new URLSearchParams(window.location.search);
+            params.set("ad", ad._id);
+            router.push(`${pathname}?${params.toString()}`, { scroll: false });
+          }
+        }}
+      />
+
       <FilterModal
         isOpen={isGlobalFilterModalOpen}
         onClose={() => setIsGlobalFilterModalOpen(false)}
@@ -1793,4 +2759,5 @@ openAdDetail(ad);
       />
     </div>
   );
+>>>>>>> Stashed changes
 }

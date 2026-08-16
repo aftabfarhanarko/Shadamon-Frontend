@@ -18,15 +18,20 @@ interface AdDisplayProps {
 const AdDisplay: React.FC<AdDisplayProps> = ({ positionId, className }) => {
     const { settings, fetchAdPositions } = useSettings();
     const adPositions = settings.adPositions || [];
+    const [loaded, setLoaded] = React.useState(false);
+
 
     useEffect(() => {
         if (adPositions.length === 0) {
-            fetchAdPositions();
+            fetchAdPositions().finally(() => setLoaded(true));
+        } else {
+            setLoaded(true);
         }
     }, [adPositions.length, fetchAdPositions]);
 
     const ad = adPositions.find(p => p.positionId === positionId);
 
+    if (!loaded) return null;
     if (!ad || ad.status === 'No') return null;
 
     const handleAdClick = () => {
