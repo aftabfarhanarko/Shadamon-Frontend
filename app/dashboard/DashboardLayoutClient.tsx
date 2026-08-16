@@ -251,6 +251,31 @@ export default function DashboardLayoutClient({
     null,
   );
 
+  const savedScrollRef = useRef(0);
+
+  const getScroller = () => document.getElementById("main-dashboard-scroller");
+
+  // wrap every place selectedAdForDetail gets SET (open)
+const openAdDetail = (ad: any) => {
+  savedScrollRef.current = getScroller()?.scrollTop || 0;
+  setSelectedAdForDetail(ad);
+};
+const closeAdDetail = () => {
+  savedScrollRef.current = getScroller()?.scrollTop || 0;
+  setSelectedAdForDetail(null);
+};
+
+// restore after open AND after close
+useEffect(() => {
+  const el = getScroller();
+  if (!el) return;
+  requestAnimationFrame(() => {
+    el.scrollTop = savedScrollRef.current;
+  });
+}, [selectedAdForDetail]);
+
+
+
   const getFilterQueryValue = (longKey: string, shortKey: string) => {
     return searchParams.get(longKey) || searchParams.get(shortKey);
   };
@@ -694,12 +719,14 @@ export default function DashboardLayoutClient({
                 { scroll: false },
               );
             }
-            setSelectedAdForDetail(ad);
+            //new logic for opening ad details modal 
+openAdDetail(ad);
           }
         })
         .catch((err) => console.error("Error fetching ad from URL:", err));
     } else {
-      setSelectedAdForDetail(null);
+      //new logic for closing ad details modal 
+closeAdDetail();
     }
 
     // Handle direct post-ad route aliases
@@ -1214,7 +1241,8 @@ export default function DashboardLayoutClient({
                                         : `https://${fullAd.trafficLink}`;
                                     window.open(directLink, "_blank");
                                   }
-                                  setSelectedAdForDetail(fullAd);
+                                  //new logic for closing ad details modal 
+openAdDetail(fullAd);
                                   const params = new URLSearchParams(
                                     window.location.search,
                                   );
@@ -1231,7 +1259,8 @@ export default function DashboardLayoutClient({
                                   err,
                                 );
                               }
-                              setSelectedAdForDetail(ad);
+                              //new logic for opening ad details modal 
+openAdDetail(ad);
                             }}
                           >
                             <div className="flex-1 min-w-0 pr-4">
@@ -1553,7 +1582,8 @@ export default function DashboardLayoutClient({
         onSuccess={() => {
           if (mobileEntryReason === "report") {
             setIsLoginModalOpen(false);
-            setSelectedAdForDetail(reportAd);
+            //new logic for closing ad details modal 
+openAdDetail(reportAd);
             setShouldOpenReportAfterLogin(true);
             window.dispatchEvent(new Event("auth-change"));
             return;
@@ -1584,7 +1614,8 @@ export default function DashboardLayoutClient({
             setIsVerificationModalOpen(true);
           } else {
             if (mobileEntryReason === "report") {
-              setSelectedAdForDetail(reportAd);
+              //new logic for closing ad details modal 
+openAdDetail(reportAd);
               setShouldOpenReportAfterLogin(true);
               window.dispatchEvent(new Event("auth-change"));
               return;
@@ -1641,7 +1672,8 @@ export default function DashboardLayoutClient({
         onSuccess={() => {
           setIsVerificationModalOpen(false);
           if (mobileEntryReason === "report") {
-            setSelectedAdForDetail(reportAd);
+            //new logic for closing ad details modal 
+openAdDetail(reportAd);
             setShouldOpenReportAfterLogin(true);
             window.dispatchEvent(new Event("auth-change"));
             return;
@@ -1686,7 +1718,8 @@ export default function DashboardLayoutClient({
     isOpen={!!selectedAdForDetail}
     ad={selectedAdForDetail}
     onClose={() => {
-        setSelectedAdForDetail(null);
+        //new logic for closing ad details modal 
+closeAdDetail();
         setShouldOpenReportAfterLogin(false);
         const params = new URLSearchParams(window.location.search);
         params.delete('ad');
@@ -1740,7 +1773,8 @@ export default function DashboardLayoutClient({
         categories={categories}
         locations={locations}
         onSelectAd={(ad) => {
-          setSelectedAdForDetail(ad);
+          //new logic for opening ad details modal 
+openAdDetail(ad);
           if (ad?._id) {
             const params = new URLSearchParams(window.location.search);
             params.set("ad", ad._id);
