@@ -59,6 +59,13 @@ import Cookies from "js-cookie";
 import { toast } from "react-hot-toast";
 import { useSettings } from "../context/SettingsContext"; 
 
+// Key used to hand off the feed's scroll position to the layout right
+// before navigating to an ad's detail view — read back in
+// DashboardLayoutClient before it reopens the Ad Details modal, so the
+// modal's close button can restore the exact scroll spot the user was at
+// instead of the (possibly already-reset) live scrollTop.
+const PENDING_AD_SCROLL_KEY = "pending_ad_scroll_top";
+
 interface SubItem {
   _id: string;
   name: string;
@@ -249,7 +256,7 @@ export default function DashboardClient() {
         window.dispatchEvent(new Event("auth-change"));
         toast.success(
           language === "bn"
-            ? "অ্যাডমিন লগইন সফল হয়েছে"
+            ? "অ্যাডমিন লগইন সফল হয়েছে"
             : "Admin login successful",
         );
       } catch (error) {
@@ -309,17 +316,6 @@ export default function DashboardClient() {
     }
   }, []);
 
-  // const handleSaveSearch = () => {
-  //   if (savedAdsData.length === 0) {
-  //     localStorage.setItem("saved_search_ads", JSON.stringify(ads));
-  //     setSavedAdsData(ads);
-  //     setIsViewingSavedSearch(false);
-  //   } else if (!isViewingSavedSearch) {
-  //     setIsViewingSavedSearch(true);
-  //   } else {
-  //     setIsViewingSavedSearch(false);
-  //   }
-  // };
   const handleSaveSearch = () => {
     if (savedAdsData.length === 0) {
       if (ads.length === 0) return; // guard against saving an empty snapshot
@@ -385,6 +381,26 @@ export default function DashboardClient() {
     const params = new URLSearchParams(searchParams.toString());
     params.set("ad", ad._id);
     return `?${params.toString()}`;
+  };
+
+  // Hands the feed's current scroll position off to the layout (via
+  // sessionStorage) synchronously, BEFORE the router.push that changes the
+  // `?ad=` param. This must happen before the URL change, not after —
+  // by the time DashboardLayoutClient's effect on the ad param runs (post
+  // async fetch + re-render), the live scroller may already have jumped,
+  // so reading it there is unreliable. Capturing it here at the moment of
+  // the click is the fix.
+  const openAdFromFeed = (ad: ActiveAd) => {
+    try {
+      const scroller = document.getElementById("main-dashboard-scroller");
+      if (scroller) {
+        sessionStorage.setItem(
+          PENDING_AD_SCROLL_KEY,
+          String(scroller.scrollTop),
+        );
+      }
+    } catch {}
+    router.push(getAdUrl(ad), { scroll: false });
   };
 
   const getCategoryUrl = (catName: string, subCatName: string = "") => {
@@ -1211,118 +1227,8 @@ export default function DashboardClient() {
                 </div>
 
                 <div className="h-[1px] bg-slate-100 w-full" />
-
-                {/* Location Section */}
-                {/* <div className="">
-                                    <div className="flex items-center justify-between group cursor-pointer" onClick={() => setExpandedLocation(expandedLocation === 'main' ? null : 'main')}>
-                                        <h3 className="text-[13px] text-black">{t('location')}</h3>
-                                        <ChevronDown className={cn("w-5 h-5 text-black group-hover:text-black transition-all", expandedLocation !== null && "rotate-180")} />
-                                    </div>
-
-                                    {expandedLocation !== null && (
-                                        <div className="pl-1 space-y-0.5">
-                                            <Link
-                                                href={getLocationUrl("")}
-                                                scroll={false}
-                                                className="block text-[13px] text-black ml-4 tracking-wider cursor-pointer hover:text-[#0088cc] transition-colors"
-                                                onClick={() => {
-                                                    setFilters({ ...filters, location: "", subLocation: "" });
-                                                    handleResetSavedSearch();
-                                                }}
-                                            >
-                                                {t('all_bangladesh')}
-                                            </Link>
-
-                                            {locations.map(loc => (
-                                                <div key={loc._id} className="space-y-0.5">
-                                                    <Link
-                                                        href={getLocationUrl(loc.name)}
-                                                        scroll={false}
-                                                        className="flex items-center justify-between group cursor-pointer"
-                                                        onClick={() => {
-                                                            toggleLocation(loc._id);
-                                                            setFilters({ ...filters, location: loc.name, subLocation: "" });
-                                                            setActiveSelectorTab('location');
-                                                        }}
-                                                    >
-                                                        <div className="flex items-center gap-1 text-[15px] text-[#0088cc] font-medium hover:underline">
-                                                            <span className={cn((expandedLocation === loc._id || filters.location === loc.name) && "text-black")}>{loc.name}</span>
-                                                            <span className="text-black font-normal ml-0.5">({totalAds.filter(ad => ad.location === loc.name).length.toLocaleString()})</span>
-                                                        </div>
-                                                        {loc.subLocations.length > 0 && (
-                                                            <ChevronDown className={cn("w-3.5 h-3.5 text-black transition-all", expandedLocation === loc._id && "rotate-180")} />
-                                                        )}
-                                                    </Link>
-
-                                                   
-                                                    {expandedLocation === loc._id && loc.subLocations.length > 0 && (
-                                                        <div className="pl-6 space-y-0.5 border-l border-slate-100 ml-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                                                            {loc.subLocations.map(sub => (
-                                                                <Link
-                                                                    key={sub._id}
-                                                                    href={getLocationUrl(loc.name, sub.name)}
-                                                                    scroll={false}
-                                                                    className="flex items-center gap-1 text-[13px] text-[#0088cc] hover:underline cursor-pointer group"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setFilters({ ...filters, location: loc.name, subLocation: sub.name });
-                                                                        setActiveSelectorTab('location');
-                                                                    }}
-                                                                >
-                                                                    {sub.image && getImageUrl(sub.image) ? (
-                                                                        <img
-                                                                            src={getImageUrl(sub.image) || undefined}
-                                                                            className="w-4 h-4 object-contain shrink-0"
-                                                                            alt=""
-                                                                            loading="lazy"
-                                                                        />
-                                                                    ) : (
-                                                                        <div className={cn("w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-[#0088cc] transition-colors", filters.subLocation === sub.name && "bg-[#0088cc]")} />
-                                                                    )}
-                                                                    <span className={cn(filters.subLocation === sub.name && "text-black")}>{sub.name}</span>
-                                                                    <span className="text-black">({totalAds.filter(ad => ad.subLocation === sub.name).length.toLocaleString()})</span>
-                                                                </Link>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div> */}
               </div>
             </div>
-
-            {/* 2. Filters Card */}
-            {/* <div className="bg-white rounded-lg p-3 space-y-2">
-                    <h3 className="text-[15px] text-black">{t('filters')}</h3>
-
-                    <div className="space-y-1.5">
-                        <label className="text-[11px] text-black tracking-tight">{t('sort_by')}</label>
-                        <div className="relative">
-                            <select className="w-full bg-white border border-slate-200 rounded px-3 py-1.5 text-xs text-black appearance-none outline-none focus:ring-1 focus:ring-slate-300">
-                                <option>Date: Newest on top</option>
-                                <option>Price: Low to High</option>
-                                <option>Price: High to Low</option>
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black pointer-events-none" />
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-[11px] text-black tracking-tight">{t('filter_by')}</label>
-                        <div className="space-y-1.5">
-                            <label className="flex items-center gap-2 cursor-pointer group">
-                                <input type="radio" name="filter" defaultChecked className="w-4 h-4 border-slate-300 text-[#0088cc] focus:ring-0" />
-                                <span className="text-[13px] text-black group-hover:text-black transition-colors">{t('all')}</span>
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer group">
-                                <input type="radio" name="filter" className="w-4 h-4 border-slate-300 text-[#0088cc] focus:ring-0" />
-                                <span className="text-[13px] text-black group-hover:text-black transition-colors">{t('promoted')}</span>
-                            </label>
-                        </div>
-                    </div>
-                </div> */}
           </div>
 
           {/* 3. Footer Links & Apps Card */}
@@ -1422,15 +1328,6 @@ export default function DashboardClient() {
                 </button>
               </div>
             </div>
-
-            {/* <div className="space-y-2.5">
-                            <p className="text-[12px] text-black font-semibold">{t('get_our_app')}</p>
-                            <div className="flex items-center gap-2">
-                                <button className="w-7 h-7 bg-[#A4C639] rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity">
-                                    <FaAndroid className="w-3.5 h-3.5 fill-white" />
-                                </button>
-                            </div>
-                        </div> */}
 
             <div className="pt-2 flex flex-col gap-0.5 border-t border-slate-100">
               <p className="text-[11px] text-slate-500 font-medium tracking-tight">
@@ -2037,9 +1934,7 @@ export default function DashboardClient() {
                               <div
                                 onClick={(e) => {
                                   if (block.bigAd) {
-                                    router.push(getAdUrl(block.bigAd), {
-                                      scroll: false,
-                                    });
+                                    openAdFromFeed(block.bigAd);
                                   }
                                 }}
                                 className={cn(
@@ -2162,9 +2057,7 @@ export default function DashboardClient() {
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          router.push(getAdUrl(block.bigAd), {
-                                            scroll: false,
-                                          });
+                                          openAdFromFeed(block.bigAd);
                                         }}
                                         className="border border-slate-300 text-black bg-gray-200 px-2 lg:px-3 py-0.5 lg:py-1 rounded text-[10px] lg:text-xs font-bold hover:bg-slate-50"
                                       >
@@ -2182,9 +2075,7 @@ export default function DashboardClient() {
                                   <div
                                     key={ad._id}
                                     onClick={() => {
-                                      router.push(getAdUrl(ad), {
-                                        scroll: false,
-                                      });
+                                      openAdFromFeed(ad);
                                     }}
                                     className={cn(
                                       "bg-white rounded-lg lg:rounded-lg p-0.5 lg:p-3 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50 border mx-[5px] lg:mx-0",
@@ -2266,7 +2157,6 @@ export default function DashboardClient() {
                                       <h4 className="text-[15px] text-black font-semibold line-clamp-1 leading-tight mb-0">
                                         {ad.headline}
                                       </h4>
-                                      {/* <div className="text-[15px] lg:text-sm text-black font-semibold leading-tight mb-1">৳ {ad.price?.toLocaleString() || 'N/A'}</div> */}
                                       {ad.price && (
                                         <div className="text-[15px] lg:text-sm text-black font-semibold leading-tight mb-1">
                                           ৳ {ad.price?.toLocaleString()}
@@ -2361,9 +2251,7 @@ export default function DashboardClient() {
                                         : "border-slate-200",
                                     )}
                                     onClick={() => {
-                                      router.push(getAdUrl(ad), {
-                                        scroll: false,
-                                      });
+                                      openAdFromFeed(ad);
                                     }}
                                   >
                                     <div className="h-40 relative rounded-t-lg overflow-hidden bg-slate-100">
@@ -2688,8 +2576,8 @@ export default function DashboardClient() {
                 <p>
                   Shadamon-এ প্রমোট করা অত্যন্ত সহজ এবং ঝামেলামুক্ত। আপনার
                   পোস্টটি দ্রুত সঠিক ক্রেতাদের কাছে পৌঁছে দিতে আপনি সরাসরি এর
-                  ব্যাপ্তি (Reach), বাজেট এবং টার্গেটিং নিয়ন্ত্রণ করতে পারেন।
-                  সবকিছু আপনার নিয়ন্ত্রণেই থাকবে-কে আপনার পোস্ট দেখবে, কতজন
+                  ব্যাপ্তি (Reach), বাজেট এবং টার্গেটিং নিয়ন্ত্রণ করতে পারেন।
+                  সবকিছু আপনার নিয়ন্ত্রণেই থাকবে-কে আপনার পোস্ট দেখবে, কতজন
                   দেখবে এবং কত দ্রুত তাদের কাছে পৌঁছাবে, তা আপনিই ঠিক করবেন।
                 </p>
 
@@ -2698,24 +2586,24 @@ export default function DashboardClient() {
                   <ul className="list-disc pl-5 space-y-1">
                     <li>
                       অধিক ভিউ এবং রিচ - আপনার পোস্টটি বিপুল সংখ্যক সম্ভাব্য
-                      ক্রেতার কাছে পৌঁছাতে পারে, যা বিক্রির সম্ভাবনা বাড়িয়ে দেয়।
+                      ক্রেতার কাছে পৌঁছাতে পারে, যা বিক্রির সম্ভাবনা বাড়িয়ে দেয়।
                       পুরো প্রক্রিয়াটি সম্পূর্ণ আপনার নিয়ন্ত্রণে থাকে।
                     </li>
                     <li>
                       টার্গেটেড রিচ - আপনার পোস্ট নির্দিষ্ট ক্যাটাগরি বা লোকেশনে
                       প্রমোট করুন যাতে আপনার কাঙ্ক্ষিত ক্রেতারা আপনাকে সহজেই
-                      খুঁজে পায়।
+                      খুঁজে পায়।
                     </li>
                     <li>
                       সরাসরি রেসপন্স - দ্রুত যোগাযোগের জন্য আগ্রহী ক্রেতাদের কাছ
                       থেকে সরাসরি মেসেজ এবং কল পান।
                     </li>
                     <li>
-                      তাৎক্ষণিক প্রমোশন - কোনো জটিল রিভিউ বা বিলম্ব ছাড়াই আপনার
-                      প্রমোশন সাথে সাথে লাইভ বা চালু হয়ে যায়।
+                      তাৎক্ষণিক প্রমোশন - কোনো জটিল রিভিউ বা বিলম্ব ছাড়াই আপনার
+                      প্রমোশন সাথে সাথে লাইভ বা চালু হয়ে যায়।
                     </li>
                     <li>
-                      পোস্ট হাইলাইটিং - আপনার পোস্টকে আরও আকর্ষণীয় করতে 'New',
+                      পোস্ট হাইলাইটিং - আপনার পোস্টকে আরও আকর্ষণীয় করতে 'New',
                       'Offer' অথবা 'Featured'-এর মতো লেবেল ব্যবহার করুন।
                     </li>
                     <li>
@@ -2727,18 +2615,18 @@ export default function DashboardClient() {
 
                 <div>
                   <h4 className="font-bold text-slate-900 mb-2">
-                    ভেরিফাইড মেম্বার হওয়ার সুবিধা
+                    ভেরিফাইড মেম্বার হওয়ার সুবিধা
                   </h4>
                   <p>
-                    ভেরিফাইড মেম্বার হওয়া প্ল্যাটফর্মে আপনার বিশ্বাসযোগ্যতা ও
+                    ভেরিফাইড মেম্বার হওয়া প্ল্যাটফর্মে আপনার বিশ্বাসযোগ্যতা ও
                     গ্রহণযোগ্যতা বৃদ্ধি করে। ক্রেতাদের কাছে আপনার প্রোফাইল এবং
-                    পোস্টগুলো আরও নির্ভরযোগ্য মনে হয়, যা যোগাযোগ এবং বিক্রির হার
-                    বাড়িয়ে দেয়।
+                    পোস্টগুলো আরও নির্ভরযোগ্য মনে হয়, যা যোগাযোগ এবং বিক্রির হার
+                    বাড়িয়ে দেয়।
                   </p>
                   <p className="mt-2 font-semibold">আপনি আরও পাবেন:</p>
                   <ul className="list-disc pl-5 space-y-1 mt-1">
                     <li>উচ্চতর বিশ্বাসযোগ্যতা এবং প্রফেশনাল উপস্থিতি</li>
-                    <li>ক্রেতাদের কাছ থেকে দ্রুত সাড়া</li>
+                    <li>ক্রেতাদের কাছ থেকে দ্রুত সাড়া</li>
                     <li>প্ল্যাটফর্মে আরও ভালো অবস্থান</li>
                   </ul>
                 </div>
@@ -2749,9 +2637,9 @@ export default function DashboardClient() {
                   </h4>
                   <ul className="list-disc pl-5 space-y-1">
                     <li>কোনো জটিল বুস্ট বা লুকানো সিস্টেম নেই</li>
-                    <li>সম্পূর্ণ নিয়ন্ত্রণ আপনার হাতে</li>
+                    <li>সম্পূর্ণ নিয়ন্ত্রণ আপনার হাতে</li>
                     <li>দ্রুত ফলাফল</li>
-                    <li>সময় বাঁচায় এবং প্রমোশনকে সহজ করে</li>
+                    <li>সময় বাঁচায় এবং প্রমোশনকে সহজ করে</li>
                   </ul>
                 </div>
               </>

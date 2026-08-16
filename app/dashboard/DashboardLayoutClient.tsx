@@ -93,6 +93,13 @@ interface Location {
   subLocations: SubItem[];
 }
 
+// Key used to hand off the feed's scroll position to this layout right
+// before it navigates to an ad's detail view. Written synchronously by
+// DashboardClient's openAdFromFeed() at click time (not after the URL
+// change), so it survives the async round-trip and re-render that used
+// to zero it out.
+const PENDING_AD_SCROLL_KEY = "pending_ad_scroll_top";
+
 export default function DashboardLayoutClient({
   children,
 }: {
@@ -254,6 +261,15 @@ export default function DashboardLayoutClient({
 
   const openAdDetail = (ad: any) => {
     savedScrollRef.current = getScroller()?.scrollTop || 0;
+    setSelectedAdForDetail(ad);
+  };
+
+  // Same as openAdDetail, but takes the scroll position handed off by the
+  // feed (captured at click time, before the URL/query-param change) instead
+  // of reading the live scroller — which by the time this effect runs may
+  // already have been reset by the navigation/re-render.
+  const openAdDetailWithScroll = (ad: any, scrollTop: number) => {
+    savedScrollRef.current = scrollTop;
     setSelectedAdForDetail(ad);
   };
 
@@ -691,6 +707,19 @@ export default function DashboardLayoutClient({
     if (adParam) {
       const idMatch = adParam.match(/--([a-f\d]{24})$/i);
       const adId = idMatch ? idMatch[1] : adParam;
+
+      // Consume the scroll position the feed handed off (if any) BEFORE the
+      // async fetch below, so a second effect run can't miss it.
+      let pendingScroll: number | null = null;
+      try {
+        const raw = sessionStorage.getItem(PENDING_AD_SCROLL_KEY);
+        if (raw !== null) {
+          const parsed = parseInt(raw, 10);
+          if (!Number.isNaN(parsed)) pendingScroll = parsed;
+          sessionStorage.removeItem(PENDING_AD_SCROLL_KEY);
+        }
+      } catch {}
+
       fetch(`${API_BASE_URL}/api/ads/public/${adId}`)
         .then((res) => res.json())
         .then((data) => {
@@ -710,7 +739,11 @@ export default function DashboardLayoutClient({
                 { scroll: false },
               );
             }
-            openAdDetail(ad);
+            if (pendingScroll !== null) {
+              openAdDetailWithScroll(ad, pendingScroll);
+            } else {
+              openAdDetail(ad);
+            }
           }
         })
         .catch((err) => console.error("Error fetching ad from URL:", err));
