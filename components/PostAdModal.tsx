@@ -1612,11 +1612,11 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                     </div>
 
                                     {subCat?.priceBoxShow && (
-                                        <div className={cn(
-                                            "bg-slate-100 rounded-lg border flex items-center overflow-hidden h-10 px-3",
-                                            attemptedSubmit && !price.trim() ? "border-red-500" : "border-slate-500"
-                                        )}>
-                                            <div className="flex-1 flex items-center pr-2">
+                                        <div className="space-y-2">
+                                            <div className={cn(
+                                                "bg-slate-100 rounded-lg border flex items-center overflow-hidden h-10 px-3",
+                                                attemptedSubmit && !price.trim() ? "border-red-500" : "border-slate-500"
+                                            )}>
                                                 <span className={cn(
                                                     "text-[13px] pr-2 border-r whitespace-nowrap",
                                                     attemptedSubmit && !price.trim() ? "text-red-500 border-red-500" : "text-slate-800 border-slate-300"
@@ -1625,23 +1625,26 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                 </span>
                                                 <input
                                                     type="number"
-                                                    placeholder=""
+                                                    placeholder="0"
                                                     value={price}
                                                     onChange={(e) => setPrice(e.target.value)}
                                                     className="w-full bg-transparent pl-2 text-[13px] text-black placeholder:text-slate-400 focus:outline-none"
                                                 />
                                             </div>
-                                            <div className="relative h-full flex items-center pl-2 border-l border-slate-300">
-                                                <select
-                                                    value={priceType}
-                                                    onChange={(e) => setPriceType(e.target.value)}
-                                                    className="bg-transparent text-[12px] text-slate-700 font-medium pr-6 focus:outline-none appearance-none cursor-pointer"
-                                                >
-                                                    <option value="Negotiable">{t('price_negotiable')}</option>
-                                                    <option value="Fixed">{t('price_fixed')}</option>
-                                                </select>
-                                                <ChevronDown className="absolute right-0 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-                                            </div>
+                                            <label className="flex items-center gap-2 cursor-pointer w-max">
+                                                <div className="relative flex items-center">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={priceType === 'Negotiable'}
+                                                        onChange={(e) => setPriceType(e.target.checked ? 'Negotiable' : 'Fixed')}
+                                                        className="peer sr-only"
+                                                    />
+                                                    <div className="w-4 h-4 rounded border border-slate-400 peer-checked:bg-[#0088cc] peer-checked:border-[#0088cc] flex items-center justify-center transition-colors">
+                                                        <Check className="w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity stroke-[3]" />
+                                                    </div>
+                                                </div>
+                                                <span className="text-[13px] text-slate-700 select-none">{t('price_negotiable')}</span>
+                                            </label>
                                         </div>
                                     )}
 

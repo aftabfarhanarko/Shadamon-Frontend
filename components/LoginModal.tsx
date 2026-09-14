@@ -91,7 +91,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
                 if (onSuccess) {
                     onSuccess();
                 } else {
-                    window.location.reload();
+                    window.location.href = '/d?profile=me';
                 }
             }
         } catch (err: any) {
@@ -258,7 +258,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
                 <div className="flex-1 overflow-y-auto px-6 pb-32">
 
                     {/* Site Logo */}
-                    <div className="mt-4 flex flex-col items-center mb-4">
+                    <div className="mt-4 flex flex-col items-center mb-6">
                         <div className="relative w-[150px] h-[60px] mb-0 flex items-center justify-center">
                             {settings.siteLogo ? (
                                 <img
@@ -272,37 +272,47 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
                                 </div>
                             )}
                         </div>
-                        <h2 className="text-[18px] font-medium text-black leading-none">{forgotPasswordMode ? 'Verification' : 'Login'}</h2>
-                        <p className="text-[12px] text-black mt-1">
-                            {forgotPasswordMode ? 'Reset your password securely' : 'If Allready Registered'}
+                        <h2 className="text-[18px] font-medium text-black leading-none">{forgotPasswordMode ? 'Verification' : 'Welcome Back'}</h2>
+                        <p className="text-[11px] text-black mt-1">
+                            {forgotPasswordMode ? 'Reset your password securely' : 'Log in to your account'}
                         </p>
                     </div>
 
                     {!forgotPasswordMode ? (
                         <>
-                            {/* Login Form - Tight Spacing */}
-                            <form onSubmit={handleSubmit} className="space-y-3 mb-2">
+                            {/* Login Form */}
+                            <form onSubmit={handleSubmit} className="space-y-3 mb-4">
                                 <div className="relative">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 w-[1px] h-4 bg-slate-500" />
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
+                                        <div className="w-4 h-4 flex items-center justify-center">
+                                            <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                        </div>
+                                        <div className="w-[1px] h-4 bg-slate-500" />
+                                    </div>
                                     <input
                                         type="text"
                                         name="email"
                                         value={formData.email}
                                         onChange={handleChange}
                                         placeholder="Mobile Number or Email"
-                                        className="w-full bg-white border border-slate-500 rounded-md py-2.5 pl-8 pr-4 text-[13px] text-black focus:outline-none focus:ring-1 focus:ring-black placeholder:text-slate-400"
+                                        className="w-full bg-white border border-slate-500 rounded-md py-2.5 pl-14 pr-4 text-[13px] text-black focus:outline-none focus:ring-1 focus:ring-black placeholder:text-slate-400"
                                         required
                                     />
                                 </div>
                                 <div className="relative">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 w-[1px] h-4 bg-slate-500" />
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
+                                        <div className="w-4 h-4 flex items-center justify-center">
+                                            <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                        </div>
+                                        <div className="w-[1px] h-4 bg-slate-500" />
+                                    </div>
                                     <input
                                         type={showPassword ? "text" : "password"}
                                         name="password"
                                         value={formData.password}
                                         onChange={handleChange}
                                         placeholder="Password"
-                                        className="w-full bg-white border border-slate-500 rounded-md py-2.5 pl-8 pr-12 text-[13px] text-black focus:outline-none focus:ring-1 focus:ring-black placeholder:text-slate-400"
+                                        className="w-full bg-white border border-slate-500 rounded-md py-2.5 pl-14 pr-12 text-[13px] text-black focus:outline-none focus:ring-1 focus:ring-black placeholder:text-slate-400"
                                         required
                                     />
                                     <div
@@ -319,56 +329,59 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full bg-[#1A1A1A] text-white py-3 rounded-lg text-[15px] hover:bg-black transition-all active:scale-[0.98] disabled:opacity-70"
+                                    className="w-full bg-[#1A1A1A] text-white py-3 rounded-lg text-[15px] hover:bg-black transition-all active:scale-[0.98] disabled:opacity-70 mt-2"
                                 >
-                                    {loading ? "Logging in..." : "Login"}
+                                    {loading ? "Logging in..." : "Login to Account"}
                                 </button>
                             </form>
 
                             {/* Secondary Actions */}
-                            <div className="flex items-center justify-between text-[11px] text-black px-1 mb-4">
+                            <div className="flex items-center justify-end text-[12px] text-black px-1 mb-6">
                                 <button
-                                    className="hover:underline"
-                                    onClick={() => window.open('https://m.me/shadamonDotCom', '_blank')}
-                                >HelpChat</button>
-                                <button
-                                    className="hover:underline"
+                                    className="hover:underline text-slate-600 hover:text-black transition-colors"
                                     onClick={() => setForgotPasswordMode(true)}
                                 >Forgot Password?</button>
                             </div>
 
                             {/* OR Divider */}
-                            <div className="relative flex items-center justify-center mb-4">
-                                <div className="absolute inset-x-0 h-[1px] bg-slate-500" />
-                                <span className="relative bg-[#F8F9FA] px-3 text-[11px] font-medium text-black">OR</span>
+                            <div className="relative flex items-center justify-center mb-6">
+                                <div className="absolute inset-x-0 h-[1px] bg-slate-200" />
+                                <span className="relative bg-[#F8F9FA] px-3 text-[11px] font-medium text-slate-500">OR CONTINUE WITH</span>
                             </div>
 
-                            {/* Social Buttons - Compact */}
-                            <div className="space-y-2.5 mb-6">
+                            {/* Social Buttons - Horizontal */}
+                            <div className="grid grid-cols-2 gap-3 mb-8">
                                 <button
                                     onClick={() => handleSocialLogin('facebook')}
-                                    className="w-full bg-[#3B5998] text-white py-2.5 rounded-lg flex items-center px-4 hover:bg-[#344e86] transition-all"
+                                    className="w-full bg-white border border-slate-200 text-slate-700 py-2.5 rounded-lg flex items-center justify-center gap-2 hover:bg-slate-50 transition-all shadow-sm"
                                 >
-                                    <span className="bg-white/20 p-1 rounded-sm mr-6">
-                                        <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                                        </svg>
-                                    </span>
-                                    <span className="text-[13px]">Continue with Facebook</span>
+                                    <svg className="w-4 h-4 fill-[#1877F2]" viewBox="0 0 24 24">
+                                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                                    </svg>
+                                    <span className="text-[13px] font-medium">Facebook</span>
                                 </button>
                                 <button
                                     onClick={() => handleSocialLogin('google')}
-                                    className="w-full bg-white border border-slate-500 text-black py-2.5 rounded-lg flex items-center px-4 hover:bg-slate-50 transition-all font-medium"
+                                    className="w-full bg-white border border-slate-200 text-slate-700 py-2.5 rounded-lg flex items-center justify-center gap-2 hover:bg-slate-50 transition-all shadow-sm"
                                 >
-                                    <span className="mr-6">
-                                        <svg className="w-4 h-4" viewBox="0 0 24 24">
-                                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
-                                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                                        </svg>
-                                    </span>
-                                    <span className="text-[13px]">Continue with Google</span>
+                                    <svg className="w-4 h-4" viewBox="0 0 24 24">
+                                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
+                                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                                    </svg>
+                                    <span className="text-[13px] font-medium">Google</span>
+                                </button>
+                            </div>
+                            
+                            {/* Bottom Link */}
+                            <div className="flex flex-col items-center gap-2 pt-4 border-t border-slate-200">
+                                <span className="text-[12px] text-slate-600">Don't have an account?</span>
+                                <button
+                                    onClick={onSwitchToRegister}
+                                    className="w-full sm:w-auto px-8 bg-white border border-slate-300 text-black py-2 rounded-lg text-[13px] font-medium shadow-sm hover:bg-slate-50 hover:border-black transition-all"
+                                >
+                                    Register Now
                                 </button>
                             </div>
                         </>
@@ -396,14 +409,14 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
                                             className="bg-red-50 border border-red-200 p-3 rounded-lg cursor-pointer hover:bg-red-100 transition-all animate-in fade-in zoom-in-95 duration-200"
                                         >
                                             <p className="text-[12px] text-red-600 font-bold text-center leading-tight">
-                                                You do not add any email, please contact help chat
+                                                Email not found. Please contact HelpChat.
                                             </p>
                                         </div>
                                     )}
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full bg-[#1A1A1A] text-white py-3 rounded-lg text-[15px] hover:bg-black transition-all active:scale-[0.98] disabled:opacity-70"
+                                        className="w-full bg-[#1A1A1A] text-white py-3 rounded-lg text-[15px] hover:bg-black transition-all active:scale-[0.98] disabled:opacity-70 mt-4"
                                     >
                                         {loading ? "Sending..." : "Verify Email"}
                                     </button>
@@ -445,7 +458,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full bg-[#1A1A1A] text-white py-3 rounded-lg text-[15px] hover:bg-black transition-all active:scale-[0.98] disabled:opacity-70"
+                                        className="w-full bg-[#1A1A1A] text-white py-3 rounded-lg text-[15px] hover:bg-black transition-all active:scale-[0.98] disabled:opacity-70 mt-4"
                                     >
                                         {loading ? "Verifying..." : "Reset & Login"}
                                     </button>

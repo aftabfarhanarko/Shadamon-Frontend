@@ -45,8 +45,7 @@ import { twMerge } from "tailwind-merge";
 import { useSettings } from "../context/SettingsContext";
 import PostAdModal from "../../components/PostAdModal";
 import PromoteModal from "../../components/PromoteModal";
-import LoginModal from "../../components/LoginModal";
-import RegisterModal from "../../components/RegisterModal";
+import AuthModal from "../../components/AuthModal";
 import AccountActivityModal from "../../components/AccountActivityModal";
 import MobileEntryModal from "../../components/MobileEntryModal";
 import VerificationModal from "../../components/VerificationModal";
@@ -57,6 +56,7 @@ import InfoModal from "../../components/InfoModal";
 import AdDisplay from "../../components/AdDisplay";
 import AdPopup from "../../components/AdPopup";
 import SearchModal from "../../components/SearchModal";
+import InviteModal from "../../components/InviteModal";
 import FilterModal, { FilterState } from "../../components/FilterModal";
 import { toast } from "react-hot-toast";
 
@@ -140,9 +140,10 @@ export default function DashboardLayoutClient({
   };
 
   const [isPostAdModalOpen, setIsPostAdModalOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalInitialMode, setAuthModalInitialMode] = useState<'login' | 'register'>('login');
   const [isMobileEntryModalOpen, setIsMobileEntryModalOpen] = useState(false);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
   const [initialMobile, setInitialMobile] = useState("");
@@ -187,12 +188,40 @@ export default function DashboardLayoutClient({
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.notification-dropdown-container')) {
+        setIsNotificationDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleMarkNotificationRead = async (id: string) => {
+    try {
+      const token = Cookies.get("token");
+      await fetch(`${API_BASE_URL}/api/notifications/${id}/read`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchUnreadCount();
+    } catch (e) {
+      console.error(e);
+    }
+  };
   const fetchUnreadCount = async () => {
     const token = Cookies.get("token");
     if (!token) {
       setUnreadCount(0);
+      setUnreadNotificationsCount(0);
+      setNotifications([]);
       return;
     }
     try {
@@ -200,7 +229,7 @@ export default function DashboardLayoutClient({
         fetch(`${API_BASE_URL}/api/messages/conversations`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`${API_BASE_URL}/api/user/notifications`, {
+        fetch(`${API_BASE_URL}/api/notifications`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -208,19 +237,22 @@ export default function DashboardLayoutClient({
       const convData = await convRes.json();
       const notifData = await notifRes.json();
 
-      let total = 0;
-
+      let msgTotal = 0;
       if (convData.success && Array.isArray(convData.data)) {
-        total += convData.data.filter(
+        msgTotal = convData.data.filter(
           (conv: any) => (conv.unreadCount || 0) > 0,
         ).length;
       }
 
-      if (Array.isArray(notifData)) {
-        total += notifData.filter((n: any) => !n.isRead).length;
+      let notifTotal = 0;
+      const notifs = notifData.data || notifData;
+      if (Array.isArray(notifs)) {
+        notifTotal = notifs.filter((n: any) => !n.isRead).length;
+        setNotifications(notifs);
       }
 
-      setUnreadCount(total);
+      setUnreadCount(msgTotal);
+      setUnreadNotificationsCount(notifTotal);
     } catch (err) {
       console.error("Unread count fetch error:", err);
     }
@@ -474,6 +506,16 @@ export default function DashboardLayoutClient({
       handleOpenPromote as EventListener,
     );
 
+    const handleOpenAuth = (e: CustomEvent) => {
+      const mode = e.detail?.mode || 'login';
+      setAuthModalInitialMode(mode);
+      setIsAuthModalOpen(true);
+    };
+    window.addEventListener(
+      "open-auth-modal",
+      handleOpenAuth as EventListener,
+    );
+
     return () => {
       window.removeEventListener(
         "open-account-modal",
@@ -498,6 +540,10 @@ export default function DashboardLayoutClient({
       window.removeEventListener(
         "open-promote-modal",
         handleOpenPromote as EventListener,
+      );
+      window.removeEventListener(
+        "open-auth-modal",
+        handleOpenAuth as EventListener,
       );
     };
   }, [language, router]);
@@ -1349,6 +1395,61 @@ export default function DashboardLayoutClient({
                     )}
                   </button>
 
+                  <div className="relative notification-dropdown-container">
+                    <button
+                      onClick={() => setIsNotificationDropdownOpen(!isNotificationDropdownOpen)}
+                      className="w-10 h-10 bg-[#EDF2F7] rounded-full hidden md:flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all relative"
+                    >
+                      <Bell className="w-5 h-5" />
+                      {unreadNotificationsCount > 0 && (
+                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#0088cc] text-white text-[10px] flex items-center justify-center rounded-full border-2 border-white">
+                          {unreadNotificationsCount}
+                        </span>
+                      )}
+                    </button>
+                    {isNotificationDropdownOpen && (
+                      <div className="absolute top-12 right-0 w-80 bg-white shadow-xl rounded-xl border border-gray-100 overflow-hidden z-50">
+                        <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+                          <h3 className="font-semibold text-gray-900">Notifications</h3>
+                          {unreadNotificationsCount > 0 && (
+                            <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-full">{unreadNotificationsCount} new</span>
+                          )}
+                        </div>
+                        <div className="max-h-[300px] overflow-y-auto">
+                          {notifications.length > 0 ? (
+                            notifications.map((notif: any) => (
+                              <div 
+                                key={notif._id} 
+                                onClick={() => {
+                                  if (!notif.isRead) handleMarkNotificationRead(notif._id);
+                                }}
+                                className={cn(
+                                  "p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer flex gap-3",
+                                  !notif.isRead && "bg-blue-50/30"
+                                )}
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <p className={cn("text-sm text-gray-800", !notif.isRead && "font-semibold")}>
+                                    {notif.message || notif.title}
+                                  </p>
+                                  <span className="text-xs text-gray-500 mt-1 block">
+                                    {new Date(notif.createdAt).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                {!notif.isRead && (
+                                  <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0" />
+                                )}
+                              </div>
+                            ))
+                          ) : (
+                            <div className="p-6 text-center text-gray-500 text-sm">
+                              No notifications yet
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <button
                     onClick={handlePromoteClick}
                     className="w-7 h-7 bg-[#EDF2F7] rounded-full border border-slate-200 shadow-sm flex md:hidden items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all relative"
@@ -1379,10 +1480,23 @@ export default function DashboardLayoutClient({
 
               <div className="w-[50px] flex-none hidden md:block"></div>
 
-              <div className="w-[230px] flex-none hidden md:block">
+              <div className="flex-none hidden md:flex items-center gap-3 w-[230px] md:w-[320px]">
+                <button
+                  onClick={() => {
+                    if (!user) {
+                      setAuthModalInitialMode('login');
+                      setIsAuthModalOpen(true);
+                    } else {
+                      setIsInviteModalOpen(true);
+                    }
+                  }}
+                  className="w-full bg-blue-50 text-blue-600 border border-blue-200 py-1.5 rounded text-sm uppercase tracking-widest flex items-center justify-center hover:bg-blue-100 transition-colors whitespace-nowrap"
+                >
+                  {language === "bn" ? "বন্ধুকে আমন্ত্রণ" : "Invite"}
+                </button>
                 <Link
                   href="/d/post-ad"
-                  className="w-full bg-[#EDF2F7] border border-slate-400 shadow-sm text-black py-1.5 rounded text-sm uppercase tracking-widest flex items-center justify-center"
+                  className="w-full bg-[#EDF2F7] border border-slate-400 shadow-sm text-black py-1.5 rounded text-sm uppercase tracking-widest flex items-center justify-center whitespace-nowrap"
                 >
                   {language === "bn" ? "ফ্রি বিজ্ঞাপন দিন" : "Post Free"}
                 </Link>
@@ -1571,42 +1685,13 @@ export default function DashboardLayoutClient({
         ad={adToPromote}
       />
 
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onSwitchToRegister={() => {
-          setIsLoginModalOpen(false);
-          setIsRegisterModalOpen(true);
-        }}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        initialMode={authModalInitialMode}
+        onClose={() => setIsAuthModalOpen(false)}
         initialMobile={initialMobile}
-        onSuccess={() => {
-          if (mobileEntryReason === "report") {
-            setIsLoginModalOpen(false);
-            openAdDetail(reportAd);
-            setShouldOpenReportAfterLogin(true);
-            window.dispatchEvent(new Event("auth-change"));
-            return;
-          }
-          const url = new URL(window.location.href);
-          if (mobileEntryReason === "message") {
-            url.searchParams.set("openMessageModal", "true");
-          } else {
-            url.searchParams.set("openUsersProfile", "true");
-          }
-          window.location.href = url.toString();
-        }}
-      />
-
-      <RegisterModal
-        isOpen={isRegisterModalOpen}
-        onClose={() => setIsRegisterModalOpen(false)}
-        onSwitchToLogin={() => {
-          setIsRegisterModalOpen(false);
-          setIsLoginModalOpen(true);
-        }}
-        initialMobile={initialMobile}
-        onSuccess={(needsVerification = true, token) => {
-          setIsRegisterModalOpen(false);
+        onSuccess={(needsVerification = false, token?: string) => {
+          setIsAuthModalOpen(false);
           if (needsVerification && token) {
             setVerificationToken(token);
             setIsVerificationModalOpen(true);
@@ -1643,7 +1728,8 @@ export default function DashboardLayoutClient({
             setIsPostAdModalOpen(true);
           } else {
             setInitialMobile(mobile);
-            setIsLoginModalOpen(true);
+            setAuthModalInitialMode('login');
+            setIsAuthModalOpen(true);
           }
         }}
         onUserNew={(mobile) => {
@@ -1653,7 +1739,8 @@ export default function DashboardLayoutClient({
             setIsPostAdModalOpen(true);
           } else {
             setInitialMobile(mobile);
-            setIsRegisterModalOpen(true);
+            setAuthModalInitialMode('register');
+            setIsAuthModalOpen(true);
           }
         }}
       />
@@ -1773,6 +1860,11 @@ export default function DashboardLayoutClient({
             router.push(`${pathname}?${params.toString()}`, { scroll: false });
           }
         }}
+      />
+
+      <InviteModal
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
       />
 
       <FilterModal

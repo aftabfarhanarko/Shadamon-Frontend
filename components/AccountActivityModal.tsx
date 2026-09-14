@@ -248,6 +248,7 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
 
     // Activity State
     const [activityData, setActivityData] = useState<any>(null);
+    const [systemActivities, setSystemActivities] = useState<any[]>([]);
     const ACTIVITY_PAGE_SIZE = 5;
     const [followingPage, setFollowingPage] = useState(1);
     const [favoritesPage, setFavoritesPage] = useState(1);
@@ -343,11 +344,21 @@ export default function AccountActivityModal({ isOpen, onClose, userId, onOpenPo
             params.set('paymentsPage', '1');
             params.set('paymentsLimit', String(ACTIVITY_PAGE_SIZE));
 
-            const res = await fetch(`${API_BASE_URL}/api/user/activity?${params.toString()}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const [res, sysRes] = await Promise.all([
+                fetch(`${API_BASE_URL}/api/user/activity?${params.toString()}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch(`${API_BASE_URL}/api/activities`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+            ]);
+            
             const data = await res.json();
+            const sysData = await sysRes.json();
             setActivityData(data);
+            if (sysData.success && Array.isArray(sysData.data)) {
+                setSystemActivities(sysData.data);
+            }
             setFollowingPage(1);
             setFavoritesPage(1);
             setPaymentsPage(1);
@@ -1424,6 +1435,20 @@ I have sent my CV for your review.`;
 
                                     {/* Divider */}
                                     <div className="mt-3 mb-3 border-t border-slate-200"></div>
+
+                                    {isOwnAccount && (
+                                        <div className="flex items-center justify-around py-3 mb-3 bg-slate-50 border border-slate-200 rounded-lg">
+                                            <div className="flex flex-col items-center">
+                                                <span className="text-xs text-slate-500 mb-1">Connects Balance</span>
+                                                <span className="text-xl font-bold text-[#0088cc]">{displayUser.connectsBalance || 0}</span>
+                                            </div>
+                                            <div className="w-px h-10 bg-slate-200"></div>
+                                            <div className="flex flex-col items-center">
+                                                <span className="text-xs text-slate-500 mb-1">Active Ads</span>
+                                                <span className="text-xl font-bold text-[#0088cc]">{userAds.filter((ad: any) => ad.status === 'active').length}</span>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {/* Action Buttons */}
                                     {/* {!isOwnAccount && ( */}
@@ -2735,6 +2760,34 @@ I have sent my CV for your review.`;
                                             >
                                                 {loadingMorePayments ? 'Loading...' : (activityData?.paymentsHasMore ? 'See More' : 'No More')}
                                             </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* System Activity Log */}
+                            <div className="bg-white rounded border border-slate-200 overflow-hidden">
+                                <div
+                                    className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50"
+                                    onClick={() => toggleActivitySection('activity_log')}
+                                >
+                                    <span className="text-sm text-slate-800">
+                                        Activity Log <span className="text-xs font-normal text-slate-500">({systemActivities.length})</span>
+                                    </span>
+                                    <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", expandedActivity === 'activity_log' && "rotate-180")} />
+                                </div>
+                                {expandedActivity === 'activity_log' && (
+                                    <div className="p-2 border-t border-slate-100 bg-slate-50 space-y-2">
+                                        <div className="max-h-[300px] overflow-y-auto pr-1 space-y-2">
+                                            {systemActivities.map((act: any) => (
+                                                <div key={act._id} className="bg-white p-2 rounded border border-slate-200 shadow-sm text-xs flex justify-between items-center gap-2">
+                                                    <span className="text-slate-700">{act.actionText}</span>
+                                                    <span className="text-[10px] text-slate-400 shrink-0">{new Date(act.createdAt).toLocaleDateString()}</span>
+                                                </div>
+                                            ))}
+                                            {systemActivities.length === 0 && (
+                                                <div className="text-center text-xs text-slate-400 py-2">No activity logged.</div>
+                                            )}
                                         </div>
                                     </div>
                                 )}

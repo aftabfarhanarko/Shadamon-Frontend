@@ -8,7 +8,7 @@ import RegisterServiceWorker from "@/components/RegisterServiceWorker"
 const SITE_TITLE = "Shadamon.com | দ্রুত ও সহজ কেনাবেচার স্মার্ট মার্কেটপ্লেস";
 const SITE_DESCRIPTION = "The ultimate marketing platform";
 const FALLBACK_OG_IMAGE = "https://shadamon.com/og.png";
-const API_URL = 'https://api.shadamon.com';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 async function fetchOgImageUrl(): Promise<string> {
   try {
@@ -149,7 +149,7 @@ export default function RootLayout({
           }}
         />
         <RegisterServiceWorker />
-        <div id="fb-root"></div>
+        <div id="fb-root" suppressHydrationWarning={true} dangerouslySetInnerHTML={{ __html: '' }}></div>
         <script async defer crossOrigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
         <script dangerouslySetInnerHTML={{
           __html: `

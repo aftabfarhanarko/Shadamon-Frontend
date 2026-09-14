@@ -2,10 +2,8 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import DashboardClient from './DashboardClient';
 
-const API_URL = 'https://api.shadamon.com';
-const SITE_URL = 'https://shadamon.com';
-// const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.shadamon.com';
-// const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://shadamon.com';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
 export async function generateMetadata(
     { searchParams }: { searchParams: Promise<{ ad?: string }> }

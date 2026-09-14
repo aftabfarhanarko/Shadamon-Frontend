@@ -51,6 +51,7 @@ import { getNonHighlightLabels, hasHighlightLabel } from "../../utils/labels";
 import { INFO_PAGE_ROUTES } from "@/utils/infoContent";
 import Image from "next/image";
 import LatestFreeAdPromo from "../../components/LatestFreeAdPromo";
+import InviteReminder from "../../components/InviteReminder";
 
 import MerchantsModal from "../../components/MerchantsModal" 
 import FilterModal, { FilterState } from "../../components/FilterModal";
@@ -175,6 +176,11 @@ export default function DashboardClient() {
     };
   };
 
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
   const [categories, setCategories] = useState<Category[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [premiumUsers, setPremiumUsers] = useState<PremiumUser[]>([]);
@@ -1350,6 +1356,64 @@ export default function DashboardClient() {
         id="center-feed-container"
         className="w-full lg:w-[565px] flex-none space-y-4 pb-32 lg:pb-20"
       >
+        {/* Modern Hero Section */}
+        {!filters.category && !filters.location && !filters.search && (
+          <div className="relative bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-none lg:rounded-xl p-6 lg:p-8 text-white shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-500">
+            {/* Background Decorative Elements */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-400/20 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4"></div>
+            
+            <div className="relative z-10 flex flex-col items-center text-center">
+              <h1 className="text-2xl lg:text-3xl font-extrabold mb-2 tracking-tight">
+                {language === "bn" ? "আপনার যা প্রয়োজন, সব এখানেই!" : "Find Anything, Instantly!"}
+              </h1>
+              <p className="text-blue-100 text-[13px] lg:text-sm mb-6 max-w-sm">
+                {language === "bn" ? "হাজারো বিজ্ঞাপনের মাঝে খুঁজুন আপনার পছন্দের পণ্য" : "Search from thousands of active classifieds locally."}
+              </p>
+              
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const val = (e.currentTarget.elements.namedItem('heroSearch') as HTMLInputElement).value;
+                  if (val.trim()) {
+                    setFilters(prev => ({ ...prev, search: val.trim() }));
+                  }
+                }}
+                className="w-full max-w-md flex bg-white/10 backdrop-blur-md border border-white/20 p-1.5 rounded-full shadow-inner mb-6"
+              >
+                <div className="flex-1 flex items-center bg-white rounded-full px-4 overflow-hidden">
+                  <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                  <input 
+                    name="heroSearch"
+                    type="text" 
+                    placeholder={language === "bn" ? "কী খুঁজছেন?" : "What are you looking for?"}
+                    className="w-full bg-transparent px-3 py-2.5 text-[13px] text-black focus:outline-none placeholder:text-slate-400" 
+                  />
+                </div>
+                <button type="submit" className="bg-black text-white px-5 py-2.5 rounded-full text-[13px] font-medium ml-1.5 hover:bg-slate-800 transition-colors shadow-sm">
+                  {language === "bn" ? "খুঁজুন" : "Search"}
+                </button>
+              </form>
+
+              {isMounted && !Cookies.get('token') && (
+                <div className="flex gap-4">
+                  <button 
+                    onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'register' } }))}
+                    className="bg-white text-indigo-600 px-6 py-2.5 rounded-full text-[14px] font-bold hover:bg-indigo-50 transition-colors shadow-md flex items-center gap-2"
+                  >
+                    {language === "bn" ? "একাউন্ট খুলুন" : "Join Now"}
+                  </button>
+                  <button 
+                    onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }))}
+                    className="bg-transparent border border-white/30 text-white px-6 py-2.5 rounded-full text-[14px] font-bold hover:bg-white/10 transition-colors"
+                  >
+                    {language === "bn" ? "লগইন করুন" : "Login"}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         {/* Secondary Filter Bar */}
         <div
           className={cn(
@@ -1447,56 +1511,58 @@ export default function DashboardClient() {
         </div>
 
         {/* Category Selector Card */}
-        <div className="bg-white rounded-none lg:rounded-lg overflow-hidden">
+        <div className="bg-white rounded-none lg:rounded-xl overflow-hidden shadow-sm border border-slate-100/50">
           {/* Selector Header Tabs */}
-          <div className="pl-2 pr-0 lg:px-5 pt-2.5 lg:pt-4 flex items-center justify-between border-b border-slate-50">
-            <div className="flex items-center gap-5 lg:gap-8">
+          <div className="px-4 lg:px-6 pt-3 lg:pt-5 flex items-center justify-between border-b border-slate-100/60">
+            <div className="flex items-center gap-6 lg:gap-10">
               <div
-                className="relative pb-1.5 lg:pb-2 cursor-pointer"
+                className="relative pb-2 lg:pb-3 cursor-pointer group"
                 onClick={() => setActiveSelectorTab("category")}
               >
                 <span
                   className={cn(
-                    "text-[13px] lg:text-[15px] transition-colors",
+                    "text-[14px] lg:text-[16px] font-medium transition-colors flex items-center gap-2",
                     activeSelectorTab === "category"
-                      ? "text-black"
-                      : "text-black hover:text-black",
+                      ? "text-blue-600"
+                      : "text-slate-500 group-hover:text-slate-800",
                   )}
                 >
-                  Select Category
+                  <Grid className="w-4 h-4" />
+                  Categories
                 </span>
                 {activeSelectorTab === "category" && (
-                  <div className="absolute -top-2.5 lg:-top-4 left-0 right-0 h-[3px] bg-blue-500 rounded-b-full" />
+                  <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-600 rounded-t-full shadow-[0_-2px_10px_rgba(37,99,235,0.3)]" />
                 )}
               </div>
               <div
-                className="relative pb-1.5 lg:pb-2 cursor-pointer"
+                className="relative pb-2 lg:pb-3 cursor-pointer group"
                 onClick={() => setActiveSelectorTab("location")}
               >
                 <span
                   className={cn(
-                    "text-[13px] lg:text-[15px] transition-colors",
+                    "text-[14px] lg:text-[16px] font-medium transition-colors flex items-center gap-2",
                     activeSelectorTab === "location"
-                      ? "text-black"
-                      : "text-black hover:text-black",
+                      ? "text-blue-600"
+                      : "text-slate-500 group-hover:text-slate-800",
                   )}
                 >
-                  Select Location
+                  <MapPin className="w-4 h-4" />
+                  Locations
                 </span>
                 {activeSelectorTab === "location" && (
-                  <div className="absolute -top-2.5 lg:-top-4 left-0 right-0 h-[3px] bg-blue-500 rounded-b-full" />
+                  <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-600 rounded-t-full shadow-[0_-2px_10px_rgba(37,99,235,0.3)]" />
                 )}
               </div>
             </div>
           </div>
 
           {/* Category/Location Bubbles */}
-          <div className="pl-2 pr-0 lg:px-5 pb-3 lg:pb-5 pt-1 lg:pt-2 relative group/bubbles flex items-center">
+          <div className="px-4 lg:px-6 py-4 lg:py-6 relative group/bubbles flex items-center bg-slate-50/30">
             {/* Left Scroll Arrow */}
             <button
               onClick={scrollLeft}
               className={cn(
-                "absolute left-4 top-[36px] lg:top-[42px] w-9 h-9 rounded-full bg-white shadow-md border border-slate-100 items-center justify-center text-black hover:bg-slate-50 hover:scale-110 active:scale-95 transition-all z-20",
+                "absolute left-2 lg:left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-slate-100 items-center justify-center text-slate-700 hover:text-blue-600 hover:scale-110 active:scale-95 transition-all z-20",
                 canScrollLeft ? "flex" : "hidden",
               )}
             >
@@ -1505,7 +1571,7 @@ export default function DashboardClient() {
 
             <div
               ref={scrollContainerRef}
-              className="flex items-center gap-3 lg:gap-4 overflow-x-auto no-scrollbar scroll-smooth w-full py-0.5 lg:py-1"
+              className="flex items-center gap-4 lg:gap-6 overflow-x-auto no-scrollbar scroll-smooth w-full py-1"
             >
               {activeSelectorTab === "category" ? (
                 <>
@@ -1515,7 +1581,7 @@ export default function DashboardClient() {
                     href={getCategoryUrl("")}
                     scroll={false}
                     className={cn(
-                      "flex flex-col items-center gap-1.5 lg:gap-2 flex-none group cursor-pointer",
+                      "flex flex-col items-center gap-2 lg:gap-2.5 flex-none group cursor-pointer",
                       !filters.category && "relative",
                     )}
                     onClick={() => {
@@ -1558,7 +1624,7 @@ export default function DashboardClient() {
                       }
                       scroll={false}
                       className={cn(
-                        "flex flex-col items-center gap-1.5 lg:gap-2 flex-none group cursor-pointer",
+                        "flex flex-col items-center gap-2 lg:gap-2.5 flex-none group cursor-pointer",
                         cat.name === filters.category && "relative",
                       )}
                       onClick={() => {
@@ -1628,7 +1694,7 @@ export default function DashboardClient() {
                     href={getLocationUrl("")}
                     scroll={false}
                     className={cn(
-                      "flex flex-col items-center gap-1.5 lg:gap-2 flex-none group cursor-pointer",
+                      "flex flex-col items-center gap-2 lg:gap-2.5 flex-none group cursor-pointer",
                       !filters.location && "relative",
                     )}
                     onClick={() => {
@@ -1671,7 +1737,7 @@ export default function DashboardClient() {
                       }
                       scroll={false}
                       className={cn(
-                        "flex flex-col items-center gap-1.5 lg:gap-2 flex-none group cursor-pointer",
+                        "flex flex-col items-center gap-2 lg:gap-2.5 flex-none group cursor-pointer",
                         loc.name === filters.location && "relative",
                       )}
                       onClick={() => {
@@ -1736,7 +1802,7 @@ export default function DashboardClient() {
             <button
               onClick={scrollRight}
               className={cn(
-                "absolute right-4 top-[36px] lg:top-[42px] w-9 h-9 rounded-full bg-white shadow-md border border-slate-100 items-center justify-center text-black hover:bg-slate-50 hover:scale-110 active:scale-95 transition-all z-20",
+                "absolute right-2 lg:right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-slate-100 items-center justify-center text-slate-700 hover:text-blue-600 hover:scale-110 active:scale-95 transition-all z-20",
                 canScrollRight ? "flex" : "hidden",
               )}
             >
@@ -1749,6 +1815,9 @@ export default function DashboardClient() {
           !filters.location &&
           !filters.search &&
           filters.promoteTag === "All" && <LatestFreeAdPromo />}
+
+        {/* Home Feed Invite Reminder */}
+        {!isViewingSavedSearch && <InviteReminder />}
 
         {loading ? (
           <div className="text-center py-20 pb-40">

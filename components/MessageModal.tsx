@@ -165,11 +165,11 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
         if (!token) return;
         setLoading(true);
         try {
-            const res = await fetch(`${API_BASE_URL}/api/user/notifications`, {
+            const res = await fetch(`${API_BASE_URL}/api/notifications`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
-            setNotifications(data);
+            setNotifications(data.data || data);
         } catch (err) {
             console.error("Error fetching notifications:", err);
         } finally {
@@ -181,7 +181,7 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
         const token = Cookies.get('token');
         if (!token) return;
         try {
-            await fetch(`${API_BASE_URL}/api/user/notifications/${id}/read`, {
+            await fetch(`${API_BASE_URL}/api/notifications/${id}/read`, {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

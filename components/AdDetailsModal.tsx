@@ -67,6 +67,7 @@ import InfoModal from "./InfoModal";
 import { useSettings } from "../app/context/SettingsContext";
 import VerifiedBadge from "./VerifiedBadge";
 import ReportModal from "./ReportModal";
+import ActionGuardButton from "./ActionGuardButton";
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -367,19 +368,64 @@ export default function AdDetailsModal({
   };
 
   const handleChatClick = () => {
+    handleConnectAction("Start Chat", () => {
+      window.dispatchEvent(
+        new CustomEvent("open-chat-modal", { detail: { ad } }),
+      );
+    });
+  };
+
+  const handleConnectAction = async (actionType: "View Phone" | "Start Chat", callback: () => void) => {
     const token = Cookies.get("token");
     if (!token) {
       window.dispatchEvent(
         new CustomEvent("open-mobile-entry-modal", {
-          detail: { reason: "message", ad: ad },
+          detail: { reason: "connect", ad: ad },
         }),
       );
       onClose();
       return;
     }
-    window.dispatchEvent(
-      new CustomEvent("open-chat-modal", { detail: { ad } }),
-    );
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/connects/deduct`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ amountSpent: 1, actionType, adId: ad?._id }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        if (response.status === 402 || data.message?.toLowerCase().includes("insufficient")) {
+          window.dispatchEvent(new Event("open-package-modal"));
+        } else {
+          toast.error(data.message || "Failed to process Connects");
+        }
+        return;
+      }
+      
+      callback();
+    } catch (err) {
+      console.error(err);
+      toast.error("Error processing Connects check");
+    }
+  };
+
+  const handlePhoneToggle = () => {
+    if (showPhone) {
+      setShowPhone(false);
+    } else {
+      handleConnectAction("View Phone", () => setShowPhone(true));
+    }
+  };
+
+  const handlePhoneRevealOnly = () => {
+    if (!showPhone) {
+      handleConnectAction("View Phone", () => setShowPhone(true));
+    }
   };
 
   const nextImage = (e: React.MouseEvent) => {
@@ -732,7 +778,7 @@ export default function AdDetailsModal({
                       <button
                         onClick={() => {
                           if (!showPhone) {
-                            setShowPhone(true);
+                            handlePhoneRevealOnly();
                             return;
                           }
                           if (primaryPhone) {
@@ -747,7 +793,7 @@ export default function AdDetailsModal({
 
                     {!showPhone && primaryPhone && (
                       <button
-                        onClick={() => setShowPhone(true)}
+                        onClick={handlePhoneRevealOnly}
                         className="text-[10px] text-slate-500 hover:text-blue-600 hover:underline text-left"
                       >
                         Click to show number
@@ -842,14 +888,14 @@ export default function AdDetailsModal({
                     <div className="flex flex-col leading-none justify-center min-w-0">
                       <div
                         className="flex items-center gap-1 cursor-pointer"
-                        onClick={() => setShowPhone(!showPhone)}
+                        onClick={handlePhoneToggle}
                       >
                         <span className="text-slate-800 text-sm leading-none truncate">
                           {showPhone ? ad.phone || "N/A" : "017 XXXXXXXX"}
                         </span>
                       </div>
                       <button
-                        onClick={() => setShowPhone(!showPhone)}
+                        onClick={handlePhoneToggle}
                         className="text-[10px] text-slate-500 hover:text-blue-600 hover:underline text-left mt-0.5"
                       >
                         {showPhone ? "Hide number" : "Click to show number"}
@@ -859,7 +905,7 @@ export default function AdDetailsModal({
                     <button
                       onClick={() => {
                         if (!showPhone) {
-                          setShowPhone(true);
+                          handlePhoneRevealOnly();
                           return;
                         }
                         if (primaryPhone) {
@@ -1012,21 +1058,21 @@ export default function AdDetailsModal({
                           !ad.phone ||
                           String(ad.phone) === "undefined"
                         ) && (
-                          <button
-                            onClick={() => setShowPhone(!showPhone)}
+                          <ActionGuardButton
+                            onGuardedClick={handlePhoneToggle}
                             className="flex-1 h-10 bg-[#1A202C] text-white text-xs px-1 rounded-md hover:bg-slate-800 transition-colors"
                           >
                             Call
-                          </button>
+                          </ActionGuardButton>
                         )}
 
                       {/* Chat Button - ALWAYS SHOW */}
-                      <button
+                      <ActionGuardButton
                         className="flex-1 h-10 bg-[#1A202C] text-white text-xs px-1 rounded-md hover:bg-black transition-colors"
-                        onClick={handleChatClick}
+                        onGuardedClick={handleChatClick}
                       >
                         Chat
-                      </button>
+                      </ActionGuardButton>
 
                       {/* Send CV Button - Only if requested */}
                       {otherButtons.includes("Send CV") && (
