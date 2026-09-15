@@ -29,7 +29,7 @@ export default async function InfoPage({ params }: InfoPageProps) {
                         <h1 className="text-lg md:text-xl font-semibold text-slate-900">{localizedPage.title}</h1>
                         {showTopBackButton && (
                             <Link
-                                href="/d"
+                                href="/dashboard"
                                 className="inline-flex items-center whitespace-nowrap text-xs md:text-sm font-medium text-sky-700 hover:text-sky-800"
                             >
                                 {language === 'bn' ? 'ড্যাশবোর্ডে ফিরে যান' : 'Back to Dashboard'}
@@ -44,7 +44,7 @@ export default async function InfoPage({ params }: InfoPageProps) {
 
                 <div className="px-6 py-4 border-t border-slate-100 bg-slate-50">
                     <Link
-                        href="/d"
+                        href="/dashboard"
                         className="inline-flex items-center text-sm font-medium text-sky-700 hover:text-sky-800"
                     >
                         {language === 'bn' ? 'ড্যাশবোর্ডে ফিরে যান' : 'Back to Dashboard'}

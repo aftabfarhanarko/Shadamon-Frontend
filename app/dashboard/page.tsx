@@ -32,7 +32,7 @@ export async function generateMetadata(
 
         const title = ad?.headline || 'Shadamon';
         const description = (ad?.description || 'The ultimate marketing platform').slice(0, 200);
-        const pageUrl = `${SITE_URL}/d?ad=${adId}`;
+        const pageUrl = `${SITE_URL}/dashboard?ad=${adId}`;
 
         return {
             title,

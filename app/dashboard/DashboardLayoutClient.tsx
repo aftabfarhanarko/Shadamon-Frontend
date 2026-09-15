@@ -425,7 +425,7 @@ export default function DashboardLayoutClient({
     else params.delete("search");
 
     const queryString = params.toString();
-    router.push(queryString ? `/d?${queryString}` : "/d", { scroll: false });
+    router.push(queryString ? `/dashboard?${queryString}` : "/dashboard", { scroll: false });
   };
 
   // Event Listener for opening account modal from children
@@ -446,7 +446,7 @@ export default function DashboardLayoutClient({
       if (userId) {
         const params = new URLSearchParams(window.location.search);
         params.set("profile", userId);
-        router.push(`/d?${params.toString()}`, { scroll: false });
+        router.push(`/dashboard?${params.toString()}`, { scroll: false });
       }
     };
 
@@ -797,7 +797,7 @@ export default function DashboardLayoutClient({
       closeAdDetail();
     }
 
-    if (pathname === "/dashboard/post-ad" || pathname === "/d/post-ad") {
+    if (pathname === "/dashboard/post-ad" || pathname === "/dashboard/post-ad") {
       const token = Cookies.get("token");
       if (!token) {
         setMobileEntryReason("post_ad");
@@ -894,7 +894,7 @@ export default function DashboardLayoutClient({
     sessionStorage.removeItem("ad_session_view_tokens");
     window.dispatchEvent(new Event("auth-change"));
     toast.success("Logged out successfully");
-    window.location.href = "/d";
+    window.location.href = "/dashboard";
   };
 
   const toggleLanguage = () => {
@@ -970,12 +970,12 @@ export default function DashboardLayoutClient({
   }, []);
 
   const isHomeNavActive =
-    pathname === "/dashboard" || pathname === "/d" || pathname === "/";
+    pathname === "/dashboard" || pathname === "/dashboard" || pathname === "/";
   const isInboxNavActive =
-    pathname.startsWith("/dashboard/inbox") || pathname.startsWith("/d/inbox");
+    pathname.startsWith("/dashboard/inbox") || pathname.startsWith("/dashboard/inbox");
   const isProfileNavActive =
     pathname.startsWith("/dashboard/profile") ||
-    pathname.startsWith("/d/profile");
+    pathname.startsWith("/dashboard/profile");
 
   return (
     <div className="h-screen bg-[#F1F5F9] font-sans overflow-hidden flex flex-col relative">
@@ -991,10 +991,10 @@ export default function DashboardLayoutClient({
         <div className="relative h-full flex items-end justify-between px-5 z-10 py-0">
           {/* Home */}
           <Link
-            href="/d"
+            href="/dashboard"
             onClick={(e) => {
               e.preventDefault();
-              window.location.href = "/d";
+              window.location.href = "/dashboard";
             }}
             className="flex flex-col items-center justify-center min-w-[44px] h-full gap-0"
           >
@@ -1064,7 +1064,7 @@ export default function DashboardLayoutClient({
 
           {/* Inbox */}
           <Link
-            href="/d/inbox"
+            href="/dashboard/inbox"
             onClick={handleMessageClick}
             className={cn(
               "flex flex-col items-center justify-center min-w-[44px] h-full gap-0 relative",
@@ -1101,7 +1101,7 @@ export default function DashboardLayoutClient({
 
           {/* Account */}
           <Link
-            href="/d/profile"
+            href="/dashboard/profile"
             onClick={handleAccountClick}
             className={cn(
               "flex flex-col items-center justify-center min-w-[44px] h-full gap-0 transition-all",
@@ -1203,7 +1203,7 @@ export default function DashboardLayoutClient({
                 </button>
 
                 <Link
-                  href="/d"
+                  href="/dashboard"
                   className="flex items-center gap-1.5 md:gap-2 shrink-0"
                   onClick={() => {
                     window.dispatchEvent(new Event("refresh-ads"));
@@ -1458,7 +1458,7 @@ export default function DashboardLayoutClient({
                   </button>
 
                   <Link
-                    href="/d/profile"
+                    href="/dashboard/profile"
                     onClick={handleAccountClick}
                     className={cn(
                       "w-10 h-10 bg-[#EDF2F7] rounded-full hidden md:flex items-center justify-center text-[#1A202C] hover:bg-slate-200 transition-all overflow-hidden",
@@ -1495,7 +1495,7 @@ export default function DashboardLayoutClient({
                   {language === "bn" ? "বন্ধুকে আমন্ত্রণ" : "Invite"}
                 </button>
                 <Link
-                  href="/d/post-ad"
+                  href="/dashboard/post-ad"
                   className="w-full bg-[#EDF2F7] border border-slate-400 shadow-sm text-black py-1.5 rounded text-sm uppercase tracking-widest flex items-center justify-center whitespace-nowrap"
                 >
                   {language === "bn" ? "ফ্রি বিজ্ঞাপন দিন" : "Post Free"}
@@ -1658,8 +1658,8 @@ export default function DashboardLayoutClient({
         onClose={() => {
           setIsPostAdModalOpen(false);
           setAdToEdit(null);
-          if (pathname === "/dashboard/post-ad" || pathname === "/d/post-ad") {
-            router.push("/d");
+          if (pathname === "/dashboard/post-ad" || pathname === "/dashboard/post-ad") {
+            router.push("/dashboard");
           }
         }}
         editAd={adToEdit}
@@ -1670,8 +1670,8 @@ export default function DashboardLayoutClient({
           setAccountModalInitialTab("Post");
           setIsAccountModalOpen(true);
 
-          if (pathname === "/dashboard/post-ad" || pathname === "/d/post-ad") {
-            router.replace("/d");
+          if (pathname === "/dashboard/post-ad" || pathname === "/dashboard/post-ad") {
+            router.replace("/dashboard");
           }
         }}
       />
@@ -1717,8 +1717,8 @@ export default function DashboardLayoutClient({
         isOpen={isMobileEntryModalOpen}
         onClose={() => {
           setIsMobileEntryModalOpen(false);
-          if (pathname === "/dashboard/post-ad" || pathname === "/d/post-ad") {
-            router.push("/d");
+          if (pathname === "/dashboard/post-ad" || pathname === "/dashboard/post-ad") {
+            router.push("/dashboard");
           }
         }}
         onUserExists={(mobile) => {
@@ -1779,7 +1779,7 @@ export default function DashboardLayoutClient({
           const params = new URLSearchParams(window.location.search);
           params.delete("profile");
           router.replace(
-            `/d${params.toString() ? `?${params.toString()}` : ""}`,
+            `/dashboard${params.toString() ? `?${params.toString()}` : ""}`,
             { scroll: false },
           );
         }}

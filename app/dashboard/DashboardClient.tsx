@@ -46,6 +46,7 @@ function cn(...inputs: ClassValue[]) {
 import { API_BASE_URL } from "../../utils/apiConfig";
 import { useLanguage } from "../context/LanguageContext";
 import { timeAgo } from "../../utils/timeAgo";
+import { formatAdPrice } from "../../utils/formatPrice";
 import { getImageUrl } from "../../utils/imageUrl";
 import { getNonHighlightLabels, hasHighlightLabel } from "../../utils/labels";
 import { INFO_PAGE_ROUTES } from "@/utils/infoContent";
@@ -97,6 +98,8 @@ interface ActiveAd {
   description: string;
   images: string[];
   price?: number;
+  minInvestment?: number;
+  maxInvestment?: number;
   category: string;
   subCategory?: string;
   location: string;
@@ -245,7 +248,7 @@ export default function DashboardClient() {
       params.delete("adminLoginToken");
       params.delete("adminLogin");
       const query = params.toString();
-      router.replace(query ? `/d?${query}` : "/d", { scroll: false });
+      router.replace(query ? `/dashboard?${query}` : "/dashboard", { scroll: false });
     };
 
     const applyAdminLogin = async () => {
@@ -415,7 +418,7 @@ export default function DashboardClient() {
     setShortFilterParam(params, "c", "category", catName || undefined);
     setShortFilterParam(params, "sc", "subCategory", subCatName || undefined);
     const str = params.toString();
-    return str ? `/d?${str}` : "/d";
+    return str ? `/dashboard?${str}` : "/dashboard";
   };
 
   const getLocationUrl = (locName: string, subLocName: string = "") => {
@@ -423,7 +426,7 @@ export default function DashboardClient() {
     setShortFilterParam(params, "l", "location", locName || undefined);
     setShortFilterParam(params, "sl", "subLocation", subLocName || undefined);
     const str = params.toString();
-    return str ? `/d?${str}` : "/d";
+    return str ? `/dashboard?${str}` : "/dashboard";
   };
 
   // Initialize filters from URL on mount
@@ -488,7 +491,7 @@ export default function DashboardClient() {
     if (adParam) params.set("ad", adParam);
 
     const queryString = params.toString();
-    const newUrl = queryString ? `/d?${queryString}` : "/d";
+    const newUrl = queryString ? `/dashboard?${queryString}` : "/dashboard";
 
     const currentParams = new URLSearchParams(searchParams.toString());
     setShortFilterParam(
@@ -2094,9 +2097,7 @@ export default function DashboardClient() {
                                           {block.bigAd.headline}
                                         </h3>
                                         <div className="font-bold text-sm lg:text-base text-black mb-0.5 lg:mb-1">
-                                          ৳{" "}
-                                          {block.bigAd.price?.toLocaleString() ||
-                                            "N/A"}
+                                          {formatAdPrice(block.bigAd) || "N/A"}
                                         </div>
                                       </div>
                                       <div className="flex items-center gap-2 lg:gap-3 text-[10px] text-black">
@@ -2227,9 +2228,9 @@ export default function DashboardClient() {
                                       <h4 className="text-[15px] text-black font-semibold line-clamp-1 leading-tight mb-0">
                                         {ad.headline}
                                       </h4>
-                                      {ad.price && (
+                                      {formatAdPrice(ad) && (
                                         <div className="text-[15px] lg:text-sm text-black font-semibold leading-tight mb-1">
-                                          ৳ {ad.price?.toLocaleString()}
+                                          {formatAdPrice(ad)}
                                         </div>
                                       )}
                                       <div className="flex items-center gap-0 text-[9px] lg:text-[10px] text-black group-hover:text-black flex-wrap">
@@ -2288,7 +2289,7 @@ export default function DashboardClient() {
                                   "category",
                                   categoryToShow.name,
                                 );
-                                router.push(`/d?${params.toString()}`, {
+                                router.push(`/dashboard?${params.toString()}`, {
                                   scroll: false,
                                 });
                                 setFilters((prev) => ({
@@ -2367,7 +2368,6 @@ export default function DashboardClient() {
                                           {ad.headline}
                                         </h4>
                                         <p className="text-black text-sm">
-                                          TK{" "}
                                           {ad.price?.toLocaleString() || "N/A"}
                                         </p>
                                       </div>

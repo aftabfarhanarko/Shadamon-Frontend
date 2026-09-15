@@ -18,9 +18,7 @@ interface MobileEntryModalProps {
 }
 
 export default function MobileEntryModal({ isOpen, onClose, onUserExists, onUserNew }: MobileEntryModalProps) {
-    const [mobile, setMobile] = useState('');
-    const [email, setEmail] = useState('');
-    const [loginMethod, setLoginMethod] = useState<'mobile' | 'email'>('mobile');
+    const [contact, setContact] = useState('');
     const { settings } = useSettings();
     const [loading, setLoading] = useState(false);
     const [infoModalType, setInfoModalType] = useState<'terms' | 'privacy' | null>(null);
@@ -29,23 +27,7 @@ export default function MobileEntryModal({ isOpen, onClose, onUserExists, onUser
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         let value = e.target.value;
-
-        if (loginMethod === 'mobile') {
-            // Ensure numeric
-            if (!/^\d*$/.test(value)) return;
-
-            // Auto prefix 0
-            if (value.length > 0 && !value.startsWith('0')) {
-                value = '0' + value;
-            }
-
-            // Limit to 11 digits
-            if (value.length > 11) return;
-
-            setMobile(value);
-        } else {
-            setEmail(value);
-        }
+        setContact(value);
     };
 
     const handleSocialLogin = (provider: string) => {
@@ -121,29 +103,38 @@ export default function MobileEntryModal({ isOpen, onClose, onUserExists, onUser
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        const isEmail = contact.includes('@');
 
-        if (loginMethod === 'mobile') {
-            if (mobile.length !== 11) {
-                toast.error("Please enter a valid 11-digit mobile number");
+        if (!isEmail) {
+            // Auto prefix 0 if needed for check
+            let mobileNumber = contact;
+            if (mobileNumber.length > 0 && !mobileNumber.startsWith('0')) {
+                mobileNumber = '0' + mobileNumber;
+            }
+            // Remove non-numeric
+            mobileNumber = mobileNumber.replace(/\D/g,'');
+
+            if (mobileNumber.length !== 11) {
+                toast.error("Please enter a valid 11-digit mobile number or an email");
                 return;
             }
 
             setLoading(true);
-
             try {
                 const res = await fetch(`${API_BASE_URL}/api/user/check-mobile`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ mobile })
+                    body: JSON.stringify({ mobile: mobileNumber })
                 });
 
                 const data = await res.json();
 
                 if (res.ok) {
                     if (data.exists) {
-                        onUserExists(mobile);
+                        onUserExists(mobileNumber);
                     } else {
-                        onUserNew(mobile);
+                        onUserNew(mobileNumber);
                     }
                     onClose();
                 } else {
@@ -151,41 +142,38 @@ export default function MobileEntryModal({ isOpen, onClose, onUserExists, onUser
                 }
             } catch (err) {
                 console.error(err);
-                toast.error("Failed to connect to server");
+                toast.error("Failed to connect to server. Please try again.");
             } finally {
                 setLoading(false);
             }
         } else {
             // Email flow
-            if (!email.includes('@')) {
-                toast.error("Please enter a valid email address");
-                return;
-            }
-
             setLoading(true);
             try {
                 const res = await fetch(`${API_BASE_URL}/api/user/check-email`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
+                    body: JSON.stringify({ email: contact })
                 });
 
                 const data = await res.json();
 
                 if (res.ok) {
                     if (data.exists) {
-                        onUserExists(email);
+                        onUserExists(contact);
                     } else {
-                        onUserNew(email);
+                        onUserNew(contact);
                     }
                     onClose();
                 } else {
                     // Fallback to onUserExists if check-email fails or is not found
-                    onUserExists(email);
+                    onUserExists(contact);
                     onClose();
                 }
             } catch (err) {
-                onUserExists(email);
+                console.error(err);
+                toast.error("Failed to connect to server. Please try again.");
+                onUserExists(contact);
                 onClose();
             } finally {
                 setLoading(false);
@@ -204,7 +192,7 @@ export default function MobileEntryModal({ isOpen, onClose, onUserExists, onUser
                 {/* Header Controls - Compact */}
                 <div className="flex items-center justify-between p-2 px-4 border-b border-slate-200 bg-white shrink-0">
                     <div className="flex items-center gap-3">
-                        <button onClick={() => loginMethod === 'email' ? setLoginMethod('mobile') : onClose()} className="w-8 h-8 flex items-center justify-center text-black hover:bg-slate-50 rounded-full transition-colors">
+                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-black hover:bg-slate-50 rounded-full transition-colors">
                             <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
                         </button>
                         <h2 className="text-[16px] text-black font-medium">Welcome</h2>
@@ -231,47 +219,31 @@ export default function MobileEntryModal({ isOpen, onClose, onUserExists, onUser
                             )}
                         </div>
                         <h2 className="text-[18px] font-medium text-black leading-none">Welcome</h2>
-                        <p className="text-[12px] text-black mt-1">{loginMethod === 'mobile' ? 'Mobile' : 'Email'} for Login/Register</p>
+                        <p className="text-[12px] text-black mt-1">Mobile/Email for Login/Register</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-3 mb-3">
-                        {loginMethod === 'mobile' ? (
-                            <div className="relative flex items-center bg-white border border-slate-500 rounded-md overflow-hidden">
-                                <div className="flex items-center gap-1 px-3 py-2.5 border-r border-slate-500 bg-slate-50/50">
-                                    <span className="text-[13px] font-medium text-black">+88</span>
-                                    <ChevronDown className="w-3.5 h-3.5 text-black" />
-                                </div>
-                                <div className="absolute left-[65px] top-1/2 -translate-y-1/2 w-[1px] h-4 bg-slate-500" />
-                                <input
-                                    type="tel"
-                                    value={mobile}
-                                    onChange={handleChange}
-                                    placeholder="Enter your mobile number"
-                                    className="flex-1 py-2.5 pl-6 pr-4 text-[13px] text-black focus:outline-none placeholder:text-slate-400"
-                                    autoFocus
-                                />
+                        <div className="relative flex items-center bg-white border border-slate-500 rounded-md overflow-hidden">
+                            <div className="flex items-center gap-1 px-3 py-2.5 border-r border-slate-500 bg-slate-50/50">
+                                <span className="text-[13px] font-medium text-black">
+                                    <Smartphone className="w-3.5 h-3.5 inline-block mr-1" />
+                                    /
+                                    <Mail className="w-3.5 h-3.5 inline-block ml-1" />
+                                </span>
                             </div>
-                        ) : (
-                            <div className="relative animate-in slide-in-from-top-2 duration-300">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
-                                    <Mail className="w-4 h-4 text-black" />
-                                    <div className="w-[1px] h-4 bg-slate-500" />
-                                </div>
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={handleChange}
-                                    placeholder="Enter your email address"
-                                    className="w-full bg-white border border-slate-500 rounded-md py-2.5 pl-14 pr-4 text-[13px] text-black focus:outline-none placeholder:text-slate-400"
-                                    required
-                                    autoFocus
-                                />
-                            </div>
-                        )}
+                            <input
+                                type="text"
+                                value={contact}
+                                onChange={handleChange}
+                                placeholder="শুধু ফোন/ইমেইল"
+                                className="flex-1 py-2.5 pl-4 pr-4 text-[13px] text-black focus:outline-none placeholder:text-slate-400"
+                                autoFocus
+                            />
+                        </div>
 
                         <button
                             type="submit"
-                            disabled={loading || (loginMethod === 'mobile' ? mobile.length < 11 : !email)}
+                            disabled={loading || contact.length < 5}
                             className="w-full bg-[#1A1A1A] text-white py-3 rounded-lg text-[15px] hover:bg-black transition-all active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2"
                         >
                             {loading ? "Checking..." : "Continue"}
@@ -311,17 +283,7 @@ export default function MobileEntryModal({ isOpen, onClose, onUserExists, onUser
                             </span>
                             <span className="text-[13px]">Continue with Google</span>
                         </button>
-                        {loginMethod === 'mobile' && (
-                            <button
-                                onClick={() => setLoginMethod('email')}
-                                className="w-full bg-white border border-slate-500 text-black py-2.5 rounded-lg flex items-center px-4 hover:bg-slate-50 transition-all shadow-sm"
-                            >
-                                <span className="mr-6">
-                                    <RiMailFill className="w-4 h-4 text-black" />
-                                </span>
-                                <span className="text-[13px]">Continue With Email</span>
-                            </button>
-                        )}
+
                     </div>
 
                     <p className="text-[10px] text-black text-center mb-6 select-none">

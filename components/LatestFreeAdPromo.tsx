@@ -8,6 +8,7 @@ import { API_BASE_URL } from '../utils/apiConfig';
 import { getImageUrl } from '../utils/imageUrl';
 import { useLanguage } from '../app/context/LanguageContext';
 import PromoteModal from './PromoteModal';
+import { formatAdPrice } from '../utils/formatPrice';
 
 
 export default function LatestFreeAdPromo() {
@@ -114,7 +115,7 @@ export default function LatestFreeAdPromo() {
                         <div className="w-1 bg-white mr-2 self-stretch shrink-0" />
                         <div className="min-w-0 flex-1 text-white drop-shadow-md">
                             <h2 className="w-full text-[17px] sm:text-[18px] leading-tight font-medium truncate">{latestAd.headline}</h2>
-                            <p className="text-[14px] mt-0">৳ {latestAd.price || '0.00'}</p>
+                            <p className="text-[14px] mt-0">{formatAdPrice(latestAd) || '৳ 0.00'}</p>
                         </div>
                     </div>
                 </div>

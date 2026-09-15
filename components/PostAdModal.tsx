@@ -12,6 +12,7 @@ import { useSettings } from '../app/context/SettingsContext';
 import { useLanguage } from '../app/context/LanguageContext';
 import { compressImage } from '../utils/imageCompression';
 import InfoModal from './InfoModal';
+import PackageUpgradeModal from './PackageUpgradeModal';
 
 
 function cn(...inputs: (string | undefined | null | false)[]) {
@@ -83,6 +84,9 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [name, setName] = useState("");
     const [hidePhone, setHidePhone] = useState(false);
     const [price, setPrice] = useState("");
+    const [minInvestment, setMinInvestment] = useState("");
+    const [maxInvestment, setMaxInvestment] = useState("");
+    const [showPackageUpgrade, setShowPackageUpgrade] = useState(false);
     const [priceType, setPriceType] = useState("Negotiable");
     const [email, setEmail] = useState("");
     const [hasReadRules, setHasReadRules] = useState(true);
@@ -196,6 +200,8 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         setSelectedLocation(ad.location || "");
         setSelectedSubLocation(ad.subLocation || "");
         setPrice(ad.price ? String(ad.price) : "");
+        setMinInvestment(ad.minInvestment ? String(ad.minInvestment) : "");
+        setMaxInvestment(ad.maxInvestment ? String(ad.maxInvestment) : "");
         setPriceType(ad.priceType || "Negotiable");
         setExistingImages(ad.images || []);
         setFeatureValues(ad.features || {});
@@ -237,23 +243,31 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 setHasReadRules(true);
                 setView('form');
             } else {
-                setHeadline("");
-                setDescription("");
+                
+                const draftStr = localStorage.getItem('postAdDraft');
+                let draft = null;
+                if (draftStr) {
+                    try { draft = JSON.parse(draftStr); } catch(e) {}
+                }
+                setHeadline(draft?.headline || "");
+                setDescription(draft?.description || "");
                 setPassword("");
-                setName("");
-                setAdditionalPhones([]);
-                setHidePhone(false);
-                setSelectedCategory("");
-                setSelectedSubCategory("");
-                setSelectedLocation("");
-                setSelectedSubLocation("");
+                setName(draft?.name || "");
+                setAdditionalPhones(draft?.additionalPhones || []);
+                setHidePhone(draft?.hidePhone || false);
+                setSelectedCategory(draft?.selectedCategory || "");
+                setSelectedSubCategory(draft?.selectedSubCategory || "");
+                setSelectedLocation(draft?.selectedLocation || "");
+                setSelectedSubLocation(draft?.selectedSubLocation || "");
                 setTempCategory("");
                 setTempSubCategory("");
                 setTempLocation("");
                 setTempSubLocations([]);
                 setExpandedCategory(null);
-                setPrice("");
-                setPriceType("Negotiable");
+                setPrice(draft?.price || "");
+                setMinInvestment(draft?.minInvestment || "");
+                setMaxInvestment(draft?.maxInvestment || "");
+                setPriceType(draft?.priceType || "Negotiable");
                 setFeatureValues({});
                 setImages([]);
                 setExistingImages([]);
@@ -282,6 +296,18 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             }
         }
     }, [isOpen, editAd, initialMobile]);
+
+    // Draft Save Timer
+    useEffect(() => {
+        if (!isOpen || editAd) return;
+        const draft = {
+            headline, description, name, hidePhone,
+            price, minInvestment, maxInvestment, priceType,
+            additionalPhones, featureValues, selectedCategory,
+            selectedSubCategory, selectedLocation, selectedSubLocation
+        };
+        localStorage.setItem('postAdDraft', JSON.stringify(draft));
+    }, [headline, description, name, hidePhone, price, minInvestment, maxInvestment, priceType, additionalPhones, featureValues, selectedCategory, selectedSubCategory, selectedLocation, selectedSubLocation, isOpen, editAd]);
 
     // OTP Timer
     useEffect(() => {
@@ -675,6 +701,8 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             formData.append('remainingImages', JSON.stringify(existingImages));
             formData.append('features', JSON.stringify(featureValues));
             formData.append('price', price);
+            formData.append('minInvestment', minInvestment);
+            formData.append('maxInvestment', maxInvestment);
             formData.append('priceType', priceType);
 
             if (wasOtpVerified) {
@@ -700,6 +728,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             const data = await response.json();
 
             if (response.ok && data.success) {
+                localStorage.removeItem('postAdDraft');
                 if (data.limitReached) {
                     toast.success("Ad posted! It's currently paused as you've reached the free limit for this category.");
                 } else {
@@ -708,7 +737,11 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 if (onSuccess) onSuccess(data.data || data.ad);
                 onClose();
             } else {
-                toast.error(data.message || "Failed to process ad");
+                if (data.code === 'INSUFFICIENT_CONNECTS') {
+                    setShowPackageUpgrade(true);
+                } else {
+                    toast.error(data.message || "Failed to process ad");
+                }
             }
         } catch (error) {
             toast.error("Something went wrong");
@@ -813,11 +846,20 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             (images.length === 0 && existingImages.length === 0) ||
             !selectedCategory ||
             !selectedLocation ||
-            (subCat?.priceBoxShow && !price) ||
+            (subCat?.priceBoxShow && (!minInvestment || !maxInvestment)) ||
             !name
         ) {
             toast.error("Please fill in required fields");
             return;
+        }
+
+        if (subCat?.priceBoxShow) {
+            const minNum = Number(minInvestment);
+            const maxNum = Number(maxInvestment);
+            if (minNum > maxNum) {
+                toast.error("Minimum investment cannot be greater than maximum investment.");
+                return;
+            }
         }
 
         // Check blocked words
@@ -948,6 +990,11 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     if (!isOpen) return null;
 
     return (
+        <>
+            <PackageUpgradeModal 
+                isOpen={showPackageUpgrade} 
+                onClose={() => setShowPackageUpgrade(false)} 
+            />
         <div className="fixed inset-0 z-[1500] flex items-start justify-center pt-20">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
 
@@ -1613,25 +1660,45 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
 
                                     {subCat?.priceBoxShow && (
                                         <div className="space-y-2">
-                                            <div className={cn(
-                                                "bg-slate-100 rounded-lg border flex items-center overflow-hidden h-10 px-3",
-                                                attemptedSubmit && !price.trim() ? "border-red-500" : "border-slate-500"
-                                            )}>
-                                                <span className={cn(
-                                                    "text-[13px] pr-2 border-r whitespace-nowrap",
-                                                    attemptedSubmit && !price.trim() ? "text-red-500 border-red-500" : "text-slate-800 border-slate-300"
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <div className={cn(
+                                                    "bg-slate-100 rounded-lg border flex flex-col justify-center overflow-hidden h-[46px] px-3",
+                                                    attemptedSubmit && !minInvestment.trim() ? "border-red-500" : "border-slate-500"
                                                 )}>
-                                                    {subCat.priceBoxName || "দাম"}
-                                                </span>
-                                                <input
-                                                    type="number"
-                                                    placeholder="0"
-                                                    value={price}
-                                                    onChange={(e) => setPrice(e.target.value)}
-                                                    className="w-full bg-transparent pl-2 text-[13px] text-black placeholder:text-slate-400 focus:outline-none"
-                                                />
+                                                    <span className={cn(
+                                                        "text-[10px] font-bold uppercase",
+                                                        attemptedSubmit && !minInvestment.trim() ? "text-red-500" : "text-slate-500"
+                                                    )}>
+                                                        {t('min_investment') || "Minimum (BDT)"}
+                                                    </span>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="0"
+                                                        value={minInvestment}
+                                                        onChange={(e) => setMinInvestment(e.target.value.replace(/[^0-9]/g, ''))}
+                                                        className="w-full bg-transparent text-[13px] font-bold text-black placeholder:text-slate-400 focus:outline-none"
+                                                    />
+                                                </div>
+                                                <div className={cn(
+                                                    "bg-slate-100 rounded-lg border flex flex-col justify-center overflow-hidden h-[46px] px-3",
+                                                    attemptedSubmit && !maxInvestment.trim() ? "border-red-500" : "border-slate-500"
+                                                )}>
+                                                    <span className={cn(
+                                                        "text-[10px] font-bold uppercase",
+                                                        attemptedSubmit && !maxInvestment.trim() ? "text-red-500" : "text-slate-500"
+                                                    )}>
+                                                        {t('max_investment') || "Maximum (BDT)"}
+                                                    </span>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="0"
+                                                        value={maxInvestment}
+                                                        onChange={(e) => setMaxInvestment(e.target.value.replace(/[^0-9]/g, ''))}
+                                                        className="w-full bg-transparent text-[13px] font-bold text-black placeholder:text-slate-400 focus:outline-none"
+                                                    />
+                                                </div>
                                             </div>
-                                            <label className="flex items-center gap-2 cursor-pointer w-max">
+                                            <label className="flex items-center gap-2 cursor-pointer w-max pt-1">
                                                 <div className="relative flex items-center">
                                                     <input 
                                                         type="checkbox" 
@@ -1643,7 +1710,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                         <Check className="w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity stroke-[3]" />
                                                     </div>
                                                 </div>
-                                                <span className="text-[13px] text-slate-700 select-none">{t('price_negotiable')}</span>
+                                                <span className="text-[13px] text-slate-700 select-none">{t('price_negotiable') || 'Negotiable'}</span>
                                             </label>
                                         </div>
                                     )}
@@ -2069,5 +2136,6 @@ Shadamon.com ব্যবহারকারীর অনুমতি ছাড়�
 Shadamon.com প্রদর্শনী বিজ্ঞাপন এবং রিমার্কেটিং ব্যবহার করে।`}
             />
         </div>
+        </>
     );
 }

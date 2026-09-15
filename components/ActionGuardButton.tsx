@@ -18,7 +18,6 @@ export default function ActionGuardButton({ onGuardedClick, children, className,
         
         const token = Cookies.get('token');
         if (!token) {
-            // Not logged in -> trigger auth modal globally
             window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }));
             return;
         }
@@ -28,19 +27,29 @@ export default function ActionGuardButton({ onGuardedClick, children, className,
             const res = await fetch(`${API_BASE_URL}/api/user/me`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            
+            if (!res.ok) {
+                throw new Error("Failed to fetch profile");
+            }
+            
             const data = await res.json();
             
-            if (res.ok && data && data.mobile) {
-                // User has a verified mobile number, allow action
-                onGuardedClick(e);
-            } else {
-                // User does not have a mobile number (or package issue), trigger upgrade modal
-                setShowUpgradeModal(true);
+            if (!data.mobile) {
+                // No mobile number
+                import('react-hot-toast').then(module => {
+                    module.toast.error("Please verify your mobile number in your profile first.");
+                });
+                return;
             }
+
+            // Mobile exists, but action is restricted (requires connects/package)
+            setShowUpgradeModal(true);
+            
         } catch (error) {
             console.error("Error checking user profile for action guard:", error);
-            // Default to showing the upgrade/restriction modal on fetch failure
-            setShowUpgradeModal(true); 
+            import('react-hot-toast').then(module => {
+                module.toast.error("Failed to connect to server. Please try again.");
+            });
         } finally {
             setIsChecking(false);
         }

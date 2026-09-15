@@ -42,7 +42,7 @@ function PaymentStatusContent() {
                                 Transaction ID: {txnId}
                             </div>
                         )}
-                        <Link href="/d" className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors">
+                        <Link href="/dashboard" className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors">
                             Go to Dashboard
                         </Link>
                     </div>

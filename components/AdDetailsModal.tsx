@@ -55,6 +55,7 @@ import {
 import { API_BASE_URL } from "../utils/apiConfig";
 // Use centralized url helper
 import { getImageUrl } from "../utils/imageUrl";
+import { formatAdPrice } from "../utils/formatPrice";
 import { getNonHighlightLabels, hasHighlightLabel } from "../utils/labels";
 import { formatDistanceToNow } from "date-fns";
 import { useRef, useEffect } from "react";
@@ -751,11 +752,11 @@ export default function AdDetailsModal({
               {/* <p className="text-xs text-slate-900 font-bold">
                                 {ad.price ? `৳ ${ad.price.toLocaleString()}` : t('price_on_ask')}
                             </p> */}
-              {ad.price && (
+              {formatAdPrice(ad) ? (
                 <p className="text-xs text-slate-900 font-bold">
-                  ৳ {ad.price.toLocaleString()}
+                  {formatAdPrice(ad)}
                 </p>
-              )}
+              ) : null}
               {ad.price && (
                 <span className="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
                   {ad.priceType === "Negotiable"
@@ -1501,9 +1502,7 @@ I have sent my CV for your review.`;
                         <div className="text-sm text-black flex items-center justify-between gap-1.5 flex-wrap">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span>
-                              {pad.price
-                                ? `৳ ${pad.price.toLocaleString()}`
-                                : t("price_on_ask")}
+                              {formatAdPrice(pad) || t("price_on_ask")}
                             </span>
                             {pad.price && (
                               <span className="text-[10px] text-slate-500 font-normal">
@@ -1695,9 +1694,7 @@ I have sent my CV for your review.`;
                           {sad.headline}
                         </h4>
                         <div className="text-[15px] lg:text-sm text-black font-semibold leading-tight mb-1">
-                          {sad.price
-                            ? `৳ ${sad.price.toLocaleString()}`
-                            : t("price_on_ask")}
+                          {formatAdPrice(sad) || t("price_on_ask")}
                         </div>
                         <div className="flex items-center gap-0 text-[9px] lg:text-[10px] text-black group-hover:text-black flex-wrap">
                           <div className="flex items-center gap-2">
