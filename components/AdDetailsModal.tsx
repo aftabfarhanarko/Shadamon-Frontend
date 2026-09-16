@@ -1075,6 +1075,16 @@ export default function AdDetailsModal({
                         Chat
                       </ActionGuardButton>
 
+                      {/* Investment Button - Only if requested */}
+                      {otherButtons.includes("Investment") && (
+                        <ActionGuardButton
+                          className="flex-1 h-10 bg-[#1A202C] text-white text-xs px-1 rounded-md hover:bg-slate-800 transition-colors"
+                          onGuardedClick={handleChatClick}
+                        >
+                          Investment
+                        </ActionGuardButton>
+                      )}
+
                       {/* Send CV Button - Only if requested */}
                       {otherButtons.includes("Send CV") && (
                         <button

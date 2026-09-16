@@ -327,9 +327,9 @@ export default function PromoteModal({ isOpen, onClose, ad, user }: PromoteModal
         }
     };
 
-    if (!isOpen || !ad) return null;
+    if (!isOpen) return null;
 
-    const mainImage = (ad.images && ad.images.length > 0 ? getImageUrl(ad.images[0]) : null) || "https://via.placeholder.com/150";
+    const mainImage = (ad?.images && ad.images.length > 0 ? getImageUrl(ad.images[0]) : null) || "https://via.placeholder.com/150";
     const privacyContent = getInfoContentForLanguage(INFO_CONTENT.privacy, language);
     const termsContent = getInfoContentForLanguage(INFO_CONTENT.terms, language);
     const returnRefundContent = getInfoContentForLanguage(INFO_CONTENT.return, language);
@@ -445,13 +445,13 @@ export default function PromoteModal({ isOpen, onClose, ad, user }: PromoteModal
                             </div>
                             <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
                                 <div>
-                                    <h4 className="text-xs text-black leading-tight font-bold mb-0.5 line-clamp-2">{ad.headline}</h4>
+                                    <h4 className="text-xs text-black leading-tight font-bold mb-0.5 line-clamp-2">{ad?.headline || "Promote Your Business & Ads"}</h4>
                                     <div className="text-[12px] text-slate-600 truncate leading-tight">
-                                        {ad.category || 'Category'}, {ad.location || 'Location'}
+                                        {ad?.category || 'All Categories'}, {ad?.location || 'Bangladesh'}
                                     </div>
                                 </div>
                                 <div className="text-[12px] text-black leading-tight space-y-0.5 mt-2">
-                                    <div>Publish {ad.createdAt ? format(new Date(ad.createdAt), 'dd.MM.yyyy') : format(new Date(), 'dd.MM.yyyy')}</div>
+                                    <div>Publish {ad?.createdAt ? format(new Date(ad.createdAt), 'dd.MM.yyyy') : format(new Date(), 'dd.MM.yyyy')}</div>
                                     <div>Duration {format(new Date(), 'dd.MM.yyyy')} to {endDate ? format(new Date(endDate), 'dd.MM.yyyy') : '...'}</div>
                                     <div className="text-slate-800 font-bold pt-0.5">Promote Amount ৳{amount}</div>
                                 </div>

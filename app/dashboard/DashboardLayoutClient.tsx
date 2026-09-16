@@ -797,15 +797,9 @@ export default function DashboardLayoutClient({
       closeAdDetail();
     }
 
-    if (pathname === "/dashboard/post-ad" || pathname === "/dashboard/post-ad") {
-      const token = Cookies.get("token");
-      if (!token) {
-        setMobileEntryReason("post_ad");
-        setIsMobileEntryModalOpen(true);
-      } else {
-        setTempMobile("");
-        setIsPostAdModalOpen(true);
-      }
+    if (pathname === "/dashboard/post-ad" || pathname === "/d/post-ad") {
+      setTempMobile("");
+      setIsPostAdModalOpen(true);
     }
   }, [searchParams, pathname]);
 

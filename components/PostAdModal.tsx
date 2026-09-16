@@ -54,6 +54,7 @@ interface Category {
     _id: string;
     name: string;
     categoryNameBn?: string;
+    slug?: string;
     image?: string;
     icon?: string;
     subcategories: SubItem[];
@@ -86,6 +87,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const [price, setPrice] = useState("");
     const [minInvestment, setMinInvestment] = useState("");
     const [maxInvestment, setMaxInvestment] = useState("");
+    const [investmentPercentage, setInvestmentPercentage] = useState("");
     const [showPackageUpgrade, setShowPackageUpgrade] = useState(false);
     const [priceType, setPriceType] = useState("Negotiable");
     const [email, setEmail] = useState("");
@@ -202,6 +204,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         setPrice(ad.price ? String(ad.price) : "");
         setMinInvestment(ad.minInvestment ? String(ad.minInvestment) : "");
         setMaxInvestment(ad.maxInvestment ? String(ad.maxInvestment) : "");
+        setInvestmentPercentage(ad.investmentPercentage ? String(ad.investmentPercentage) : "");
         setPriceType(ad.priceType || "Negotiable");
         setExistingImages(ad.images || []);
         setFeatureValues(ad.features || {});
@@ -267,6 +270,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 setPrice(draft?.price || "");
                 setMinInvestment(draft?.minInvestment || "");
                 setMaxInvestment(draft?.maxInvestment || "");
+                setInvestmentPercentage(draft?.investmentPercentage || "");
                 setPriceType(draft?.priceType || "Negotiable");
                 setFeatureValues({});
                 setImages([]);
@@ -297,17 +301,54 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
         }
     }, [isOpen, editAd, initialMobile]);
 
+    // Handle Auto-Select Category and jump directly to Location selection step
+    useEffect(() => {
+        if (!isOpen || editAd || categories.length === 0) return;
+
+        const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+        const autoType = searchParams?.get('autoSelect') || searchParams?.get('type');
+
+        if (autoType === 'invest' || autoType === 'seek') {
+            let matchedCat: Category | undefined;
+
+            if (autoType === 'invest') {
+                matchedCat = categories.find((c: Category) =>
+                    c.slug === 'invest' ||
+                    c.name.toLowerCase() === 'invest' ||
+                    c.categoryNameBn === 'বিনিয়োগ'
+                );
+            } else if (autoType === 'seek') {
+                matchedCat = categories.find((c: Category) =>
+                    c.slug === 'vehicles' ||
+                    c.name.toLowerCase() === 'vehicles' ||
+                    (c.categoryNameBn && c.categoryNameBn.includes('যানবাহন'))
+                );
+            }
+
+            if (matchedCat) {
+                setSelectedCategory(matchedCat.name);
+                setTempCategory(matchedCat.name);
+                const sub = matchedCat.subcategories?.[0];
+                if (sub) {
+                    setSelectedSubCategory(sub.name);
+                    setTempSubCategory(sub.name);
+                }
+                setView('location');
+            }
+        }
+    }, [isOpen, categories, editAd]);
+
     // Draft Save Timer
     useEffect(() => {
         if (!isOpen || editAd) return;
         const draft = {
             headline, description, name, hidePhone,
-            price, minInvestment, maxInvestment, priceType,
+            price, minInvestment, maxInvestment, investmentPercentage, priceType,
             additionalPhones, featureValues, selectedCategory,
             selectedSubCategory, selectedLocation, selectedSubLocation
         };
         localStorage.setItem('postAdDraft', JSON.stringify(draft));
-    }, [headline, description, name, hidePhone, price, minInvestment, maxInvestment, priceType, additionalPhones, featureValues, selectedCategory, selectedSubCategory, selectedLocation, selectedSubLocation, isOpen, editAd]);
+    }, [headline, description, name, hidePhone, price, minInvestment, maxInvestment, investmentPercentage, priceType, additionalPhones, featureValues, selectedCategory, selectedSubCategory, selectedLocation, selectedSubLocation, isOpen, editAd]);
 
     // OTP Timer
     useEffect(() => {
@@ -703,6 +744,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
             formData.append('price', price);
             formData.append('minInvestment', minInvestment);
             formData.append('maxInvestment', maxInvestment);
+            formData.append('investmentPercentage', investmentPercentage);
             formData.append('priceType', priceType);
 
             if (wasOtpVerified) {
@@ -1423,6 +1465,81 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                 </div>
                             ) : (
                                 <>
+                                    {/* Category & Location Selection Section */}
+                                    <div className={cn(
+                                        "bg-white rounded-lg border p-3 shadow-sm font-sans space-y-2 mb-3",
+                                        attemptedSubmit && (!selectedCategory || !selectedLocation) ? "border-red-500" : "border-slate-500"
+                                    )}>
+                                        {attemptedSubmit && (!selectedCategory || !selectedLocation) && <p className="text-[9px] text-red-500 font-bold uppercase">{t('field_required')}</p>}
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-4 text-[13px] text-slate-600 font-medium">
+                                                <div
+                                                    className={cn(
+                                                        "flex items-center gap-1 transition-colors",
+                                                        !editAd ? "cursor-pointer hover:text-black" : "cursor-default"
+                                                    )}
+                                                    onClick={() => !editAd && setView('category')}
+                                                >
+                                                    <span className={selectedCategory ? "text-black font-bold" : "text-slate-400"}>
+                                                        {selectedCategory
+                                                            ? (() => {
+                                                                const catDisp = getLocalizedAreaName(selectedCategory, selectedCategoryMeta?.categoryNameBn);
+                                                                const subDisp = selectedSubCategory ? getLocalizedAreaName(selectedSubCategory, selectedSubCategoryMeta?.subCategoryNameBn) : '';
+                                                                if (!subDisp || subDisp.toLowerCase() === catDisp.toLowerCase()) {
+                                                                    return catDisp;
+                                                                }
+                                                                return `${catDisp}, ${subDisp}`;
+                                                            })()
+                                                            : t('category')}
+                                                    </span>
+                                                    {!editAd && <ChevronDown className="w-3 h-3 text-slate-400" />}
+                                                </div>
+                                                <div
+                                                    className={cn(
+                                                        "flex items-center gap-1 transition-colors",
+                                                        !editAd ? "cursor-pointer hover:text-black" : "cursor-default"
+                                                    )}
+                                                    onClick={() => !editAd && setView('category')}
+                                                >
+                                                    <span className={selectedLocation ? "text-black font-bold" : "text-slate-400"}>
+                                                        {selectedLocation
+                                                            ? (() => {
+                                                                const locDisp = getLocalizedAreaName(selectedLocation, selectedLocationMeta?.locationNameBn);
+                                                                const subDisp = selectedSubLocation ? getLocalizedAreaName(selectedSubLocation, selectedSubLocationMeta?.subLocationNameBn) : '';
+                                                                if (!subDisp || subDisp.toLowerCase() === locDisp.toLowerCase()) {
+                                                                    return locDisp;
+                                                                }
+                                                                return `${locDisp}, ${subDisp}`;
+                                                            })()
+                                                            : t('location')}
+                                                    </span>
+                                                    {!editAd && <ChevronDown className="w-3 h-3 text-slate-400" />}
+                                                </div>
+                                            </div>
+                                            {!editAd && (
+                                                <button
+                                                    onClick={() => setView('category')}
+                                                    className="text-[12px] text-[#0088cc] font-bold hover:underline"
+                                                >
+                                                    {(selectedCategory || selectedLocation) ? t('change_btn') : t('select_btn')}
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {Object.keys(featureValues).length > 0 && (
+                                            <div className="flex flex-col gap-1 border-t border-slate-100 pt-2">
+                                                <div className="flex flex-wrap gap-2 pt-1">
+                                                    {Object.entries(featureValues).map(([key, value]) => (
+                                                        <div key={key} className="bg-slate-50 border border-slate-200 px-2 py-0.5 rounded text-[10px] text-slate-600 flex items-center gap-1">
+                                                            <span className="font-bold">{key}:</span>
+                                                            <span>{String(value)}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
                                     <div className={cn(
                                         "bg-white rounded-lg p-3 border",
                                         attemptedSubmit && images.length === 0 && existingImages.length === 0 ? "border-red-500" : "border-slate-100"
@@ -1597,76 +1714,17 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                         </div>
                                     </div>
 
-                                    {/* Category & Location Selection Section */}
-                                    <div className={cn(
-                                        "bg-white rounded-lg border p-3 shadow-sm font-sans space-y-2",
-                                        attemptedSubmit && (!selectedCategory || !selectedLocation) ? "border-red-500" : "border-slate-500"
-                                    )}>
-                                        {attemptedSubmit && (!selectedCategory || !selectedLocation) && <p className="text-[9px] text-red-500 font-bold uppercase">{t('field_required')}</p>}
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-4 text-[13px] text-slate-600 font-medium">
-                                                <div
-                                                    className={cn(
-                                                        "flex items-center gap-1 transition-colors",
-                                                        !editAd ? "cursor-pointer hover:text-black" : "cursor-default"
-                                                    )}
-                                                    onClick={() => !editAd && setView('category')}
-                                                >
-                                                    <span className={selectedCategory ? "text-black font-bold" : "text-slate-400"}>
-                                                        {selectedCategory
-                                                            ? `${getLocalizedAreaName(selectedCategory, selectedCategoryMeta?.categoryNameBn)}${selectedSubCategory ? `, ${getLocalizedAreaName(selectedSubCategory, selectedSubCategoryMeta?.subCategoryNameBn)}` : ''}`
-                                                            : t('category')}
-                                                    </span>
-                                                    {!editAd && <ChevronDown className="w-3 h-3 text-slate-400" />}
-                                                </div>
-                                                <div
-                                                    className={cn(
-                                                        "flex items-center gap-1 transition-colors",
-                                                        !editAd ? "cursor-pointer hover:text-black" : "cursor-default"
-                                                    )}
-                                                    onClick={() => !editAd && setView('category')}
-                                                >
-                                                    <span className={selectedLocation ? "text-black font-bold" : "text-slate-400"}>
-                                                        {selectedLocation
-                                                            ? `${getLocalizedAreaName(selectedLocation, selectedLocationMeta?.locationNameBn)}${selectedSubLocation ? `, ${getLocalizedAreaName(selectedSubLocation, selectedSubLocationMeta?.subLocationNameBn)}` : ''}`
-                                                            : t('location')}
-                                                    </span>
-                                                    {!editAd && <ChevronDown className="w-3 h-3 text-slate-400" />}
-                                                </div>
-                                            </div>
-                                            {!editAd && (
-                                                <button
-                                                    onClick={() => setView('category')}
-                                                    className="text-[12px] text-[#0088cc] font-bold hover:underline"
-                                                >
-                                                    {(selectedCategory || selectedLocation) ? t('change_btn') : t('select_btn')}
-                                                </button>
-                                            )}
-                                        </div>
 
-                                        {Object.keys(featureValues).length > 0 && (
-                                            <div className="flex flex-col gap-1 border-t border-slate-100 pt-2">
-                                                <div className="flex flex-wrap gap-2 pt-1">
-                                                    {Object.entries(featureValues).map(([key, value]) => (
-                                                        <div key={key} className="bg-slate-50 border border-slate-200 px-2 py-0.5 rounded text-[10px] text-slate-600 flex items-center gap-1">
-                                                            <span className="font-bold">{key}:</span>
-                                                            <span>{String(value)}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
 
                                     {subCat?.priceBoxShow && (
                                         <div className="space-y-2">
-                                            <div className="grid grid-cols-2 gap-2">
+                                            <div className="grid grid-cols-3 gap-2">
                                                 <div className={cn(
-                                                    "bg-slate-100 rounded-lg border flex flex-col justify-center overflow-hidden h-[46px] px-3",
+                                                    "bg-slate-100 rounded-lg border flex flex-col justify-center overflow-hidden h-[46px] px-2.5",
                                                     attemptedSubmit && !minInvestment.trim() ? "border-red-500" : "border-slate-500"
                                                 )}>
                                                     <span className={cn(
-                                                        "text-[10px] font-bold uppercase",
+                                                        "text-[9px] font-bold uppercase truncate",
                                                         attemptedSubmit && !minInvestment.trim() ? "text-red-500" : "text-slate-500"
                                                     )}>
                                                         {t('min_investment') || "Minimum (BDT)"}
@@ -1680,11 +1738,11 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                     />
                                                 </div>
                                                 <div className={cn(
-                                                    "bg-slate-100 rounded-lg border flex flex-col justify-center overflow-hidden h-[46px] px-3",
+                                                    "bg-slate-100 rounded-lg border flex flex-col justify-center overflow-hidden h-[46px] px-2.5",
                                                     attemptedSubmit && !maxInvestment.trim() ? "border-red-500" : "border-slate-500"
                                                 )}>
                                                     <span className={cn(
-                                                        "text-[10px] font-bold uppercase",
+                                                        "text-[9px] font-bold uppercase truncate",
                                                         attemptedSubmit && !maxInvestment.trim() ? "text-red-500" : "text-slate-500"
                                                     )}>
                                                         {t('max_investment') || "Maximum (BDT)"}
@@ -1697,21 +1755,19 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                                                         className="w-full bg-transparent text-[13px] font-bold text-black placeholder:text-slate-400 focus:outline-none"
                                                     />
                                                 </div>
-                                            </div>
-                                            <label className="flex items-center gap-2 cursor-pointer w-max pt-1">
-                                                <div className="relative flex items-center">
-                                                    <input 
-                                                        type="checkbox" 
-                                                        checked={priceType === 'Negotiable'}
-                                                        onChange={(e) => setPriceType(e.target.checked ? 'Negotiable' : 'Fixed')}
-                                                        className="peer sr-only"
+                                                <div className="bg-slate-100 rounded-lg border border-slate-500 flex flex-col justify-center overflow-hidden h-[46px] px-2.5">
+                                                    <span className="text-[9px] font-bold uppercase text-slate-500 truncate">
+                                                        % Percentage
+                                                    </span>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="0%"
+                                                        value={investmentPercentage}
+                                                        onChange={(e) => setInvestmentPercentage(e.target.value)}
+                                                        className="w-full bg-transparent text-[13px] font-bold text-black placeholder:text-slate-400 focus:outline-none"
                                                     />
-                                                    <div className="w-4 h-4 rounded border border-slate-400 peer-checked:bg-[#0088cc] peer-checked:border-[#0088cc] flex items-center justify-center transition-colors">
-                                                        <Check className="w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity stroke-[3]" />
-                                                    </div>
                                                 </div>
-                                                <span className="text-[13px] text-slate-700 select-none">{t('price_negotiable') || 'Negotiable'}</span>
-                                            </label>
+                                            </div>
                                         </div>
                                     )}
 
