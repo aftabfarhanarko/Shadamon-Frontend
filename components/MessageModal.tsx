@@ -169,7 +169,8 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
-            setNotifications(data.data || data);
+            const notifs = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
+            setNotifications(notifs);
         } catch (err) {
             console.error("Error fetching notifications:", err);
         } finally {
@@ -312,7 +313,7 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
     // Merge notifications preferences as UI items
     const combinedList = [
         ...filteredConversations.map(c => ({ ...c, uiType: 'conversation' })),
-        ...(searchQuery === '' && (activeTab === 'All' || activeTab === 'Notify') ? notifyPreferences.map(p => ({
+        ...(searchQuery === '' && (activeTab === 'All' || activeTab === 'Notify') && Array.isArray(notifyPreferences) ? notifyPreferences.map(p => ({
             _id: p._id,
             uiType: 'preference',
             ad: p.ad,
@@ -320,7 +321,7 @@ export default function MessageModal({ isOpen, onClose, onOpenChat }: MessageMod
             createdAt: p.createdAt,
             lastMessage: { messageType: 'notify' }
         })) : []),
-        ...(searchQuery === '' && (activeTab === 'All' || activeTab === 'Shadamon') ? notifications.map(n => ({
+        ...(searchQuery === '' && (activeTab === 'All' || activeTab === 'Shadamon') && Array.isArray(notifications) ? notifications.map(n => ({
             ...n,
             uiType: 'notification'
         })) : [])
