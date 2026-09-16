@@ -105,7 +105,7 @@ export default function RootLayout({
       </head>
       <body
         className={`antialiased`}
-
+        suppressHydrationWarning={true}
       >
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-SEZGVZCXMT"
