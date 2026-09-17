@@ -106,6 +106,57 @@ export default function Home() {
 
     const displayAds = recentAds.length > 0 ? recentAds : sampleAds;
 
+    const categoryBnMap: Record<string, string> = {
+        'Property': 'প্রোপার্টি',
+        'Vehicles': 'যানবাহন',
+        'Electronics': 'ইলেকট্রনিক্স',
+        'Women Corner': 'উইমেনস কর্নার',
+        'Services': 'সার্ভিস',
+        'Business': 'ব্যবসা',
+        'Jobs': 'চাকরি',
+        'Education': 'শিক্ষা',
+        'Fashion': 'ফ্যাশন',
+        'Health & Beauty': 'স্বাস্থ্য ও সৌন্দর্য',
+        'Health': 'স্বাস্থ্য'
+    };
+
+    const toBengaliDigits = (str: string | number): string => {
+        if (str === null || str === undefined) return '';
+        const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+        return String(str).replace(/[0-9]/g, (w) => bengaliDigits[parseInt(w, 10)]);
+    };
+
+    const getFormattedAdBadge = (ad: any, index: number): string => {
+        const rawCategory = ad.badge || ad.category || ad.subCategory;
+        if (rawCategory && categoryBnMap[rawCategory]) {
+            return categoryBnMap[rawCategory];
+        }
+        if (rawCategory && typeof rawCategory === 'string' && rawCategory.trim()) {
+            return toBengaliDigits(rawCategory);
+        }
+        return index % 2 === 0 ? 'বিনিয়োগ' : 'বিনিয়োগকারী';
+    };
+
+    const getFormattedAdTitle = (ad: any): string => {
+        let title = ad.title || ad.headline || '';
+        if (title.includes('4-bedroom Apartment')) title = title.replace(/4-bedroom Apartment in\.\.\./g, '৪-বেডরুম অ্যাপার্টমেন্ট');
+        if (title.includes('Platina 110')) title = title.replace(/Platina 110/g, 'প্লাটিনা ১১০');
+        if (title.includes('32" Curved Gaming Monitor')) title = title.replace(/32" Curved Gaming Monitor/g, '৩২" কার্ভড গেমিং মনিটর');
+        if (title.includes('Kojic Acid Turmeric Soap')) title = 'কোজিক এসিড টারমারিক সোপ';
+        return toBengaliDigits(title);
+    };
+
+    const getFormattedAdPriceBn = (ad: any): string => {
+        if (!ad) return "আলোচনা সাপেক্ষে";
+        if (ad.returnRate) {
+            return toBengaliDigits(ad.returnRate.replace(/return/ig, 'রিটার্ন').replace(/year/ig, 'বছর'));
+        }
+        const rawPriceFormatted = formatAdPrice(ad);
+        if (!rawPriceFormatted) return "আলোচনা সাপেক্ষে";
+        let formatted = rawPriceFormatted.replace(/Min:/gi, 'সর্বনিম্ন:').replace(/Max:/gi, 'সর্বোচ্চ:');
+        return toBengaliDigits(formatted);
+    };
+
     // Framer Motion Stagger Variants
     const containerVariants: Variants = {
         hidden: { opacity: 0 },
@@ -325,19 +376,19 @@ export default function Home() {
                                                             : 'bg-emerald-50 text-emerald-800 border border-emerald-200/60'
                                                     }`}>
                                                         <span className={`w-1.5 h-1.5 rounded-full ${isPurpleBadge ? 'bg-purple-600' : 'bg-emerald-600'}`}></span>
-                                                        {ad.badge || (ad.category ? ad.category : (index % 2 === 0 ? 'বিনিয়োগ' : 'বিনিয়োগকারী'))}
+                                                        {getFormattedAdBadge(ad, index)}
                                                     </span>
                                                 </div>
 
                                                 {/* Title */}
                                                 <h3 className="font-bold text-slate-900 text-[11px] sm:text-sm md:text-base mb-1 line-clamp-2 group-hover:text-[#7C3AED] transition-colors leading-snug">
-                                                    {ad.title || ad.headline}
+                                                    {getFormattedAdTitle(ad)}
                                                 </h3>
 
                                                 {/* Location */}
                                                 <p className="text-[9.5px] sm:text-[11px] text-slate-500 font-medium mb-2.5 sm:mb-3 flex items-center gap-1">
                                                     <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400 shrink-0" />
-                                                    <span className="truncate">{ad.location || 'ঢাকা • বাংলাদেশ'}</span>
+                                                    <span className="truncate">{toBengaliDigits(ad.location || 'ঢাকা • বাংলাদেশ')}</span>
                                                 </p>
                                             </div>
 
@@ -346,7 +397,7 @@ export default function Home() {
                                                 <div className="flex flex-col">
                                                     <span className="text-[8.5px] sm:text-[9.5px] text-slate-400 font-medium uppercase tracking-wider">অফার / রিটার্ন</span>
                                                     <span className="text-[11px] sm:text-sm md:text-base font-bold text-purple-700 group-hover:text-purple-900 transition-colors">
-                                                        {ad.returnRate || formatAdPrice(ad) || 'আলোচনা সাপেক্ষে'}
+                                                        {getFormattedAdPriceBn(ad)}
                                                     </span>
                                                 </div>
                                                 <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl bg-purple-50 group-hover:bg-[#7C3AED] text-[#7C3AED] group-hover:text-white flex items-center justify-center transition-all duration-300 shadow-sm shrink-0">

@@ -1723,54 +1723,59 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
 
 
                                     {subCat?.priceBoxShow && (
-                                        <div className="space-y-2">
-                                            <div className="grid grid-cols-3 gap-2">
-                                                <div className={cn(
-                                                    "bg-slate-100 rounded-lg border flex flex-col justify-center overflow-hidden h-[46px] px-2.5",
-                                                    attemptedSubmit && !minInvestment.trim() ? "border-red-500" : "border-slate-500"
-                                                )}>
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs sm:text-sm font-semibold text-slate-800 block px-0.5">
+                                                বিনিয়োগের পরিমাণ
+                                            </label>
+                                            <div className={cn(
+                                                "bg-white rounded-xl border overflow-hidden shadow-sm grid grid-cols-3 divide-x divide-slate-300",
+                                                attemptedSubmit && (!minInvestment.trim() || !maxInvestment.trim()) ? "border-red-500" : "border-slate-300"
+                                            )}>
+                                                {/* Min Investment */}
+                                                <div className="flex flex-col justify-center px-2.5 py-2 bg-slate-50/60 focus-within:bg-white transition-colors">
                                                     <span className={cn(
-                                                        "text-[9px] font-bold uppercase truncate",
-                                                        attemptedSubmit && !minInvestment.trim() ? "text-red-500" : "text-slate-500"
+                                                        "text-[10px] sm:text-[11px] font-medium text-slate-600 truncate mb-0.5",
+                                                        attemptedSubmit && !minInvestment.trim() && "text-red-500 font-semibold"
                                                     )}>
-                                                        {t('min_investment') || "Minimum (BDT)"}
+                                                        সর্বনিম্ন (৳)
                                                     </span>
                                                     <input
                                                         type="text"
-                                                        placeholder="0"
+                                                        placeholder="০"
                                                         value={minInvestment}
                                                         onChange={(e) => setMinInvestment(e.target.value.replace(/[^0-9]/g, ''))}
-                                                        className="w-full bg-transparent text-[13px] font-bold text-black placeholder:text-slate-400 focus:outline-none"
+                                                        className="w-full bg-transparent text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none"
                                                     />
                                                 </div>
-                                                <div className={cn(
-                                                    "bg-slate-100 rounded-lg border flex flex-col justify-center overflow-hidden h-[46px] px-2.5",
-                                                    attemptedSubmit && !maxInvestment.trim() ? "border-red-500" : "border-slate-500"
-                                                )}>
+
+                                                {/* Max Investment */}
+                                                <div className="flex flex-col justify-center px-2.5 py-2 bg-slate-50/60 focus-within:bg-white transition-colors">
                                                     <span className={cn(
-                                                        "text-[9px] font-bold uppercase truncate",
-                                                        attemptedSubmit && !maxInvestment.trim() ? "text-red-500" : "text-slate-500"
+                                                        "text-[10px] sm:text-[11px] font-medium text-slate-600 truncate mb-0.5",
+                                                        attemptedSubmit && !maxInvestment.trim() && "text-red-500 font-semibold"
                                                     )}>
-                                                        {t('max_investment') || "Maximum (BDT)"}
+                                                        সর্বোচ্চ (৳)
                                                     </span>
                                                     <input
                                                         type="text"
-                                                        placeholder="0"
+                                                        placeholder="০"
                                                         value={maxInvestment}
                                                         onChange={(e) => setMaxInvestment(e.target.value.replace(/[^0-9]/g, ''))}
-                                                        className="w-full bg-transparent text-[13px] font-bold text-black placeholder:text-slate-400 focus:outline-none"
+                                                        className="w-full bg-transparent text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none"
                                                     />
                                                 </div>
-                                                <div className="bg-slate-100 rounded-lg border border-slate-500 flex flex-col justify-center overflow-hidden h-[46px] px-2.5">
-                                                    <span className="text-[9px] font-bold uppercase text-slate-500 truncate">
-                                                        % Percentage
+
+                                                {/* Percentage */}
+                                                <div className="flex flex-col justify-center px-2.5 py-2 bg-slate-50/60 focus-within:bg-white transition-colors">
+                                                    <span className="text-[10px] sm:text-[11px] font-medium text-slate-600 truncate mb-0.5">
+                                                        প্রত্যাশিত লভ্যাংশ (%)
                                                     </span>
                                                     <input
                                                         type="text"
-                                                        placeholder="0%"
+                                                        placeholder="০%"
                                                         value={investmentPercentage}
                                                         onChange={(e) => setInvestmentPercentage(e.target.value)}
-                                                        className="w-full bg-transparent text-[13px] font-bold text-black placeholder:text-slate-400 focus:outline-none"
+                                                        className="w-full bg-transparent text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none"
                                                     />
                                                 </div>
                                             </div>
