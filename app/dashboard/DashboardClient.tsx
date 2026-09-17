@@ -159,7 +159,7 @@ export default function DashboardClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t, language } = useLanguage();
-  const { settings } = useSettings();
+  const { settings, fetchAdPositions } = useSettings();
 
   const getFilterQueryValue = (longKey: string, shortKey: string) => {
     return searchParams.get(longKey) || searchParams.get(shortKey);
@@ -200,7 +200,8 @@ export default function DashboardClient() {
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    fetchAdPositions();
+  }, [fetchAdPositions]);
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
@@ -1081,73 +1082,16 @@ export default function DashboardClient() {
         id="center-feed-container"
         className="w-full lg:w-[785px] flex-none space-y-4 pb-32 lg:pb-20"
       >
-        {/* Modern Hero Section */}
-        {!filters.category && !filters.location && !filters.search && (
-          <div className="relative bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-none lg:rounded-xl p-6 lg:p-8 text-white shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-500">
-            {/* Background Decorative Elements */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-400/20 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4"></div>
-            
-            <div className="relative z-10 flex flex-col items-center text-center">
-              <h1 className="text-2xl lg:text-3xl font-extrabold mb-2 tracking-tight">
-                {language === "bn" ? "আপনার যা প্রয়োজন, সব এখানেই!" : "Find Anything, Instantly!"}
-              </h1>
-              <p className="text-blue-100 text-[13px] lg:text-sm mb-6 max-w-sm">
-                {language === "bn" ? "হাজারো বিজ্ঞাপনের মাঝে খুঁজুন আপনার পছন্দের পণ্য" : "Search from thousands of active classifieds locally."}
-              </p>
-              
-              <form 
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const val = (e.currentTarget.elements.namedItem('heroSearch') as HTMLInputElement).value;
-                  if (val.trim()) {
-                    setFilters(prev => ({ ...prev, search: val.trim() }));
-                  }
-                }}
-                className="w-full max-w-md flex bg-white/10 backdrop-blur-md border border-white/20 p-1.5 rounded-full shadow-inner mb-6"
-              >
-                <div className="flex-1 flex items-center bg-white rounded-full px-4 overflow-hidden">
-                  <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                  <input 
-                    name="heroSearch"
-                    type="text" 
-                    placeholder={language === "bn" ? "কী খুঁজছেন?" : "What are you looking for?"}
-                    className="w-full bg-transparent px-3 py-2.5 text-[13px] text-black focus:outline-none placeholder:text-slate-400" 
-                  />
-                </div>
-                <button type="submit" className="bg-black text-white px-5 py-2.5 rounded-full text-[13px] font-medium ml-1.5 hover:bg-slate-800 transition-colors shadow-sm">
-                  {language === "bn" ? "খুঁজুন" : "Search"}
-                </button>
-              </form>
 
-              {isMounted && !Cookies.get('token') && (
-                <div className="flex gap-4">
-                  <button 
-                    onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'register' } }))}
-                    className="bg-white text-indigo-600 px-6 py-2.5 rounded-full text-[14px] font-bold hover:bg-indigo-50 transition-colors shadow-md flex items-center gap-2"
-                  >
-                    {language === "bn" ? "একাউন্ট খুলুন" : "Join Now"}
-                  </button>
-                  <button 
-                    onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }))}
-                    className="bg-transparent border border-white/30 text-white px-6 py-2.5 rounded-full text-[14px] font-bold hover:bg-white/10 transition-colors"
-                  >
-                    {language === "bn" ? "লগইন করুন" : "Login"}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
         {/* Secondary Filter Bar */}
         <div
           className={cn(
-            "bg-white rounded-2xl flex items-center justify-between px-3 py-2 border border-slate-100 shadow-sm sticky z-[49] transition-all duration-300 mx-[5px] lg:mx-0 mb-3",
+            "bg-white rounded-xl flex items-center justify-between px-4 py-2.5 border border-slate-100  sticky z-[49] transition-all duration-300 mx-[5px] lg:mx-0 mb-3",
             isNavVisible ? "top-16" : "top-0",
           )}
         >
           {/* Left Promote Tag Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
             {[
               { id: "All", labelBn: "সব পোস্ট", labelEn: "All Posts" },
               { id: "Entrepreneur", labelBn: "উদ্যোক্তা", labelEn: "Entrepreneur" },
@@ -1164,15 +1108,15 @@ export default function DashboardClient() {
                     }))
                   }
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 cursor-pointer",
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all shrink-0 cursor-pointer",
                     isActive
-                      ? "bg-transparent text-slate-900 font-semibold"
+                      ? "bg-transparent text-slate-900"
                       : "bg-transparent text-slate-500 hover:text-slate-800",
                   )}
                 >
                   <span
                     className={cn(
-                      "w-2 h-2 rounded-full",
+                      "w-2.5 h-2.5 rounded-full",
                       isActive ? "bg-purple-600 ring-2 ring-purple-200" : "bg-slate-300",
                     )}
                   />
@@ -1185,9 +1129,9 @@ export default function DashboardClient() {
           {/* Right Filter Button */}
           <button
             onClick={() => setIsFilterModalOpen(true)}
-            className="flex items-center gap-1.5 text-xs text-slate-700 hover:text-purple-600 font-medium px-3 py-1.5 rounded-xl hover:bg-slate-50 transition-colors shrink-0 border-l border-slate-100 pl-3"
+            className="flex items-center gap-1.5 text-xs text-slate-800 hover:text-purple-600 font-medium px-3.5 py-1.5 rounded-full border border-slate-200 hover:bg-slate-50 transition-all shrink-0"
           >
-            <SlidersHorizontal className="w-4 h-4 text-slate-600" />
+            <SlidersHorizontal className="w-3.5 h-3.5 text-slate-700" />
             <span>{language === "bn" ? "ফিল্টার" : "Filter"}</span>
           </button>
         </div>
@@ -1391,14 +1335,14 @@ export default function DashboardClient() {
                                   }
                                 }}
                                 className={cn(
-                                  "relative bg-gradient-to-r from-purple-100/90 via-pink-100/80 to-pink-200/90 rounded-2xl lg:rounded-3xl p-3 lg:p-4 border shadow-sm cursor-pointer group hover:shadow-md transition-all flex flex-col md:flex-row gap-4 lg:gap-5 mx-[5px] lg:mx-0 overflow-hidden",
+                                  "relative bg-gradient-to-r from-[#FDF2F8] via-[#FCE7F3]/70 to-[#FDF2F8] rounded-lg  p-2.5 lg:p-3 border  cursor-pointer group  flex flex-col md:flex-row gap-3.5 lg:gap-4 mx-[5px] lg:mx-0 overflow-hidden",
                                   hasHighlightLabel(block.bigAd)
                                     ? "border-orange-500 shadow-[0_12px_30px_rgba(249,115,22,0.25)] ring-2 ring-orange-400/40"
-                                    : "border-purple-200/60",
+                                    : "border-pink-200/60",
                                 )}
                               >
                                 {/* Left Image Section */}
-                                <div className="relative w-full md:w-[48%] lg:w-[45%] h-[200px] md:h-[220px] lg:h-[240px] rounded-2xl overflow-hidden shrink-0 bg-slate-200">
+                                <div className="relative w-full md:w-[48.5%] lg:w-[48.5%] h-[165px]   lg:h-[270px] rounded-lg overflow-hidden shrink-0 bg-slate-200">
                                   {getImageUrl(block.bigAd.images?.[0]) ? (
                                     <>
                                       <img
@@ -1409,7 +1353,7 @@ export default function DashboardClient() {
                                       <img
                                         src={getImageUrl(block.bigAd.images?.[0]) || undefined}
                                         alt={block.bigAd.headline}
-                                        className="relative z-10 w-full h-full object-contain rounded-2xl group-hover:scale-105 transition-transform duration-300"
+                                        className="relative z-10 w-full h-full object-contain rounded-2xl"
                                         loading="lazy"
                                       />
                                     </>
@@ -1433,63 +1377,63 @@ export default function DashboardClient() {
                                 </div>
 
                                 {/* Right Content Section */}
-                                <div className="flex-1 flex flex-col justify-between py-1 px-1 md:px-2 min-w-0">
-                                  <div>
-                                    {/* Top Tag & Badge Row */}
-                                    <div className="flex items-center justify-between gap-2 mb-2">
-                                      <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-purple-800">
-                                        <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse" />
-                                        {block.bigAd.category || "Active Business"}
-                                      </div>
-                                      <span className="bg-white/90 backdrop-blur-sm text-slate-800 text-xs font-bold px-3 py-1 rounded-full shadow-xs border border-white/80">
-                                        {block.bigAd.subCategory || block.bigAd.category || "Investor"}
-                                      </span>
+                                <div className="flex-1 flex flex-col justify-center py-0.5 px-1 md:px-2 min-w-0 gap-1.5 my-auto">
+                                  {/* Top Tag & Badge Row */}
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="inline-flex items-center gap-1.5 text-xs font-bold text-purple-700">
+                                      <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse" />
+                                      Active Business
                                     </div>
-
-                                    {/* Headline */}
-                                    <h3 className="font-bold text-lg md:text-xl lg:text-2xl text-slate-900 leading-tight mb-3 line-clamp-2 group-hover:text-purple-700 transition-colors">
-                                      {block.bigAd.headline}
-                                    </h3>
-
-                                    {/* Financial / Price Metric Badges Row */}
-                                    <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-4">
-                                      {block.bigAd.investmentPercentage ? (
-                                        <div className="bg-purple-600 text-white font-bold text-xs px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-1">
-                                          <span>{block.bigAd.investmentPercentage}%</span>
-                                          <span className="text-[10px] opacity-80 uppercase tracking-wider">SHARE</span>
-                                        </div>
-                                      ) : null}
-
-                                      {block.bigAd.minInvestment || block.bigAd.maxInvestment ? (
-                                        <div className="flex items-center gap-3 text-xs md:text-sm font-semibold text-slate-800 bg-white/70 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-white/80 shadow-xs">
-                                          {block.bigAd.minInvestment ? (
-                                            <div>
-                                              <span className="text-slate-900 font-bold">{formatInvestmentDisplay(block.bigAd.minInvestment)}</span>
-                                              <span className="text-[10px] text-slate-500 block leading-none mt-0.5">Min. Invest</span>
-                                            </div>
-                                          ) : null}
-                                          {block.bigAd.maxInvestment ? (
-                                            <div>
-                                              <span className="text-slate-900 font-bold">{formatInvestmentDisplay(block.bigAd.maxInvestment)}</span>
-                                              <span className="text-[10px] text-slate-500 block leading-none mt-0.5">Max. Invest</span>
-                                            </div>
-                                          ) : null}
-                                        </div>
-                                      ) : (
-                                        <div className="bg-purple-600 text-white font-bold text-sm md:text-base px-4 py-1.5 rounded-xl shadow-sm">
-                                          {formatAdPrice(block.bigAd) || "N/A"}
-                                        </div>
-                                      )}
-                                    </div>
+                                    <span className="bg-white/90 backdrop-blur-sm text-slate-800 text-xs font-bold px-3 py-0.5 rounded-full shadow-2xs border border-white/80">
+                                      {block.bigAd.subCategory || block.bigAd.category || "Investor"}
+                                    </span>
                                   </div>
 
-                                  {/* Bottom User Info & Action Pill Buttons Row */}
-                                  <div className="flex items-end justify-between gap-2 pt-2 border-t border-purple-200/50">
-                                    <div>
-                                      <span className="text-[11px] text-slate-500 block font-medium">Posted By</span>
-                                      <div className="font-bold text-sm text-slate-900 flex items-center gap-1">
+                                  {/* Headline */}
+                                  <h3 className="font-bold text-base md:text-xl lg:text-2xl text-slate-900 leading-snug line-clamp-2">
+                                    {block.bigAd.headline}
+                                  </h3>
+
+                                  {/* Financial / Price Metric Badges Row - 2 Items Max, No Outer Rounded Box */}
+                                  <div className="flex flex-wrap items-center gap-3">
+                                    {block.bigAd.minInvestment || block.bigAd.maxInvestment || block.bigAd.investmentPercentage ? (
+                                      <div className="flex items-center gap-3">
+                                        {block.bigAd.investmentPercentage ? (
+                                          <div className="bg-[#7C3AED] text-white font-bold text-xs md:text-sm px-2.5 py-1 rounded-md shadow-xs flex items-center gap-1 shrink-0">
+                                            <span>{block.bigAd.investmentPercentage}%</span>
+                                            <span className="text-[10px] opacity-80 uppercase">{language === "bn" ? "শেয়ার" : "SHARE"}</span>
+                                          </div>
+                                        ) : null}
+
+                                        {block.bigAd.minInvestment ? (
+                                          <div className="text-xs md:text-sm font-semibold text-slate-800">
+                                            <span className="text-slate-900 font-bold text-sm md:text-base block leading-none">{formatInvestmentDisplay(block.bigAd.minInvestment)}</span>
+                                            <span className="text-[10px] text-slate-500 block leading-none mt-1">{language === "bn" ? "সর্বনিম্ন" : "Min. Invest"}</span>
+                                          </div>
+                                        ) : null}
+
+                                        {!block.bigAd.investmentPercentage && block.bigAd.maxInvestment ? (
+                                          <div className="text-xs md:text-sm font-semibold text-slate-800">
+                                            <span className="text-slate-900 font-bold text-sm md:text-base block leading-none">{formatInvestmentDisplay(block.bigAd.maxInvestment)}</span>
+                                            <span className="text-[10px] text-slate-500 block leading-none mt-1">{language === "bn" ? "সর্বোচ্চ" : "Max. Invest"}</span>
+                                          </div>
+                                        ) : null}
+                                      </div>
+                                    ) : (
+                                      <div className="bg-[#7C3AED] text-white font-bold text-base md:text-lg px-3.5 py-1 rounded-md shadow-xs inline-flex items-center">
+                                        {formatAdPrice(block.bigAd) || "N/A"}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Bottom Section: Posted By, Location & Action Pill Buttons */}
+                                  <div className="flex flex-col gap-1.5 pt-1.5 border-t border-purple-200/40">
+                                    {/* Posted By & Location Row */}
+                                    <div className="flex items-center justify-between gap-2 text-xs sm:text-sm">
+                                      <div className="flex items-center gap-1 min-w-0">
+                                        <span className="text-xs text-slate-500 shrink-0">Post By</span>
                                         <span
-                                          className="hover:text-purple-700 hover:underline cursor-pointer"
+                                          className="font-bold text-slate-900 hover:text-purple-700 hover:underline cursor-pointer truncate text-xs sm:text-sm"
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             window.dispatchEvent(
@@ -1501,16 +1445,17 @@ export default function DashboardClient() {
                                         >
                                           {block.bigAd.user?.storeName || block.bigAd.user?.name || "User"}
                                         </span>
-                                        {block.bigAd.user?.mVerified && <VerifiedBadge className="translate-y-[0.5px]" />}
+                                        {block.bigAd.user?.mVerified && <VerifiedBadge className="translate-y-[0.5px] shrink-0" />}
                                       </div>
-                                      <div className="text-xs text-slate-600 flex items-center gap-1 mt-0.5">
-                                        <MapPin className="w-3 h-3 text-purple-600 shrink-0" />
+
+                                      <div className="text-xs sm:text-sm font-bold text-slate-700 flex items-center gap-1 shrink-0">
+                                        <MapPin className="w-3.5 h-3.5 text-purple-600 shrink-0" />
                                         <span className="truncate">{block.bigAd.location || "Bangladesh"}</span>
                                       </div>
                                     </div>
 
-                                    {/* Action Icon Buttons */}
-                                    <div className="flex items-center gap-2 shrink-0">
+                                    {/* Action Icon Buttons - Moved Up Right Under Post By */}
+                                    <div className="flex items-center gap-2">
                                       <button
                                         title="User Profile"
                                         onClick={(e) => {
@@ -1521,7 +1466,7 @@ export default function DashboardClient() {
                                             }),
                                           );
                                         }}
-                                        className="w-9 h-9 rounded-xl bg-white text-slate-700 flex items-center justify-center shadow-xs border border-white/80 hover:bg-slate-50 hover:text-purple-700 hover:scale-105 active:scale-95 transition-all"
+                                        className="w-9 h-9 rounded-xl bg-white text-slate-700 flex items-center justify-center shadow-2xs border border-white/80 hover:bg-slate-50 hover:text-purple-700 transition-all"
                                       >
                                         <UserPlus className="w-4 h-4" />
                                       </button>
@@ -1532,7 +1477,7 @@ export default function DashboardClient() {
                                           e.stopPropagation();
                                           openAdFromFeed(block.bigAd);
                                         }}
-                                        className="w-9 h-9 rounded-xl bg-white text-slate-700 flex items-center justify-center shadow-xs border border-white/80 hover:bg-slate-50 hover:text-purple-700 hover:scale-105 active:scale-95 transition-all"
+                                        className="w-9 h-9 rounded-xl bg-white text-slate-700 flex items-center justify-center shadow-2xs border border-white/80 hover:bg-slate-50 hover:text-purple-700 transition-all"
                                       >
                                         <MessageSquare className="w-4 h-4" />
                                       </button>
@@ -1543,20 +1488,9 @@ export default function DashboardClient() {
                                           e.stopPropagation();
                                           openAdFromFeed(block.bigAd);
                                         }}
-                                        className="w-9 h-9 rounded-xl bg-white text-slate-700 flex items-center justify-center shadow-xs border border-white/80 hover:bg-slate-50 hover:text-purple-700 hover:scale-105 active:scale-95 transition-all"
+                                        className="w-9 h-9 rounded-xl bg-white text-slate-700 flex items-center justify-center shadow-2xs border border-white/80 hover:bg-slate-50 hover:text-purple-700 transition-all"
                                       >
                                         <Phone className="w-4 h-4" />
-                                      </button>
-
-                                      <button
-                                        title="View Details"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          openAdFromFeed(block.bigAd);
-                                        }}
-                                        className="w-9 h-9 rounded-xl bg-[#7C3AED] text-white flex items-center justify-center shadow-xs hover:bg-[#6D28D9] hover:scale-105 active:scale-95 transition-all"
-                                      >
-                                        <ExternalLink className="w-4 h-4" />
                                       </button>
                                     </div>
                                   </div>
@@ -1572,15 +1506,10 @@ export default function DashboardClient() {
                                     onClick={() => {
                                       openAdFromFeed(ad);
                                     }}
-                                    className={cn(
-                                      "relative bg-gradient-to-r from-purple-100/90 via-pink-100/80 to-pink-200/90 rounded-2xl border cursor-pointer group flex flex-col overflow-hidden shadow-xs hover:shadow-md transition-all justify-between border-purple-200/60",
-                                      hasHighlightLabel(ad)
-                                        ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-2 ring-orange-400/30"
-                                        : "border-purple-200/60",
-                                    )}
+                                    className="relative bg-white rounded-2xl border border-slate-200/80 cursor-pointer group flex flex-col overflow-hidden shadow-none transition-all justify-between"
                                   >
-                                    {/* Card Image Header */}
-                                    <div className="relative w-full aspect-[4/3] bg-slate-200 overflow-hidden shrink-0">
+                                    {/* Card Image Header - Compact Image */}
+                                    <div className="relative w-full aspect-[16/10] bg-slate-100 overflow-hidden shrink-0">
                                       {getImageUrl(ad.images?.[0]) ? (
                                         <>
                                           <img
@@ -1591,12 +1520,12 @@ export default function DashboardClient() {
                                           <img
                                             src={getImageUrl(ad.images?.[0]) || undefined}
                                             alt={ad.headline}
-                                            className="relative z-10 w-full h-full object-contain rounded-t-2xl group-hover:scale-105 transition-transform duration-300"
+                                            className="relative z-10 w-full h-full object-contain rounded-t-2xl"
                                             loading="lazy"
                                           />
                                         </>
                                       ) : (
-                                        <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400 text-xs font-medium">
+                                        <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400 text-xs font-medium">
                                           No Image
                                         </div>
                                       )}
@@ -1614,13 +1543,13 @@ export default function DashboardClient() {
                                       )}
                                     </div>
 
-                                    {/* Card Content Body */}
-                                    <div className="p-2.5 sm:p-3 flex flex-col justify-between flex-1 min-w-0">
+                                    {/* Card Content Body - White BG, Compact Spacing */}
+                                    <div className="p-2 sm:p-2.5 flex flex-col justify-between flex-1 min-w-0 bg-white">
                                       <div>
-                                        {/* Row 1: Post By & Badge */}
+                                        {/* Row 1: Post By & SubCategory Badge */}
                                         <div className="flex items-center justify-between gap-1 mb-1">
-                                          <div className="flex items-center gap-1 text-[10px] text-slate-600 truncate">
-                                            <span>Post By</span>
+                                          <div className="flex items-center gap-1 text-[10px] text-slate-600 truncate min-w-0">
+                                            <span className="text-slate-500 shrink-0">Post By</span>
                                             <span
                                               className="font-bold text-slate-900 hover:text-purple-700 hover:underline truncate"
                                               onClick={(e) => {
@@ -1636,48 +1565,49 @@ export default function DashboardClient() {
                                             </span>
                                             {ad.user?.mVerified && <VerifiedBadge className="translate-y-[0.5px] shrink-0" />}
                                           </div>
-                                          <span className="bg-white/90 backdrop-blur-sm text-slate-800 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full border border-white/80 truncate shrink-0 max-w-[80px]">
+                                          <span className="bg-slate-50 text-slate-700 text-[9px] font-bold px-2 py-0.5 rounded-full border border-slate-200 truncate shrink-0 max-w-[75px]">
                                             {ad.subCategory || ad.category || "Investor"}
                                           </span>
                                         </div>
 
                                         {/* Row 2: Status Indicator */}
-                                        <div className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-800 mb-1">
+                                        <div className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-700 mb-1">
                                           <span className="w-1.5 h-1.5 rounded-full bg-purple-600 animate-pulse" />
-                                          <span className="truncate">{ad.category || "Active Business"}</span>
+                                          <span className="truncate">Active Business</span>
                                         </div>
 
                                         {/* Row 3: Headline Title */}
-                                        <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug line-clamp-2 mb-2 group-hover:text-purple-700 transition-colors">
+                                        <h4 className="text-sm sm:text-base font-bold text-slate-900 leading-snug line-clamp-2 mb-1.5">
                                           {ad.headline}
                                         </h4>
 
-                                        {/* Row 4: Financial Metrics / Price */}
-                                        <div className="flex flex-wrap items-center gap-1.5 mb-3">
-                                          {ad.investmentPercentage ? (
-                                            <div className="bg-purple-600 text-white font-bold text-[9px] px-2 py-0.5 rounded flex flex-col items-center leading-none">
-                                              <span>{ad.investmentPercentage}%</span>
-                                              <span className="text-[7px] opacity-90 mt-0.5">SHARE</span>
-                                            </div>
-                                          ) : null}
-
-                                          {ad.minInvestment || ad.maxInvestment ? (
-                                            <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-800 bg-white/70 backdrop-blur-sm px-2 py-1 rounded-lg border border-white/80">
-                                              {ad.minInvestment ? (
-                                                <div>
-                                                  <span className="text-slate-900 font-bold block leading-none">{formatInvestmentDisplay(ad.minInvestment)}</span>
-                                                  <span className="text-[8px] text-slate-500 block leading-none mt-0.5">Minimum Invest</span>
+                                        {/* Row 4: Financial Metrics / Price - 2 Items Max, No Outer Rounded Box */}
+                                        <div className="flex flex-wrap items-center gap-2.5 mb-2">
+                                          {ad.minInvestment || ad.maxInvestment || ad.investmentPercentage ? (
+                                            <div className="flex items-center gap-2.5">
+                                              {ad.investmentPercentage ? (
+                                                <div className="bg-[#7C3AED] text-white font-bold text-xs px-2.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5 shrink-0">
+                                                  <span>{ad.investmentPercentage}%</span>
+                                                  <span className="text-[8px] opacity-80 uppercase">{language === "bn" ? "শেয়ার" : "SHARE"}</span>
                                                 </div>
                                               ) : null}
-                                              {ad.maxInvestment ? (
-                                                <div>
-                                                  <span className="text-slate-900 font-bold block leading-none">{formatInvestmentDisplay(ad.maxInvestment)}</span>
-                                                  <span className="text-[8px] text-slate-500 block leading-none mt-0.5">Maximum Invest</span>
+
+                                              {ad.minInvestment ? (
+                                                <div className="text-xs sm:text-sm font-semibold text-slate-800">
+                                                  <span className="text-slate-900 font-bold text-xs sm:text-sm block leading-none">{formatInvestmentDisplay(ad.minInvestment)}</span>
+                                                  <span className="text-[9px] text-slate-500 block leading-none mt-0.5">{language === "bn" ? "সর্বনিম্ন" : "Min. Invest"}</span>
+                                                </div>
+                                              ) : null}
+
+                                              {!ad.investmentPercentage && ad.maxInvestment ? (
+                                                <div className="text-xs sm:text-sm font-semibold text-slate-800">
+                                                  <span className="text-slate-900 font-bold text-xs sm:text-sm block leading-none">{formatInvestmentDisplay(ad.maxInvestment)}</span>
+                                                  <span className="text-[9px] text-slate-500 block leading-none mt-0.5">{language === "bn" ? "সর্বোচ্চ" : "Max. Invest"}</span>
                                                 </div>
                                               ) : null}
                                             </div>
                                           ) : (
-                                            <div className="text-xs sm:text-sm font-bold text-purple-700">
+                                            <div className="bg-[#7C3AED] text-white font-bold text-xs sm:text-sm px-3 py-1 rounded-md shadow-xs inline-flex items-center">
                                               {formatAdPrice(ad) || "N/A"}
                                             </div>
                                           )}
@@ -1685,17 +1615,17 @@ export default function DashboardClient() {
                                       </div>
 
                                       {/* Row 5: Footer & Action Buttons */}
-                                      <div className="flex items-end justify-between gap-1 pt-2 border-t border-slate-100 mt-auto">
-                                        <div className="text-[9px] text-slate-500 min-w-0">
-                                          <span className="block truncate">
-                                            Update {timeAgo(ad.createdAt, language as "en" | "bn")}
+                                      <div className="flex items-center justify-between gap-1 pt-1.5 border-t border-slate-100 mt-auto">
+                                        <div className="text-[10px] sm:text-xs text-slate-500 min-w-0">
+                                          <span className="block truncate font-medium">
+                                            Updated {timeAgo(ad.createdAt, language as "en" | "bn")}
                                           </span>
-                                          <span className="block truncate text-slate-600 font-medium">
+                                          <span className="block  text-slate-800 font-bold text-xs sm:text-sm">
                                             {ad.location}
                                           </span>
                                         </div>
 
-                                        {/* Action Buttons */}
+                                        {/* Action Buttons - Compact 3 Icon Buttons */}
                                         <div className="flex items-center gap-1 shrink-0">
                                           <button
                                             title="Profile"
@@ -1707,7 +1637,7 @@ export default function DashboardClient() {
                                                 }),
                                               );
                                             }}
-                                            className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center hover:bg-purple-100 hover:text-purple-700 transition-all"
+                                            className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center border border-slate-200/60 hover:bg-slate-200 transition-all"
                                           >
                                             <UserPlus className="w-3.5 h-3.5" />
                                           </button>
@@ -1718,7 +1648,7 @@ export default function DashboardClient() {
                                               e.stopPropagation();
                                               openAdFromFeed(ad);
                                             }}
-                                            className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center hover:bg-purple-100 hover:text-purple-700 transition-all"
+                                            className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center border border-slate-200/60 hover:bg-slate-200 transition-all"
                                           >
                                             <MessageSquare className="w-3.5 h-3.5" />
                                           </button>
@@ -1729,7 +1659,7 @@ export default function DashboardClient() {
                                               e.stopPropagation();
                                               openAdFromFeed(ad);
                                             }}
-                                            className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center hover:bg-purple-100 hover:text-purple-700 transition-all"
+                                            className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center border border-slate-200/60 hover:bg-slate-200 transition-all"
                                           >
                                             <Phone className="w-3.5 h-3.5" />
                                           </button>
@@ -2028,16 +1958,32 @@ export default function DashboardClient() {
 
       {/* Right Sidebar - Promotions Column & Footer Links: 200px */}
       <div className="hidden lg:block w-[200px] flex-none sticky top-4 h-[calc(100vh-32px)] overflow-y-auto no-scrollbar pb-10 z-40 space-y-4">
-        <div 
-          onClick={handleFooterPromoteClick}
-          className="w-full bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer group"
-        >
-          <img
-            src="/promet.png"
-            alt="Promote"
-            className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        </div>
+        {(() => {
+          const homeAdPos = settings.adPositions?.find(
+            (p) => (p.positionId === 1 || p.placeName?.toLowerCase().includes("home")) && p.status === "Yes" && p.imageDesk
+          );
+          const bannerSrc = homeAdPos?.imageDesk ? getImageUrl(homeAdPos.imageDesk) : "/promet.png";
+          const bannerLink = homeAdPos?.link;
+
+          return (
+            <div
+              onClick={() => {
+                if (bannerLink) {
+                  window.open(bannerLink, "_blank");
+                } else {
+                  handleFooterPromoteClick();
+                }
+              }}
+              className="w-full bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer group"
+            >
+              <img
+                src={bannerSrc}
+                alt="Promote"
+                className="w-full h-auto object-cover"
+              />
+            </div>
+          );
+        })()}
 
         {/* Footer Links & Social Media Card */}
         <div className="bg-white rounded-xl p-3.5 space-y-3.5 shadow-sm border border-slate-200/80">

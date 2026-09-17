@@ -1,9 +1,17 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { Bai_Jamjuree } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "./context/LanguageContext";
 import { Toaster } from "react-hot-toast";
-import RegisterServiceWorker from "@/components/RegisterServiceWorker"
+import RegisterServiceWorker from "@/components/RegisterServiceWorker";
+
+const baiJamjuree = Bai_Jamjuree({
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "500", "600", "700"],
+  variable: "--font-bai-jamjuree",
+  display: "swap",
+});
 
 const SITE_TITLE = "Shadamon.com | দ্রুত ও সহজ কেনাবেচার স্মার্ট মার্কেটপ্লেস";
 const SITE_DESCRIPTION = "The ultimate marketing platform";
@@ -81,6 +89,9 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="152x152" href="/hc.png" />
         <link rel="apple-touch-icon" sizes="167x167" href="/hc.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/hc.png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,200;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" />
 
         <meta name="twitter:creator" content="@shadamon" />
@@ -104,7 +115,7 @@ export default function RootLayout({
 
       </head>
       <body
-        className={`antialiased`}
+        className={`${baiJamjuree.className} ${baiJamjuree.variable} antialiased`}
         suppressHydrationWarning={true}
       >
         <Script

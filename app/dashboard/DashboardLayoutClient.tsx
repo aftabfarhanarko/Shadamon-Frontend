@@ -1460,30 +1460,7 @@ export default function DashboardLayoutClient({
                 </div>
               </div>
 
-              <div className="w-[50px] flex-none hidden md:block"></div>
 
-              <div className="flex-none hidden md:flex items-center gap-3 w-[230px] md:w-[320px]">
-                <button
-                  onClick={() => {
-                    if (!user) {
-                      setAuthModalInitialMode('login');
-                      setIsAuthModalOpen(true);
-                    } else {
-                      setIsInviteModalOpen(true);
-                    }
-                  }}
-                  className="w-full bg-blue-50 text-blue-600 border border-blue-200 py-1.5 rounded text-sm uppercase tracking-widest flex items-center justify-center hover:bg-blue-100 transition-colors whitespace-nowrap"
-                >
-                  {language === "bn" ? "বন্ধুকে আমন্ত্রণ" : "Invite"}
-                </button>
-                <Link
-                  href="/dashboard/post-ad"
-                  className="w-full bg-[#EDF2F7] border border-slate-400 shadow-sm text-black py-1.5 rounded text-sm uppercase tracking-widest flex items-center justify-center whitespace-nowrap"
-                >
-                  {language === "bn" ? "ফ্রি বিজ্ঞাপন দিন" : "Post Free"}
-                </Link>
-              </div>
-              <div className="w-[70px] flex-none hidden lg:block"></div>
             </div>
           </header>
         </div>

@@ -11,7 +11,7 @@
 
   /* Define default Tailwind font to use our custom fonts */
   /* --font-sans: 'Verdana', 'Tahoma', sans-serif; */
-  --font-sans: 'Tahoma', 'Verdana', sans-serif;
+  --font-sans: 'Bai Jamjuree', sans-serif;
 
   /* BRAND PALETTE (Orange) - Used to be Indigo */
   --color-brand-50: #fff7ed;
@@ -138,9 +138,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  /* Toggle between these fonts as per your preference */
-  font-family: 'Verdana', sans-serif;
-  /* font-family: 'Tahoma', sans-serif; */
+  font-family: 'Bai Jamjuree', sans-serif;
 }
 
 /* Prevent auto-zoom on iOS when focusing inputs */
