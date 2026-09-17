@@ -1335,28 +1335,21 @@ export default function DashboardClient() {
                                   }
                                 }}
                                 className={cn(
-                                  "relative bg-gradient-to-r from-[#FDF2F8] via-[#FCE7F3]/70 to-[#FDF2F8] rounded-lg  p-2.5 lg:p-3 border  cursor-pointer group  flex flex-col md:flex-row gap-3.5 lg:gap-4 mx-[5px] lg:mx-0 overflow-hidden",
+                                  "relative bg-gradient-to-br from-[#F5CCE4] via-[#F8E1F0] to-[#FCCCD8] rounded-xl p-2.5 lg:p-3 cursor-pointer group flex flex-col md:flex-row gap-3.5 lg:gap-4 mx-[5px] lg:mx-0 overflow-hidden shadow-2xs",
                                   hasHighlightLabel(block.bigAd)
-                                    ? "border-orange-500 shadow-[0_12px_30px_rgba(249,115,22,0.25)] ring-2 ring-orange-400/40"
-                                    : "border-pink-200/60",
+                                    ? "border-2 border-orange-500 shadow-[0_12px_30px_rgba(249,115,22,0.25)] ring-2 ring-orange-400/40"
+                                    : "border-0 border-transparent",
                                 )}
                               >
                                 {/* Left Image Section */}
-                                <div className="relative w-full md:w-[48.5%] lg:w-[48.5%] h-[165px]   lg:h-[270px] rounded-lg overflow-hidden shrink-0 bg-slate-200">
+                                <div className="relative w-full md:w-[48.5%] lg:w-[48.5%] h-[210px] sm:h-[230px] md:h-[250px] lg:h-[270px] rounded-lg overflow-hidden shrink-0 bg-slate-200">
                                   {getImageUrl(block.bigAd.images?.[0]) ? (
-                                    <>
-                                      <img
-                                        src={getImageUrl(block.bigAd.images?.[0]) || undefined}
-                                        alt=""
-                                        className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-70"
-                                      />
-                                      <img
-                                        src={getImageUrl(block.bigAd.images?.[0]) || undefined}
-                                        alt={block.bigAd.headline}
-                                        className="relative z-10 w-full h-full object-contain rounded-2xl"
-                                        loading="lazy"
-                                      />
-                                    </>
+                                    <img
+                                      src={getImageUrl(block.bigAd.images?.[0]) || undefined}
+                                      alt={block.bigAd.headline}
+                                      className="w-full h-full object-cover rounded-lg"
+                                      loading="lazy"
+                                    />
                                   ) : (
                                     <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400 font-medium">
                                       No Image
@@ -1508,22 +1501,15 @@ export default function DashboardClient() {
                                     }}
                                     className="relative bg-white rounded-2xl border border-slate-200/80 cursor-pointer group flex flex-col overflow-hidden shadow-none transition-all justify-between"
                                   >
-                                    {/* Card Image Header - Compact Image */}
-                                    <div className="relative w-full h-[140px] sm:h-[150px] md:h-[160px] bg-slate-100 overflow-hidden shrink-0">
+                                    {/* Card Image Header */}
+                                    <div className="relative w-full h-[200px] sm:h-[210px] md:h-[220px] bg-slate-100 overflow-hidden shrink-0">
                                       {getImageUrl(ad.images?.[0]) ? (
-                                        <>
-                                          <img
-                                            src={getImageUrl(ad.images?.[0]) || undefined}
-                                            alt=""
-                                            className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-70"
-                                          />
-                                          <img
-                                            src={getImageUrl(ad.images?.[0]) || undefined}
-                                            alt={ad.headline}
-                                            className="relative z-10 w-full h-full object-contain rounded-t-2xl"
-                                            loading="lazy"
-                                          />
-                                        </>
+                                        <img
+                                          src={getImageUrl(ad.images?.[0]) || undefined}
+                                          alt={ad.headline}
+                                          className="w-full h-full object-cover rounded-t-2xl"
+                                          loading="lazy"
+                                        />
                                       ) : (
                                         <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400 text-xs font-medium">
                                           No Image
