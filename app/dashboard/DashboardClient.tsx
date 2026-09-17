@@ -1142,96 +1142,53 @@ export default function DashboardClient() {
         {/* Secondary Filter Bar */}
         <div
           className={cn(
-            "bg-white rounded-none lg:rounded-lg flex divide-x divide-slate-100 overflow-hidden sticky z-[49] shadow-sm transition-all duration-300",
-            isNavVisible ? "top-16" : "top-0", // Shift to top-0 when header is hidden
+            "bg-white rounded-2xl flex items-center justify-between px-3 py-2 border border-slate-100 shadow-sm sticky z-[49] transition-all duration-300 mx-[5px] lg:mx-0 mb-3",
+            isNavVisible ? "top-16" : "top-0",
           )}
         >
-          <button
-            onClick={() => {
-              setIsFilterModalOpen(true);
-              setTimeout(() => {
-                window.dispatchEvent(
-                  new CustomEvent("open-filter-view", {
-                    detail: { view: "category" },
-                  }),
-                );
-              }, 50);
-            }}
-            className="flex-1 px-4 py-2.5 flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors group"
-          >
-            <Grid className="w-5 h-5 text-black" />
-            <div className="flex items-center gap-1 min-w-0">
-              <span className="text-xs sm:text-sm text-black truncate">
-                {filters.category
-                  ? filters.subCategory || filters.category
-                  : language === "bn"
-                    ? "ক্যাটাগরি"
-                    : "Category"}
-              </span>
-              {filters.category && (
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
+          {/* Left Promote Tag Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+            {[
+              { id: "All", labelBn: "সব পোস্ট", labelEn: "All Posts" },
+              { id: "Entrepreneur", labelBn: "উদ্যোক্তা", labelEn: "Entrepreneur" },
+              { id: "Investor", labelBn: "বিনিয়োগকারী", labelEn: "Investor" },
+            ].map((tag) => {
+              const isActive = filters.promoteTag === tag.id;
+              return (
+                <button
+                  key={tag.id}
+                  onClick={() =>
                     setFilters((prev) => ({
                       ...prev,
-                      category: "",
-                      subCategory: "",
-                    }));
-                  }}
-                  className="p-1 rounded-full hover:bg-slate-200 transition-colors shrink-0"
+                      promoteTag: tag.id as any,
+                    }))
+                  }
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 cursor-pointer",
+                    isActive
+                      ? "bg-transparent text-slate-900 font-semibold"
+                      : "bg-transparent text-slate-500 hover:text-slate-800",
+                  )}
                 >
-                  <X className="w-5 h-5 text-slate-500" />
-                </div>
-              )}
-            </div>
-          </button>
-          <button
-            onClick={() => {
-              setIsFilterModalOpen(true);
-              setTimeout(() => {
-                window.dispatchEvent(
-                  new CustomEvent("open-filter-view", {
-                    detail: { view: "location" },
-                  }),
-                );
-              }, 100);
-            }}
-            className="flex-1 px-4 py-2.5 flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors group"
-          >
-            <MapPin className="w-5 h-5 text-black" />
-            <div className="flex items-center gap-1 min-w-0">
-              <span className="text-xs sm:text-sm text-black truncate">
-                {filters.location
-                  ? filters.subLocation || filters.location
-                  : language === "bn"
-                    ? "লোকেশন"
-                    : "Location"}
-              </span>
-              {filters.location && (
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setFilters((prev) => ({
-                      ...prev,
-                      location: "",
-                      subLocation: "",
-                    }));
-                  }}
-                  className="p-1 rounded-full hover:bg-slate-200 transition-colors shrink-0"
-                >
-                  <X className="w-5 h-5 text-slate-500" />
-                </div>
-              )}
-            </div>
-          </button>
+                  <span
+                    className={cn(
+                      "w-2 h-2 rounded-full",
+                      isActive ? "bg-purple-600 ring-2 ring-purple-200" : "bg-slate-300",
+                    )}
+                  />
+                  <span>{language === "bn" ? tag.labelBn : tag.labelEn}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Right Filter Button */}
           <button
             onClick={() => setIsFilterModalOpen(true)}
-            className="flex-1 px-4 py-2.5 flex items-center justify-center gap-3 hover:bg-slate-50 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-slate-700 hover:text-purple-600 font-medium px-3 py-1.5 rounded-xl hover:bg-slate-50 transition-colors shrink-0 border-l border-slate-100 pl-3"
           >
-            <SlidersHorizontal className="w-5 h-5 text-black" />
-            <span className="text-xs sm:text-sm text-black">
-              {language === "bn" ? "ফিল্টার" : "Filter"}
-            </span>
+            <SlidersHorizontal className="w-4 h-4 text-slate-600" />
+            <span>{language === "bn" ? "ফিল্টার" : "Filter"}</span>
           </button>
         </div>
 
