@@ -30,439 +30,323 @@ export const INFO_CONTENT: Record<InfoPageType, InfoContentItem> = {
         slug: 'about-us',
         titleBn: 'Shadamon.com সম্পর্কে',
         titleEn: 'About Shadamon.com',
-        contentEn: `Shadamon.com is a modern online marketplace where you can easily and safely buy and sell various types of products. You can find products from your nearby area or anywhere across Bangladesh.
+        contentEn: `Shadamon Invest is a matchmaking platform in Bangladesh that connects entrepreneurs and investors with one another.
 
-Do you want to sell something?
-Creating an account on Shadamon.com is completely free and very easy. Within just a few minutes, you can post your product advertisements and reach interested buyers.
-To sell faster, make sure your advertisement is clear, informative, and attractive. If you have multiple products or sell professionally, you can use Shadamon.com's premium features to reach even more people.
+We believe there are numerous promising businesses in Bangladesh that need the right capital, and countless investors looking for the right opportunities. However, there was no easy and reliable medium to establish a connection between these two parties—Shadamon Invest was created to bridge that gap.
 
-Do you want to buy something?
-Shadamon.com offers a wide range of products from all over Bangladesh across different categories. From electronics, vehicles, and home essentials to everyday items-you can find everything in one place.
-Easy search and filter options help you quickly find exactly what you need.
+What We Do:
 
-Quality Assurance
-Every advertisement on Shadamon.com is reviewed before publication to maintain quality and trustworthiness.`,
-        contentBn: `Shadamon.com একটি আধুনিক অনলাইন মার্কেটপ্লেস যেখানে আপনি খুব সহজে এবং নিরাপদে বিভিন্ন ধরনের পণ্য কেনা-বেচা করতে পারেন। আপনি আপনার নিকটস্থ এলাকা কিংবা বাংলাদেশের যেকোনো প্রান্তের পণ্য এখানে খুঁজে পেতে পারেন।
+Entrepreneurs can post their funding requirements, and investors can post their investment criteria.
 
-আপনি কি কিছু বিক্রি করতে চান?
-Shadamon.com-এ অ্যাকাউন্ট খোলা সম্পূর্ণ ফ্রি এবং অত্যন্ত সহজ। মাত্র কয়েক মিনিটের মধ্যেই আপনি আপনার পণ্যের বিজ্ঞাপন পোস্ট করতে পারেন এবং আগ্রহী ক্রেতাদের কাছে পৌঁছে যেতে পারেন।
-দ্রুত বিক্রির জন্য নিশ্চিত করুন যে আপনার বিজ্ঞাপনটি স্পষ্ট, তথ্যবহুল এবং আকর্ষণীয়। আপনার যদি অনেকগুলো পণ্য থাকে বা আপনি পেশাদারভাবে বিক্রি করতে চান, তবে আরও বেশি মানুষের কাছে পৌঁছাতে আপনি Shadamon.com-এর প্রিমিয়াম ফিচারগুলো ব্যবহার করতে পারেন।
+The platform helps both parties find each other and initiate communication (Invite, Chat, Call, Send Proposal).
 
-আপনি কি কিছু কিনতে চান?
-Shadamon.com বিভিন্ন ক্যাটাগরিতে সারা বাংলাদেশের পণ্যের এক বিশাল সমাহার অফার করে। ইলেকট্রনিক্স, যানবাহন, ঘরের প্রয়োজনীয় সরঞ্জাম থেকে শুরু করে নিত্যদিনের পণ্য-সবকিছুই পাবেন এক জায়গায়।
-সহজ সার্চ এবং ফিল্টার অপশন আপনাকে আপনার প্রয়োজনীয় পণ্যটি দ্রুত খুঁজে পেতে সাহায্য করবে।
+We strive to create a reliable environment through mobile number OTP verification and optional document verification (NID, Trade License, etc.).
 
-মান নিশ্চিতকরণ (Quality Assurance)
-মানসম্মত সেবা এবং বিশ্বস্ততা বজায় রাখতে Shadamon.com-এ প্রতিটি বিজ্ঞাপন প্রকাশের আগে গুরুত্বের সাথে পর্যালোচনা করা হয়।`
+What We Do Not Do:
+
+Shadamon Invest is not an investment bank, brokerage, financial advisor, or a licensed financial institution.
+
+We do not verify or guarantee the authenticity of any business's financial data, project feasibility, or proposed returns—these details are the poster's own self-declarations.
+
+We do not mediate any deals, investment contracts, or fund transfers; Shadamon Invest solely connects two parties. Contracts, due diligence, and decisions are entirely the users' own responsibility.
+
+Before making any investment or fundraising decisions, please conduct your own due diligence and consult a licensed financial/legal advisor if necessary.`,
+        contentBn: `Shadamon Invest বাংলাদেশে উদ্যোক্তা এবং বিনিয়োগকারীদের একে অপরের সাথে সংযুক্ত করার একটি ম্যাচমেকিং প্ল্যাটফর্ম।
+
+আমরা বিশ্বাস করি বাংলাদেশে এমন অসংখ্য সম্ভাবনাময় ব্যবসা রয়েছে যেগুলোর সঠিক মূলধন প্রয়োজন, এবং অসংখ্য বিনিয়োগকারী রয়েছেন যারা সঠিক সুযোগ খুঁজছেন। তবে এই দুই পক্ষের মধ্যে সংযোগ স্থাপনের কোনো সহজ ও নির্ভরযোগ্য মাধ্যম ছিল না—সেই শূন্যতা পূরণের জন্যই Shadamon Invest তৈরি করা হয়েছে।
+
+আমরা যা করি:
+
+উদ্যোক্তারা তাদের অর্থায়নের প্রয়োজনীয়তা এবং বিনিয়োগকারীরা তাদের বিনিয়োগের মানদণ্ড পোস্ট করতে পারেন।
+
+প্ল্যাটফর্মটি উভয় পক্ষকে একে অপরকে খুঁজে পেতে এবং যোগাযোগ শুরু করতে সহায়তা করে (ইনভাইট, চ্যাট, কল, প্রস্তাব পাঠানো)।
+
+আমরা মোবাইল নম্বর OTP যাচাইকরণ এবং ঐচ্ছিক নথি যাচাইকরণের (NID, ট্রেড লাইসেন্স ইত্যাদি) মাধ্যমে একটি নির্ভরযোগ্য পরিবেশ তৈরি করার চেষ্টা করি।
+
+আমরা যা করি না:
+
+Shadamon Invest কোনো ইনভেস্টমেন্ট ব্যাংক, ব্রোকারেজ, ফাইন্যান্সিয়াল অ্যাডভাইজার বা লাইসেন্সপ্রাপ্ত আর্থিক প্রতিষ্ঠান নয়।
+
+আমরা কোনো ব্যবসার আর্থিক ডেটা, প্রকল্পের সম্ভাব্যতা বা প্রস্তাবিত রিটার্নের সত্যতা যাচাই বা গ্যারান্টি দিই না—এই বিবরণগুলো পোস্টকারীর নিজস্ব স্ব-ঘোষণা।
+
+আমরা কোনো চুক্তি, বিনিয়োগের চুক্তি বা ফান্ড ট্রান্সফারে মধ্যস্থতা করি না; Shadamon Invest শুধুমাত্র দুই পক্ষকে সংযুক্ত করে। চুক্তি, যথাযথ সতর্কতা (Due Diligence) এবং সিদ্ধান্তগুলো সম্পূর্ণভাবে ব্যবহারকারীদের নিজস্ব দায়িত্ব।
+
+যেকোনো বিনিয়োগ বা তহবিল সংগ্রহের সিদ্ধান্ত নেওয়ার আগে, অনুগ্রহ করে আপনার নিজস্ব যথাযথ সতর্কতা অবলম্বন করুন এবং প্রয়োজনে একটি লাইসেন্সপ্রাপ্ত আর্থিক/আইনি উপদেষ্টার সাথে পরামর্শ করুন।`
     }),
     terms: makeInfoItem({
         slug: 'terms-and-conditions',
-        titleBn: 'SHADAMON.COM – ব্যবহারের শর্তাবলি',
-        titleEn: 'SHADAMON.COM – TERMS OF USE',
-        contentEn: `1. Acceptance of Terms
-1.1 These Terms of Use ("Terms") form a legally binding agreement between you and Shadamon.com.
-1.2 By accessing or using Shadamon.com (website, mobile application, or services), you agree to be bound by these Terms and our Privacy Policy.
-1.3 If you do not agree to any part of these Terms, you must not use the platform.
-1.4 We reserve the right to modify or update these Terms at any time. Continued use of the platform means acceptance of updated Terms.
+        titleBn: 'Shadamon Invest – ব্যবহারের শর্তাবলি',
+        titleEn: 'Shadamon Invest – Terms & Conditions',
+        contentEn: `Terms & Conditions
+Last Updated: September 17, 2026
 
-2. Nature of the Platform
-2.1 Shadamon.com is an online marketplace that allows users to post advertisements, view listings, and communicate with each other.
-2.2 The platform is not a buyer, seller, agent, broker, or intermediary in any transaction.
-2.3 All transactions are conducted directly between users at their own risk.
-2.4 We do not guarantee the quality, safety, legality, or accuracy of any listing.
+By using Shadamon Invest ("we", "the platform"), you agree to the following terms.
 
-3. Account Registration
-3.1 Some features require account registration.
-3.2 Users must provide accurate and complete information.
-3.3 Only one account per user is allowed unless otherwise permitted.
-3.4 Users are responsible for maintaining the confidentiality of their account.
-3.5 Users must be at least 18 years old or use the platform under parental or guardian supervision.
+1. Nature of the Platform
+Shadamon Invest is merely a matchmaking marketplace. We facilitate connections between entrepreneurs and investors, but are not responsible for any transactions, contracts, or outcomes thereof. Any information displayed on the platform (funding requirements, expected returns, business valuation, etc.) is not independently verified by us unless explicitly marked as "Verified"—and verification badges relate strictly to identity/documents, not a guarantee of the accuracy of financial data.
 
-4. User Responsibilities
-4.1 Users must use the platform only for lawful purposes.
-4.2 Users must not engage in fraud, misleading activity, or illegal conduct.
-4.3 Users must not collect or misuse other users' personal data.
-4.4 Users are responsible for verifying all information before transactions.
-4.5 Users are advised to meet in safe and public places for transactions.
+2. Account & Eligibility
+- You must be at least 18 years of age to open an account and possess the legal capacity to enter into a contract under applicable laws of Bangladesh.
+- Mobile number OTP verification is mandatory. You are obligated to provide accurate and authentic personal information.
+- The security of an account (password, OTP, login session) is entirely the user's responsibility.
 
-5. Content and Listings
-5.1 Users are solely responsible for all content they post.
-5.2 The following content is strictly prohibited:
-5.2.1 Illegal goods or services
-5.2.2 Fraudulent or misleading content
-5.2.3 Adult or pornographic material
-5.2.4 Weapons, drugs, or restricted items
-5.2.5 Copyright-infringing content
-5.2.6 Hate speech or harmful content
-5.3 We may remove or restrict any content without prior notice if it violates policies or law.
-5.4 We are not responsible for the accuracy of user-generated content.
+3. Posting Rules
+- It is the user's responsibility to keep the information provided in posts (funding needs, business description, investment criteria) accurate and up-to-date.
+- We reserve the right to remove posts containing false, misleading, or fraudulent information and to suspend or terminate the respective account.
+- Posts related to illegal businesses, schemes, pyramid/MLM activities, or any activities prohibited by Bangladeshi law are strictly prohibited.
 
-6. Free and Paid Services
-6.1 Some services are free and some are paid.
-6.2 We may limit free listings or features.
-6.3 Paid promotions only increase visibility and do not guarantee results.
-6.4 Fees may change at any time without prior notice.
-6.5 Paid services are generally non-refundable unless required by law.
+4. Payments & Paid Features
+- Paid features such as Access Packages (Invite/Chat/Call/Send Proposal), Promotion/Boost, and Connect Access are subject to specific terms outlined on their respective feature pages and the "Promote" policy.
+- All payments are displayed and accepted in Bangladeshi Taka (৳).
+- Refund policies apply as per the conditions stated on the "Promote" page.
 
-7. Safety and Risk
-7.1 Users are solely responsible for verifying products and other users before transactions.
-7.2 All interactions between users are at their own risk.
-7.3 We do not guarantee safety, outcome, or legality of any transaction.
-7.4 Shadamon.com is not responsible for fraud, scams, or disputes between users.
+5. Limitation of Liability
+- Shadamon Invest shall not be liable for any financial losses, fraud, breach of contract, or any damages arising from investments made by any user.
+- Any discussions, agreements, or transactions between two parties are conducted entirely at the respective parties' own risk and responsibility.
+- Before investing, independently verify the financial standing, legitimacy, and accuracy of the proposed returns of a business.
 
-8. Intellectual Property
-8.1 Users retain ownership of their content.
-8.2 By posting content, users grant Shadamon.com a non-exclusive license to use it for platform operation and promotion.
-8.3 All platform branding, design, and software remain the property of Shadamon.com.
+6. Prohibited Activities
+Harassment, spam, creating fake profiles, impersonation, coercing others to make payments outside the platform, using deep-links, page-scrapers, robots, spiders, or any automated methods to harvest platform content, or attempting to breach platform security may result in permanent account termination. In such cases, previously paid fees are non-refundable.
 
-9. Limitation of Liability
-9.1 To the maximum extent permitted by law, Shadamon.com is not liable for any indirect, incidental, or financial loss.
-9.2 The platform is provided on an "as is" and "as available" basis.
-9.3 We are not responsible for technical errors, downtime, or system failures.
-9.4 Any loss due to unintended errors, system issues, or platform malfunction is not the responsibility of Shadamon.com unless required by law.
+7. Securities & Public Offering Restrictions
+Shadamon Invest is not licensed or registered by any regulatory body (such as the Bangladesh Securities and Exchange Commission or any other authority). Offering any public securities, shares, bonds, or similar regulated financial instruments through this platform is strictly prohibited. Users may only use the platform for private, point-to-point business discussions.
 
-10. Indemnification
-10.1 Users agree to indemnify and hold harmless Shadamon.com from any claims, damages, or legal actions arising from:
-10.1.1 Use of the platform
-10.1.2 User content or listings
-10.1.3 Violation of these Terms
-10.1.4 Any user-to-user transaction
+8. Release from Disputes
+If a dispute arises between two or more users, you release Shadamon Invest from any claims, compensation, or damages (direct and indirect, known and unknown) related to such disputes. Shadamon Invest shall not be liable for any direct, special, indirect, incidental, consequential, or punitive damages, whether arising from contract, statute, tort (including negligence), or any other basis.
 
-11. Service Changes
-11.1 We may modify, suspend, or discontinue any part of the platform at any time.
-11.2 We are not required to provide prior notice for such changes.
-11.3 We are not liable for any resulting loss.
+9. Indemnification
+You agree to indemnify and hold harmless Shadamon Invest from any third-party claims, damages, or costs (including legal fees) arising from your posted content, provided information, or use of the platform—particularly in cases of intellectual property infringement, provision of false information, or violation of third-party rights.
 
-12. Governing Law
-12.1 These Terms are governed by the laws of Bangladesh.
-12.2 Any disputes shall be resolved under applicable laws of Bangladesh.
+10. Right to Edit/Remove Posts
+We reserve the right to edit, suspend, or delete any post or account if we believe a user is misusing the platform, using it outside its intended purpose, providing false/misleading information, or behaving objectionably toward other users. Payments made in such cases are non-refundable. No post or profile displayed on the platform shall constitute a binding offer.
 
-13. Contact
-13.1 Email: shadamon.com@gmail.com
-13.2 Messenger: m.me/shadamondotcom`,
-        contentBn: `১. শর্তাবলি গ্রহণ
-১.১ এই ব্যবহারের শর্তাবলি ("শর্তাবলি") আপনার এবং Shadamon.com-এর মধ্যে একটি আইনত বাধ্যতামূলক চুক্তি গঠন করে।
-১.২ Shadamon.com (ওয়েবসাইট, মোবাইল অ্যাপ্লিকেশন বা পরিষেবা) অ্যাক্সেস বা ব্যবহারের মাধ্যমে আপনি এই শর্তাবলি এবং আমাদের গোপনীয়তা নীতি মেনে চলতে সম্মত হচ্ছেন।
-১.৩ আপনি যদি এই শর্তাবলির কোনো অংশের সাথে একমত না হন, তবে আপনাকে অবশ্যই এই প্ল্যাটফর্মটি ব্যবহার করা থেকে বিরত থাকতে হবে।
-১.৪ আমরা যেকোনো সময় এই শর্তাবলি পরিবর্তন বা আপডেট করার অধিকার সংরক্ষণ করি। প্ল্যাটফর্মটির ক্রমাগত ব্যবহার মানে হলো আপনি আপডেট করা শর্তাবলি গ্রহণ করেছেন।
+11. Modification/Termination of Services
+We reserve the right to modify, suspend, or discontinue our services in whole or in part at any time, without liability to any user or third party.
 
-২. প্ল্যাটফর্মের ধরণ
-২.১ Shadamon.com একটি অনলাইন মার্কেটপ্লেস যা ব্যবহারকারীদের বিজ্ঞাপন পোস্ট করতে, লিস্টিং দেখতে এবং একে অপরের সাথে যোগাযোগ করতে সাহায্য করে।
-২.২ এই প্ল্যাটফর্মটি কোনো লেনদেনের ক্ষেত্রে ক্রেতা, বিক্রেতা, এজেন্ট, ব্রোকার বা মধ্যস্থতাকারী হিসেবে কাজ করে না।
-২.৩ সকল লেনদেন ব্যবহারকারীদের মধ্যে সরাসরি এবং তাদের নিজস্ব ঝুঁকিতে সম্পন্ন হয়।
-২.৪ আমরা কোনো লিস্টিংয়ের গুণমান, নিরাপত্তা, বৈধতা বা নির্ভুলতার গ্যারান্টি দিই না।
+12. Changes to Terms
+We reserve the right to modify these terms at any time. Continuing to use the platform after modifications means you accept the new terms.
 
-৩. অ্যাকাউন্ট নিবন্ধন
-৩.১ কিছু ফিচার ব্যবহারের জন্য অ্যাকাউন্ট নিবন্ধনের প্রয়োজন হতে পারে।
-৩.২ ব্যবহারকারীদের অবশ্যই সঠিক এবং সম্পূর্ণ তথ্য প্রদান করতে হবে।
-৩.৩ অনুমতি ব্যতিরেকে একজন ব্যবহারকারীর জন্য কেবল একটি অ্যাকাউন্ট অনুমোদিত।
-৩.৪ ব্যবহারকারীরা তাদের অ্যাকাউন্টের গোপনীয়তা বজায় রাখার জন্য দায়ী।
-৩.৫ ব্যবহারকারীর বয়স কমপক্ষে ১৮ বছর হতে হবে অথবা পিতামাতা বা অভিভাবকের তত্ত্বাবধানে প্ল্যাটফর্মটি ব্যবহার করতে হবে।
+13. Governing Law and Jurisdiction
+These terms shall be governed by the laws of Bangladesh, and the courts of Dhaka shall have exclusive jurisdiction over any disputes arising from or related to them.
 
-৪. ব্যবহারকারীর দায়িত্ব
-৪.১ ব্যবহারকারীদের অবশ্যই প্ল্যাটফর্মটি কেবল বৈধ উদ্দেশ্যে ব্যবহার করতে হবে।
-৪.২ ব্যবহারকারীরা কোনো প্রতারণা, বিভ্রান্তিকর কার্যকলাপ বা অবৈধ আচরণে লিপ্ত হতে পারবেন না।
-৪.৩ ব্যবহারকারীরা অন্য ব্যবহারকারীদের ব্যক্তিগত তথ্য সংগ্রহ বা অপব্যবহার করতে পারবেন না।
-৪.৪ লেনদেনের আগে সমস্ত তথ্য যাচাই করার দায়িত্ব ব্যবহারকারীর।
-৪.৫ লেনদেনের জন্য ব্যবহারকারীদের নিরাপদ এবং জনাকীর্ণ স্থানে দেখা করার পরামর্শ দেওয়া হয়।
+You confirm that you have read these terms and unconditionally agree to abide by them.`,
+        contentBn: `ব্যবহারের শর্তাবলি (Terms & Conditions)
+সর্বশেষ সংস্করণ: ১৭ সেপ্টেম্বর, ২০২৬
 
-৫. কন্টেন্ট এবং লিস্টিং
-৫.১ ব্যবহারকারীরা তাদের পোস্ট করা সমস্ত কন্টেন্টের জন্য এককভাবে দায়ী।
-৫.২ নিম্নলিখিত কন্টেন্টগুলো কঠোরভাবে নিষিদ্ধ:
-৫.২.১ অবৈধ পণ্য বা পরিষেবা
-৫.২.২ প্রতারণামূলক বা বিভ্রান্তিকর কন্টেন্ট
-৫.২.৩ প্রাপ্তবয়স্কদের বা পর্নোগ্রাফিক উপাদান
-৫.২.৪ অস্ত্র, মাদক বা নিষিদ্ধ আইটেম
-৫.২.৫ কপিরাইট লঙ্ঘনকারী কন্টেন্ট
-৫.২.৬ ঘৃণা প্রচারকারী (Hate speech) বা ক্ষতিকারক কন্টেন্ট
-৫.৩ নীতি বা আইন লঙ্ঘন করলে আমরা আগাম নোটিশ ছাড়াই যেকোনো কন্টেন্ট অপসারণ বা সীমাবদ্ধ করতে পারি।
-৫.৪ ব্যবহারকারীর তৈরি কন্টেন্টের নির্ভুলতার জন্য আমরা দায়ী নই।
+Shadamon Invest ("আমরা", "প্ল্যাটফর্ম") ব্যবহার করার মাধ্যমে আপনি নিম্নলিখিত শর্তাবলি মেনে নিতে সম্মত হচ্ছেন।
 
-৬. ফ্রি এবং পেইড পরিষেবা
-৬.১ কিছু পরিষেবা বিনামূল্যে এবং কিছু পেইড (পেমেন্ট সাপেক্ষে)।
-৬.২ আমরা ফ্রি লিস্টিং বা ফিচারের সংখ্যা সীমিত করতে পারি।
-৬.৩ পেইড প্রমোশন শুধুমাত্র দৃশ্যমানতা বৃদ্ধি করে এবং কোনো ফলাফলের গ্যারান্টি দেয় না।
-৬.৪ ফি যেকোনো সময় আগাম নোটিশ ছাড়াই পরিবর্তিত হতে পারে।
-৬.৫ আইনগত বাধ্যবাধকতা না থাকলে পেইড পরিষেবাগুলো সাধারণত অফেরতযোগ্য (non-refundable)।
+১. প্ল্যাটফর্মের প্রকৃতি
+Shadamon Invest কেবল একটি ম্যাচমেকিং মার্কেটপ্লেস। আমরা উদ্যোক্তা এবং বিনিয়োগকারীদের মধ্যে সংযোগ তৈরিতে সহায়তা করি, তবে কোনো লেনদেন, চুক্তি বা এর ফলাফলের জন্য আমরা দায়ী নই। প্ল্যাটফর্মে প্রদর্শিত যেকোনো তথ্য (অর্থায়নের প্রয়োজনীয়তা, প্রত্যাশিত রিটার্ন, ব্যবসার মূল্যায়ন ইত্যাদি) আমাদের দ্বারা স্বাধীনভাবে যাচাইকৃত নয়, যদি না স্পষ্টভােব "Verified" হিসেবে চিহ্নিত করা হয়—এবং যাচাইকরণ ব্যাজগুলো কঠোরভাবে পরিচয়/নথির সাথে সম্পর্কিত, আর্থিক তথ্যের নির্ভুলতার কোনো গ্যারান্টি নয়।
 
-৭. নিরাপত্তা এবং ঝুঁকি
-৭.১ লেনদেনের আগে পণ্য এবং অন্যান্য ব্যবহারকারীদের যাচাই করার দায়িত্ব সম্পূর্ণভাবে ব্যবহারকারীর।
-৭.২ ব্যবহারকারীদের মধ্যে সমস্ত মিথস্ক্রিয়া তাদের নিজস্ব ঝুঁকিতে হয়।
-৭.৩ আমরা কোনো লেনদেনের নিরাপত্তা, ফলাফল বা বৈধতার গ্যারান্টি দিই না।
-৭.৪ Shadamon.com কোনো প্রতারণা, জালিয়াতি বা ব্যবহারকারীদের মধ্যকার বিরোধের জন্য দায়ী নয়।
+২. অ্যাকাউন্ট ও যোগ্যতা
+- একটি অ্যাকাউন্ট খুলতে আপনার বয়স কমপক্ষে ১৮ বছর হতে হবে এবং বাংলাদেশের প্রচলিত আইনের অধীনে চুক্তি করার আইনি ক্ষমতা থাকতে হবে।
+- মোবাইল নম্বর OTP যাচাইকরণ বাধ্যতামূলক। আপনি সঠিক ও খাঁটি ব্যক্তিগত তথ্য প্রদান করতে বাধ্য।
+- একটি অ্যাকাউন্টের নিরাপত্তা (পাসওয়ার্ড, OTP, লগইন সেশন) সম্পূর্ণভাবে ব্যবহারকারীর দায়িত্ব।
 
-৮. মেধা সম্পত্তি (Intellectual Property)
-৮.১ ব্যবহারকারীরা তাদের কন্টেন্টের মালিকানা ধরে রাখেন।
-৮.২ কন্টেন্ট পোস্ট করার মাধ্যমে, ব্যবহারকারীরা Shadamon.com-কে প্ল্যাটফর্ম পরিচালনা এবং প্রচারের জন্য এটি ব্যবহার করার একটি অ-একচেটিয়া লাইসেন্স প্রদান করেন।
-৮.৩ প্ল্যাটফর্মের সমস্ত ব্র্যান্ডিং, ডিজাইন এবং সফটওয়্যার Shadamon.com-এর সম্পত্তি হিসেবে থাকবে।
+৩. পোস্ট করার নিয়মাবলি
+- পোস্টে প্রদত্ত তথ্য (অর্থায়নের প্রয়োজন, ব্যবসার বিবরণ, বিনিয়োগের মানদণ্ড) সঠিক ও হালনাগাদ রাখা ব্যবহারকারীর দায়িত্ব।
+- আমরা মিথ্যা, বিভ্রান্তিকর বা প্রতারণামূলক তথ্য সম্বলিত পোস্ট মুছে ফেলার এবং সংশ্লিষ্ট অ্যাকাউন্ট স্থগিত বা বাতিল করার অধিকার সংরক্ষণ করি।
+- অবৈধ ব্যবসা, স্কিম, পিরামিড/MLM কার্যক্রম বা বাংলাদেশের আইন দ্বারা নিষিদ্ধ যেকোনো কার্যক্রম সম্পর্কিত পোস্ট কঠোরভাবে নিষিদ্ধ।
 
-৯. দায়ের সীমাবদ্ধতা (Limitation of Liability)
-৯.১ আইনের সর্বোচ্চ সীমা অনুযায়ী, Shadamon.com কোনো পরোক্ষ, আনুষঙ্গিক বা আর্থিক ক্ষতির জন্য দায়ী নয়।
-৯.২ প্ল্যাটফর্মটি "যেমন আছে" (as is) এবং "যেমন পাওয়া যায়" (as available) ভিত্তিতে প্রদান করা হয়।
-৯.৩ আমরা প্রযুক্তিগত ত্রুটি, ডাউনটাইম বা সিস্টেমের ব্যর্থতার জন্য দায়ী নই।
-৯.৪ অনিচ্ছাকৃত ত্রুটি, সিস্টেম সমস্যা বা প্ল্যাটফর্মের ত্রুটির কারণে কোনো ক্ষতি হলে Shadamon.com দায়ী থাকবে না (যদি না আইনত প্রয়োজন হয়)।
+৪. পেমেন্ট ও পেইড ফিচার
+- অ্যাক্সেস প্যাকেজ (ইনভাইট/চ্যাট/কল/প্রস্তাব পাঠানো), প্রমোশন/বুস্ট এবং কানেক্ট অ্যাক্সেসের মতো পেইড ফিচারগুলো তাদের নিজ নিজ ফিচার পেজ এবং "Promote" নীতিতে উল্লিখিত নির্দিষ্ট শর্তাবলির অধীন।
+- সকল পেমেন্ট বাংলাদেশী টাকায় (৳) প্রদর্শিত এবং গৃহীত হয়।
+- "Promote" পেজে উল্লিখিত শর্তানুসারে রিফান্ড নীতি প্রযোজ্য হবে।
 
-১০. ক্ষতিপূরণ (Indemnification)
-১০.১ ব্যবহারকারীরা Shadamon.com-কে যেকোনো দাবি, ক্ষতি বা আইনি পদক্ষেপ থেকে মুক্ত রাখতে এবং ক্ষতিপূরণ দিতে সম্মত হন যা নিম্নলিখিত কারণে উদ্ভূত হতে পারে:
-১০.১.১ প্ল্যাটফর্মের ব্যবহার
-১০.১.২ ব্যবহারকারীর কন্টেন্ট বা লিস্টিং
-১০.১.৩ এই শর্তাবলির লঙ্ঘন
-১০.১.৪ যেকোনো ব্যবহারকারী-থেকে-ব্যবহারকারী লেনদেন
+৫. দায়ের সীমাবদ্ধতা (Limitation of Liability)
+- যেকোনো ব্যবহারকারীর বিনিয়োগের ফলে সৃষ্ট আর্থিক ক্ষতি, প্রতারণা, চুক্তি ভঙ্গ বা কোনো ক্ষতির জন্য Shadamon Invest দায়ী থাকবে না।
+- দুই পক্ষের মধ্যকার যেকোনো আলোচনা, চুক্তি বা লেনদেন সম্পূর্ণভাবে নিজ নিজ পক্ষের ঝুঁকিতে এবং দায়িত্বে পরিচালিত হয়।
+- বিনিয়োগ করার আগে, একটি ব্যবসার আর্থিক অবস্থা, বৈধতা এবং প্রস্তাবিত রিটার্নের নির্ভুলতা স্বাধীনভাবে যাচাই করুন।
 
-১১. পরিষেবা পরিবর্তন
-১১.১ আমরা যেকোনো সময় প্ল্যাটফর্মের যেকোনো অংশ পরিবর্তন, স্থগিত বা বন্ধ করতে পারি।
-১১.২ এই ধরনের পরিবর্তনের জন্য আমাদের আগাম নোটিশ দেওয়ার প্রয়োজন নেই।
-১১.৩ এর ফলে হওয়া কোনো ক্ষতির জন্য আমরা দায়ী নই।
+৬. নিষিদ্ধ কার্যকলাপ
+হয়রানি করা, স্প্যাম পাঠানো, ভুয়া প্রোফাইল তৈরি করা, ছদ্মবেশ ধারণ করা, প্ল্যাটফর্মের বাইরে পেমেন্ট করতে বাধ্য করা, ডিপ-লিংক, পেজ-স্ক্র্যাপার, রোবট, স্পাইডার বা যেকোনো স্বয়ংক্রিয় পদ্ধতি ব্যবহার করে কন্টেন্ট সংগ্রহ করা বা নিরাপত্তা লঙ্ঘনের চেষ্টা করার ফলে অ্যাকাউন্ট স্থায়ীভাবে বন্ধ হতে পারে। এই ধরনের ক্ষেত্রে পূর্বে পরিশোধিত ফি অফেরতযোগ্য।
 
-১২. প্রযোজ্য আইন
-১২.১ এই শর্তাবলি বাংলাদেশের আইন দ্বারা পরিচালিত।
-১২.২ যেকোনো বিরোধ বাংলাদেশের প্রচলিত আইনের অধীনে সমাধান করা হবে।
+৭. সিকিউরিটিজ ও পাবলিক অফারিং বিধিনিষেধ
+Shadamon Invest কোনো নিয়ন্ত্রক সংস্থা (যেমন বাংলাদেশ সিকিউরিটিজ অ্যান্ড এক্সচেঞ্জ কমিশন বা অন্য কোনো কর্তৃপক্ষ) দ্বারা লাইসেন্সপ্রাপ্ত বা নিবন্ধিত নয়। এই প্ল্যাটফর্মের মাধ্যমে কোনো পাবলিক সিকিউরিটিজ, শেয়ার, বন্ড বা একই ধরনের নিয়ন্ত্রিত আর্থিক উপাদান অফার করা কঠোরভাবে নিষিদ্ধ। ব্যবহারকারীরা কেবল ব্যক্তিগত, পয়েন্ট-টু-পয়েন্ট ব্যবসার আলোচনার জন্য প্ল্যাটফর্মটি ব্যবহার করতে পারেন।
 
-১৩. যোগাযোগ
-১৩.১ ইমেইল: shadamon.com@gmail.com
-১৩.২ মেসেঞ্জার: m.me/shadamondotcom`
+৮. বিরোধ মুক্তকরণ (Release from Disputes)
+যদি দুই বা ততোধিক ব্যবহারকারীর মধ্যে বিরোধ দেখা দেয়, তবে আপনি Shadamon Invest-কে এই ধরনের বিরোধ সম্পর্কিত যেকোনো দাবি, ক্ষতিপূরণ বা ক্ষতি (প্রত্যক্ষ ও পরোক্ষ, জানা এবং অজানা) থেকে মুক্ত করছেন। চুক্তি, সংবিধি, টর্ট (অবহেলাসহ) বা অন্য কোনো ভিত্তি থেকে উদ্ভূত প্রত্যক্ষ, বিশেষ, পরোক্ষ, আনুষঙ্গিক, ফলশ্রুতিগত বা শাস্তিমূলক ক্ষতির জন্য Shadamon Invest দায়ী থাকবে না।
+
+৯. ক্ষতিপূরণ (Indemnification)
+আপনার পোস্ট করা কন্টেন্ট, প্রদত্ত তথ্য বা প্ল্যাটফর্ম ব্যবহারের ফলে সৃষ্ট যেকোনো তৃতীয় পক্ষের দাবি, ক্ষতি বা খরচ (আইনি ফি সহ) থেকে Shadamon Invest-কে মুক্ত রাখতে এবং ক্ষতিপূরণ দিতে আপনি সম্মত হন—বিশেষ করে মেধা সম্পত্তি লঙ্ঘন, মিথ্যা তথ্য প্রদান বা তৃতীয় পক্ষের অধিকার লঙ্ঘনের ক্ষেত্রে।
+
+১০. পোস্ট সম্পাদনা/অপসারণের অধিকার
+কোনো ব্যবহারকারী প্ল্যাটফর্মের অপব্যবহার করছেন, উদ্দেশ্যে বাইরে ব্যবহার করছেন, মিথ্যা/বিভ্রান্তিকর তথ্য প্রদান করছেন বা অন্য ব্যবহারকারীদের সাথে আপত্তিজনক আচরণ করছেন বলে মনে করলে যেকোনো পোস্ট বা অ্যাকাউন্ট সম্পাদনা, স্থগিত বা মুছে ফেলার অধিকার আমরা সংরক্ষণ করি। এই ধরনের ক্ষেত্রে পরিশোধিত পেমেন্ট অফেরতযোগ্য। প্ল্যাটফর্মে প্রদর্শিত কোনো পোস্ট বা প্রোফাইল কোনো বাধ্যবাধকতামূলক অফার গঠন করবে না।
+
+১১. সেবা পরিবর্তন/সমাপ্তি
+আমরা যেকোনো সময় কোনো ব্যবহারকারী বা তৃতীয় পক্ষের প্রতি দায়বদ্ধতা ছাড়াই আমাদের পরিষেবাগুলো সম্পূর্ণ বা আংশিকভাবে পরিবর্তন, স্থগিত বা বন্ধ করার অধিকার সংরক্ষণ করি।
+
+১২. শর্তাবলির পরিবর্তন
+আমরা যেকোনো সময় এই শর্তাবলি পরিবর্তন করার অধিকার সংরক্ষণ করি। পরিবর্তনের পর প্ল্যাটফর্মের ব্যবহার অব্যাহত রাখার অর্থ হলো আপনি নতুন শর্তাবলি মেনে নিচ্ছেন।
+
+১৩. প্রযোজ্য আইন এবং এখতিয়ার
+এই শর্তাবলি বাংলাদেশের আইন দ্বারা পরিচালিত হবে এবং এর থেকে উদ্ভূত যেকোনো বিরোধের ক্ষেত্রে ঢাকার আদালতের একচ্ছত্র এখতিয়ার থাকবে।
+
+আপনি নিশ্চিত করছেন যে আপনি এই শর্তাবলি পড়েছেন এবং নিঃশর্তভাবে এগুলো মেনে চলতে সম্মত হচ্ছেন।`
     }),
     privacy: makeInfoItem({
         slug: 'privacy-policy',
-        titleBn: 'SHADAMON.COM – গোপনীয়তা নীতি',
-        titleEn: 'SHADAMON.COM – PRIVACY POLICY',
-        contentEn: `1. Introduction
-1.1 This Privacy Policy explains how Shadamon.com collects, uses, and protects user data.
-1.2 By using the platform, you agree to this Privacy Policy.
+        titleBn: 'Shadamon Invest – গোপনীয়তা নীতি',
+        titleEn: 'Shadamon Invest – Privacy Policy',
+        contentEn: `Privacy Policy
+Last Updated: September 17, 2026
 
-2. Information We Collect
-2.1 Information you provide:
-2.1.1 Name
-2.1.2 Phone number
-2.1.3 Email address
-2.1.4 Profile and account details
-2.1.5 Address or location
-2.1.6 Content and listings
-2.2 Automatically collected information:
-2.2.1 IP address
-2.2.2 Device and browser data
-2.2.3 Usage activity logs
-2.2.4 Cookies and tracking data
-2.2.5 Location data (if enabled)
+Information We Collect:
 
-3. Use of Information
-3.1 Provide and maintain services
-3.2 Manage user accounts
-3.3 Enable communication between users
-3.4 Prevent fraud and abuse
-3.5 Improve platform performance
-3.6 Provide customer support
-3.7 Deliver relevant content and advertisements
+Account Information: Name, mobile number, email (if signed up via Google/Facebook).
 
-4. Cookies
-4.1 Cookies are used to improve user experience.
-4.2 Types include:
-4.2.1 Session cookies
-4.2.2 Preference cookies
-4.2.3 Security cookies
-4.3 Users may disable cookies, but some features may not work properly.
+Verification Information (Optional): NID, trade license, tax certificate, bank statement—solely for trust scores and verification badges.
 
-5. Data Sharing
-5.1 We do not sell personal data.
-5.2 We may share data with:
-5.2.1 Service providers
-5.2.2 Legal authorities when required by law
-5.2.3 Business partners for operational purposes
+Post Information: Funding requirements, business description, investment criteria, images.
 
-6. Data Security
-6.1 We use reasonable security measures to protect data.
-6.2 However, no system is fully secure.
+Usage Information: Login activity, post views, invite/chat activity (for spam prevention and platform improvement).
 
-7. Data Retention
-7.1 Data is retained only as long as necessary for service, legal, or operational requirements.
+Payment Information: Processed securely through payment gateways; we do not directly store card/bank details.
 
-8. User Rights
-8.1 Users may request:
-8.1.1 Access to data
-8.1.2 Correction of data
-8.1.3 Deletion of data
-8.1.4 Restriction of processing
+How We Use Information:
 
-9. Age Restriction
-9.1 Users must be at least 18 years old or use the platform under guardian supervision.
+- For account verification and OTP authentication.
+- For matchmaking and feed display (based on location and category).
+- For trust score calculation and fraud prevention.
+- For customer support and communication.
 
-10. Changes to Policy
-10.1 We may update this Privacy Policy at any time.
-10.2 Continued use of the platform means acceptance of changes.
+Information Sharing:
 
-11. Contact
-11.1 Email: shadamon.com@gmail.com
-11.2 Messenger: m.me/shadamonDotCom
-Effective Date: 1 May 2026`,
-        contentBn: `১. ভূমিকা
-১.১ এই গোপনীয়তা নীতি ব্যাখ্যা করে যে Shadamon.com কীভাবে ব্যবহারকারীর তথ্য সংগ্রহ, ব্যবহার এবং সুরক্ষা প্রদান করে।
-১.২ প্ল্যাটফর্মটি ব্যবহারের মাধ্যমে আপনি এই গোপনীয়তা নীতির সাথে একমত পোষণ করছেন।
+- Your full name and contact information remain hidden from other users (locked icon) until you give explicit permission or the relevant party purchases Connect Access.
+- We share necessary data with third parties (payment providers, SMS gateways) only, which are protected by their own privacy policies.
+- We do not sell or share your data with third parties except under legal obligation or government directive.
 
-২. আমরা যে তথ্য সংগ্রহ করি
-২.১ আপনার প্রদান করা তথ্য:
-২.১.১ নাম
-২.১.২ ফোন নম্বর
-২.১.৩ ইমেইল ঠিকানা
-২.১.৪ প্রোফাইল এবং অ্যাকাউন্টের বিবরণ
-২.১.৫ ঠিকানা বা অবস্থান
-২.১.৬ কন্টেন্ট এবং লিস্টিং
-২.২ স্বয়ংক্রিয়ভাবে সংগৃহীত তথ্য:
-২.২.১ আইপি (IP) ঠিকানা
-২.২.২ ডিভাইস এবং ব্রাউজার সংক্রান্ত তথ্য
-২.২.৩ ব্যবহারের অ্যাক্টিভিটি লগ
-২.২.৪ কুকিজ (Cookies) এবং ট্র্যাকিং ডেটা
-২.২.৫ লোকেশন ডেটা বা অবস্থান সংক্রান্ত তথ্য (যদি চালু থাকে)
+Data Security:
 
-৩. তথ্যের ব্যবহার
-৩.১ পরিষেবা প্রদান এবং রক্ষণাবেক্ষণ করা
-৩.২ ব্যবহারকারীর অ্যাকাউন্ট পরিচালনা করা
-৩.৩ ব্যবহারকারীদের মধ্যে যোগাযোগের সুবিধা দেওয়া
-৩.৪ প্রতারণা এবং অপব্যবহার রোধ করা
-৩.৫ প্ল্যাটফর্মের কার্যক্ষমতা উন্নত করা
-৩.৬ কাস্টমার সাপোর্ট প্রদান করা
-৩.৭ প্রাসঙ্গিক কন্টেন্ট এবং বিজ্ঞাপন পৌঁছে দেওয়া
+We take reasonable technical and administrative measures to keep your data secure. However, in the event of unexpected technical errors, malfunctions, or security breaches, Shadamon Invest will not be liable for any resulting damages—no online system is 100% secure, so please be aware of this risk.
 
-৪. কুকিজ (Cookies)
-৪.১ ব্যবহারকারীর অভিজ্ঞতা উন্নত করতে কুকিজ ব্যবহার করা হয়।
-৪.২ এর প্রকারভেদগুলোর মধ্যে রয়েছে:
-৪.২.১ সেশন কুকিজ
-৪.২.২ প্রেফারেন্স কুকিজ
-৪.২.৩ সিকিউরিটি কুকিজ
-৪.৩ ব্যবহারকারীরা কুকিজ বন্ধ করে দিতে পারেন, তবে সেক্ষেত্রে কিছু ফিচার সঠিকভাবে কাজ নাও করতে পারে।
+Account Closure & Data Retention:
 
-৫. তথ্য শেয়ার করা
-৫.১ আমরা ব্যক্তিগত তথ্য বিক্রি করি না।
-৫.২ আমরা তথ্য শেয়ার করতে পারি:
-৫.২.১ পরিষেবা প্রদানকারীদের (Service providers) সাথে
-৫.২.২ আইনগত প্রয়োজনে আইনি কর্তৃপক্ষের সাথে
-৫.২.৩ ব্যবসায়িক কার্যক্রমের প্রয়োজনে অংশীদারদের সাথে
+- You can request account closure or permanent data deletion via Contact Us; we will process it promptly.
+- We reserve the right to close accounts that remain inactive for a long time or for platform improvement purposes.
+- We may permanently retain certain data from closed accounts to comply with the law, prevent fraud, recover pending fees, resolve disputes, or conduct industry analysis.
 
-৬. তথ্যের নিরাপত্তা
-৬.১ তথ্য সুরক্ষায় আমরা যথাযথ নিরাপত্তা ব্যবস্থা গ্রহণ করি।
-৬.২ তবে, কোনো সিস্টেমই সম্পূর্ণ সুরক্ষিত নয়।
+Business Transfers:
 
-৭. তথ্য সংরক্ষণ
-৭.১ পরিষেবা, আইনি বা কার্যক্রমের প্রয়োজনীয়তা অনুযায়ী যতক্ষণ প্রয়োজন ঠিক ততক্ষণই তথ্য সংরক্ষণ করা হয়।
+If Shadamon Invest undergoes a merger, acquisition, or asset sale and your information becomes part of the transferred assets, the new privacy policy determined at that time will apply to your data. Such changes will be communicated on the platform or via email.
 
-৮. ব্যবহারকারীর অধিকার
-৮.১ ব্যবহারকারীরা অনুরোধ করতে পারেন:
-৮.১.১ তথ্যের অ্যাক্সেস বা দেখার জন্য
-৮.১.২ তথ্য সংশোধনের জন্য
-৮.১.৩ তথ্য মুছে ফেলার জন্য
-৮.১.৪ তথ্য প্রক্রিয়াকরণ সীমিত করার জন্য
+Your Rights:
 
-৯. বয়স সীমা
-৯.১ ব্যবহারকারীর বয়স কমপক্ষে ১৮ বছর হতে হবে অথবা অভিভাবকের তত্ত্বাবধানে প্ল্যাটফর্মটি ব্যবহার করতে হবে।
+- You may request to view, correct, or delete your own data.
+- For requests, contact us via the Contact Us page.
 
-১০. নীতির পরিবর্তন
-১০.১ আমরা যেকোনো সময় এই গোপনীয়তা নীতি আপডেট করতে পারি।
-১০.২ প্ল্যাটফর্মটির ক্রমাগত ব্যবহার মানে হলো আপনি এই পরিবর্তনগুলো গ্রহণ করেছেন।
+Policy Changes:
 
-১১. যোগাযোগ
-১১.১ ইমেইল: shadamon.com@gmail.com
-১১.২ মেসেঞ্জার: m.me/shadamonDotCom
-কার্যকর হওয়ার তারিখ: ১ মে ২০২৬`
+We reserve the right to modify this privacy policy at any time for any reason.
+
+Cookies:
+
+The platform uses cookies to improve login sessions and user experience.`,
+        contentBn: `গোপনীয়তা নীতি (Privacy Policy)
+সর্বশেষ সংস্করণ: ১৭ সেপ্টেম্বর, ২০২৬
+
+আমরা যে তথ্য সংগ্রহ করি:
+
+অ্যাকাউন্ট সম্পর্কিত তথ্য: নাম, মোবাইল নম্বর, ইমেইল (গুগল/ফেসবুকের মাধ্যমে সাইন আপ করলে)।
+
+যাচাইকরণ তথ্য (ঐচ্ছিক): NID, ট্রেড লাইসেন্স, ট্যাক্স সার্টিফিকেট, ব্যাংক স্টেটমেন্ট—শুধুমাত্র ট্রাস্ট স্কোর এবং যাচাইকরণ ব্যাজের জন্য।
+
+পোস্ট সম্পর্কিত তথ্য: অর্থায়নের প্রয়োজনীয়তা, ব্যবসার বিবরণ, বিনিয়োগের মানদণ্ড, ছবি।
+
+ব্যবহার সম্পর্কিত তথ্য: লগইন অ্যাক্টিভিটি, পোস্ট ভিউ, ইনভাইট/চ্যাট অ্যাক্টিভিটি (স্প্যাম প্রতিরোধ এবং প্ল্যাটফর্মের উন্নতির জন্য)।
+
+পেমেন্ট সম্পর্কিত তথ্য: পেমেন্ট গেটওয়ের মাধ্যমে নিরাপদে প্রক্রিয়াজাত করা হয়; আমরা সরাসরি কার্ড/ব্যাংক বিবরণ সংরক্ষণ করি না।
+
+আমরা কীভাবে তথ্য ব্যবহার করি:
+
+- অ্যাকাউন্ট যাচাইকরণ এবং OTP অথেন্টিকেশনের জন্য।
+- ম্যাচমেকিং এবং ফিড প্রদর্শনের জন্য (অবস্থান এবং ক্যাটাগরির ওপর ভিত্তি করে)।
+- ট্রাস্ট স্কোর গণনা এবং জালিয়াতি প্রতিরোধের জন্য।
+- কাস্টমার সাপোর্ট এবং যোগাযোগের জন্য।
+
+তথ্য ভাগাভাগি (Information Sharing):
+
+- আপনি স্পষ্ট অনুমতি না দেওয়া বা সংশ্লিষ্ট পক্ষ কানেক্ট অ্যাক্সেস ক্রয় না করা পর্যন্ত আপনার পূর্ণ নাম এবং যোগাযোগের তথ্য অন্য ব্যবহারকারীদের কাছ থেকে লুকানো থাকে (লক করা আইকন)।
+- আমরা কেবল প্রয়োজনীয় ডেটা তৃতীয় পক্ষের (পেমেন্ট প্রোভাইডার, SMS গেটওয়ে) সাথে শেয়ার করি, যা তাদের নিজস্ব গোপনীয়তা নীতি দ্বারা সুরক্ষিত।
+- আইনি বাধ্যবাধকতা বা সরকারি নির্দেশ ছাড়া আমরা কোনো তৃতীয় পক্ষের কাছে আপনার ডেটা বিক্রি বা শেয়ার করি না।
+
+ডেটা নিরাপত্তা:
+
+আপনার ডেটা নিরাপদ রাখতে আমরা যুক্তিযুক্ত প্রযুক্তিগত এবং প্রশাসনিক ব্যবস্থা গ্রহণ করি। তবে, অপ্রত্যাশিত প্রযুক্তিগত ত্রুটি, বিভ্রাট বা নিরাপত্তা লঙ্ঘনের ক্ষেত্রে, Shadamon Invest কোনো ক্ষতির জন্য দায়ী থাকবে না—কোনো অনলাইন সিস্টেমই ১০০% নিরাপদ নয়, তাই অনুগ্রহ করে এই ঝুঁকি সম্পর্কে সচেতন থাকুন।
+
+অ্যাকাউন্ট বন্ধ এবং ডেটা সংরক্ষণ:
+
+- আপনি 'Contact Us' এর মাধ্যমে অ্যাকাউন্ট বন্ধ বা স্থায়ী ডেটা মুছে ফেলার অনুরোধ করতে পারেন; আমরা অবিলম্বে এটি প্রক্রিয়া করব।
+- দীর্ঘ সময় ধরে নিষ্ক্রিয় থাকা অ্যাকাউন্ট বা প্ল্যাটফর্মের উন্নতির উদ্দেশ্যে অ্যাকাউন্ট বন্ধ করার অধিকার আমরা সংরক্ষণ করি।
+- আইন মেনে চলা, জালিয়াতি প্রতিরোধ করা, বকেয়া ফি উদ্ধার করা, বিরোধ নিষ্পত্তি করা বা শিল্প বিশ্লেষণের জন্য আমরা বন্ধ করা অ্যাকাউন্টগুলোর নির্দিষ্ট ডেটা স্থায়ীভাবে সংরক্ষণ করতে পারি।
+
+ব্যবসায়িক হস্তান্তর (Business Transfers):
+
+যদি Shadamon Invest কোনো একীভূতকরণ (Merger), অধিগ্রহণ (Acquisition) বা সম্পদ বিক্রয়ের মধ্য দিয়ে যায় এবং আপনার তথ্য স্থানান্তরিত সম্পদের অংশ হয়, তবে সেই সময়ে নির্ধারিত নতুন গোপনীয়তা নীতি আপনার ডেটাতে প্রযোজ্য হবে। এই ধরনের পরিবর্তন প্ল্যাটফর্মে বা ইমেলের মাধ্যমে জানানো হবে।
+
+আপনার অধিকারসমূহ:
+
+- আপনি আপনার নিজস্ব ডেটা দেখতে, সংশোধন করতে বা মুছে ফেলার অনুরোধ করতে পারেন।
+- অনুরোধের জন্য, 'Contact Us' পেজের মাধ্যমে আমাদের সাথে যোগাযোগ করুন।
+
+নীতি পরিবর্তন:
+
+আমরা যেকোনো সময় যেকোনো কারণে এই গোপনীয়তা নীতি সংশোধন করার অধিকার সংরক্ষণ করি।
+
+কুকিজ (Cookies):
+
+লগইন সেশন এবং ব্যবহারকারীর অভিজ্ঞতা উন্নত করতে প্ল্যাটফর্মটি কুকিজ ব্যবহার করে।`
     }),
     safety: makeInfoItem({
         slug: 'safety-tips',
-        titleBn: 'SHADAMON.COM – নিরাপত্তা টিপস',
-        titleEn: 'SHADAMON.COM – SAFETY TIPS',
-        contentEn: `1. General Safety Guidelines
-1.1 Your safety is our top priority at Shadamon.com.
-1.2 Always use caution when interacting with other users on the platform.
-1.3 Avoid sharing unnecessary personal or financial information with unknown parties.
-1.4 Use common sense when evaluating offers that seem unusually cheap or unrealistic.
+        titleBn: 'Shadamon Invest – নিরাপত্তা টিপস',
+        titleEn: 'Shadamon Invest – Safety Tips',
+        contentEn: `Safety Tips
+Last Updated: September 17, 2026
 
-2. Transaction Safety
-2.1 Always meet the seller or buyer in person before making any payment whenever possible.
-2.2 Inspect the product carefully before completing any transaction.
-2.3 Buyers should not make payment before receiving and verifying the product.
-2.4 Sellers should avoid shipping or handing over products before receiving confirmed payment.
-2.5 Avoid remote or unsafe locations for meetings. Prefer public and secure places.
+Shadamon Invest only provides connections—due diligence and decisions are entirely your own responsibility. Stay safe by following these tips:
 
-3. Job and Recruitment Safety
-3.1 Always verify the employer and job offer before sharing any personal information.
-3.2 Do not share sensitive documents unless you trust the source.
-3.3 Avoid interviews or meetings in unknown or unsafe locations.
-3.4 Be cautious of job offers that require upfront payment or promise unrealistic income.
+Before Investing:
 
-4. Payment and Financial Safety
-4.1 Never share bank account details, PINs, OTPs, or sensitive financial information.
-4.2 Avoid advance payments without proper verification.
-4.3 Shadamon.com does not guarantee or process payments between users.
-4.4 Users are fully responsible for verifying payment authenticity.
+- Independently verify proposed returns, business financials, and project legitimacy—do not rely solely on figures written in posts.
+- Cross-check the business's trade license, NID, and relevant documents directly through respective government agencies.
+- Visit the business location in person and meet directly if possible.
+- Have a lawyer or financial advisor draft and review agreements.
 
-5. Fraud and Scam Awareness
-5.1 Be cautious of fake payment requests or fake payment confirmations.
-5.2 Shadamon.com never asks for personal data via email, SMS, or unofficial messages.
-5.3 Avoid suspicious links, messages, or requests from unknown users.
-5.4 Do not use untrusted money transfer services with unknown individuals.
-5.5 Be aware that Shadamon.com does not provide delivery services. Any such claim should be considered suspicious.
+During Financial Transactions:
 
-6. Platform Safety Measures
-6.1 User contact details may be hidden to protect privacy.
-6.2 We use technical systems to detect and prevent suspicious activity.
-6.3 Repeated offenders or fraudulent users may be restricted or blocked.
-6.4 We continuously improve security systems to reduce abuse and fraud.
+- Never send advance money until due diligence is complete.
+- Beware of high-pressure tactics such as "decide very quickly" or "limited time offer"—this is a common fraud strategy.
+- Be suspicious of promises of unusually high returns (e.g., guaranteed high monthly profits)—no return is 100% guaranteed in realistic investments.
 
-7. Reporting Safety Issues
-7.1 If you suspect fraud or scam activity, report it immediately through the platform.
-7.2 In serious cases, users are advised to contact local law enforcement authorities.
-7.3 Early reporting helps protect you and other users.
+Communication Guidelines:
 
-8. Important Disclaimer
-8.1 Shadamon.com provides a platform for user interaction only and does not guarantee the safety of any transaction between users.
-8.2 Users are solely responsible for verifying all information before engaging in any transaction.
-8.3 While we take reasonable steps to improve safety, we are not liable for any loss, fraud, or damages resulting from user interactions.
-8.4 In cases of suspected illegal activity, we may cooperate with law enforcement authorities as required by law.`,
-        contentBn: `১. সাধারণ নিরাপত্তা নির্দেশিকা
-১.১ Shadamon.com-এ আপনার নিরাপত্তাই আমাদের সর্বোচ্চ অগ্রাধিকার।
-১.২ প্ল্যাটফর্মে অন্য ব্যবহারকারীদের সাথে যোগাযোগের সময় সর্বদা সতর্ক থাকুন।
-১.৩ অপরিচিত ব্যক্তিদের সাথে অপ্রয়োজনীয় ব্যক্তিগত বা আর্থিক তথ্য শেয়ার করা থেকে বিরত থাকুন।
-১.৪ অস্বাভাবিক সস্তা বা অবাস্তব মনে হয় এমন অফারগুলো মূল্যায়নের ক্ষেত্রে সাধারণ জ্ঞান বা বুদ্ধি ব্যবহার করুন।
+- Keep initial conversations within the platform; be cautious if there is pressure to quickly move to external channels (WhatsApp, Telegram).
+- Having a verified badge means identity/documents have been reviewed—it is not a guarantee of financial safety.
+- If you suspect suspicious behavior or fraud, immediately inform us using the "Report" feature.`,
+        contentBn: `নিরাপত্তা টিপস (Safety Tips)
+সর্বশেষ সংস্করণ: ১৭ সেপ্টেম্বর, ২০২৬
 
-২. লেনদেনের নিরাপত্তা
-২.১ সম্ভব হলে যেকোনো পেমেন্ট করার আগে সর্বদা বিক্রেতা বা ক্রেতার সাথে সরাসরি দেখা করুন।
-২.২ লেনদেন সম্পন্ন করার আগে পণ্যটি যত্নসহকারে পরীক্ষা করে নিন।
-২.৩ ক্রেতাদের উচিত পণ্য গ্রহণ এবং যাচাই করার আগে কোনো পেমেন্ট না করা।
-২.৪ বিক্রেতাদের উচিত পেমেন্ট নিশ্চিত করার আগে পণ্য পাঠানো বা হস্তান্তর করা থেকে বিরত থাকা।
-২.৫ দেখা করার জন্য দুর্গম বা অনিরাপদ স্থান পরিহার করুন। জনাকীর্ণ এবং নিরাপদ স্থানকে প্রাধান্য দিন।
+Shadamon Invest কেবল সংযোগ প্রদান করে—যথাযথ সতর্কতা (Due Diligence) অবলম্বন এবং সিদ্ধান্ত গ্রহণ সম্পূর্ণভাবে আপনার নিজস্ব দায়িত্ব। নিরাপদে থাকতে এই টিপসগুলো অনুসরণ করুন:
 
-৩. চাকরি এবং নিয়োগ সংক্রান্ত নিরাপত্তা
-৩.১ যেকোনো ব্যক্তিগত তথ্য শেয়ার করার আগে সর্বদা নিয়োগকর্তা এবং চাকরির অফারটি যাচাই করুন।
-৩.২ উৎসটি বিশ্বস্ত না হওয়া পর্যন্ত সংবেদনশীল কোনো নথিপত্র শেয়ার করবেন না।
-৩.৩ অপরিচিত বা অনিরাপদ স্থানে ইন্টারভিউ বা মিটিং এড়িয়ে চলুন।
-৩.৪ যেসব চাকরির অফারে অগ্রিম টাকা চাওয়া হয় বা অবাস্তব আয়ের প্রতিশ্রুতি দেওয়া হয়, সেগুলোর ব্যাপারে সতর্ক থাকুন।
+বিনিয়োগ করার আগে:
 
-৪. পেমেন্ট এবং আর্থিক নিরাপত্তা
-৪.১ কখনো ব্যাংক অ্যাকাউন্টের বিবরণ, পিন (PIN), ওটিপি (OTP) বা সংবেদনশীল আর্থিক তথ্য শেয়ার করবেন না।
-৪.২ সঠিক যাচাইকরণ ছাড়া অগ্রিম পেমেন্ট এড়িয়ে চলুন।
-৪.৩ Shadamon.com ব্যবহারকারীদের মধ্যে কোনো পেমেন্টের গ্যারান্টি দেয় না বা প্রসেস করে না।
-৪.৪ পেমেন্টের সত্যতা যাচাই করার জন্য ব্যবহারকারীরা সম্পূর্ণ দায়ী।
+- প্রস্তাবিত রিটার্ন, ব্যবসার আর্থিক অবস্থা এবং প্রকল্পের বৈধতা স্বাধীনভাবে যাচাই করুন—কেবল পোস্টে লেখা পরিসংখ্যানে ভরসা করবেন না।
+- সংশ্লিষ্ট সরকারি সংস্থার মাধ্যমে সরাসরি ব্যবসার ট্রেড লাইসেন্স, NID এবং প্রাসঙ্গিক নথিপত্র পুনরায় যাচাই (Cross-check) করুন।
+- সরাসরি ব্যবসার স্থানে ব্যক্তিগতভাবে যান এবং সম্ভব হলে সরাসরি দেখা করুন।
+- একজন আইনজীবী বা আর্থিক উপদেষ্টাকে দিয়ে চুক্তিপত্রের খসড়া তৈরি ও পর্যালোচনা করিয়ে নিন।
 
-৫. প্রতারণা এবং স্ক্যাম সচেতনতা
-৫.১ ভুয়া পেমেন্ট রিকোয়েস্ট বা ভুয়া পেমেন্ট কনফার্মেশনের ব্যাপারে সতর্ক থাকুন।
-৫.২ Shadamon.com কখনো ইমেইল, এসএমএস বা অনানুষ্ঠানিক মেসেজের মাধ্যমে ব্যক্তিগত তথ্য চায় না।
-৫.৩ অপরিচিত ব্যবহারকারীদের পাঠানো সন্দেহজনক লিঙ্ক, মেসেজ বা অনুরোধ এড়িয়ে চলুন।
-৫.৪ অপরিচিত ব্যক্তিদের সাথে লেনদেনের ক্ষেত্রে অবিশ্বস্ত মানি ট্রান্সফার সার্ভিস ব্যবহার করবেন না।
-৫.৫ মনে রাখবেন, Shadamon.com কোনো ডেলিভারি সার্ভিস প্রদান করে না। এই ধরনের যেকোনো দাবিকে সন্দেহজনক হিসেবে বিবেচনা করা উচিত।
+আর্থিক লেনদেনের সময়:
 
-৬. প্ল্যাটফর্মের নিরাপত্তা ব্যবস্থা
-৬.১ গোপনীয়তা রক্ষার জন্য ব্যবহারকারীর যোগাযোগের বিস্তারিত তথ্য লুকানো থাকতে পারে।
-৬.২ আমরা সন্দেহজনক কার্যকলাপ শনাক্ত এবং প্রতিরোধের জন্য প্রযুক্তিগত ব্যবস্থা ব্যবহার করি।
-৬.৩ বারবার নিয়ম লঙ্ঘনকারী বা প্রতারক ব্যবহারকারীদের সীমাবদ্ধ বা ব্লক করা হতে পারে।
-৬.৪ অপব্যবহার এবং প্রতারণা কমাতে আমরা ক্রমাগত নিরাপত্তা ব্যবস্থার উন্নতি করি।
+- যথাযথ সতর্কতা (Due Diligence) সম্পন্ন না হওয়া পর্যন্ত কখনোই অগ্রিম অর্থ পাঠাবেন না।
+- "খুব দ্রুত সিদ্ধান্ত নিন" বা "সীমিত সময়ের অফার"—এর মতো চাপ সৃষ্টিকারী কৌশল থেকে সাবধান থাকুন; এটি একটি সাধারণ প্রতারণার কৌশল।
+- অস্বাভাবিক উচ্চ রিটার্নের প্রতিশ্রুতিতে (যেমন, নিশ্চিত উচ্চ মাসিক মুনাফা) সন্দেহ প্রকাশ করুন—বাস্তবসম্মত বিনিয়োগে কোনো রিটার্নই ১০০% নিশ্চিত নয়।
 
-৭. নিরাপত্তা ইস্যু রিপোর্ট করা
-৭.১ আপনি যদি কোনো প্রতারণা বা স্ক্যামের সন্দেহ করেন, তবে তাৎক্ষণিকভাবে প্ল্যাটফর্মের মাধ্যমে রিপোর্ট করুন।
-৭.২ গুরুতর ক্ষেত্রে ব্যবহারকারীদের স্থানীয় আইন প্রয়োগকারী সংস্থার সাথে যোগাযোগ করার পরামর্শ দেওয়া হচ্ছে।
-৭.৩ দ্রুত রিপোর্ট করা আপনাকে এবং অন্যান্য ব্যবহারকারীদের সুরক্ষিত রাখতে সাহায্য করে।
+যোগাযোগের নির্দেশিকা:
 
-৮. গুরুত্বপূর্ণ সতর্কবার্তা (Disclaimer)
-৮.১ Shadamon.com শুধুমাত্র ব্যবহারকারীদের মিথস্ক্রিয়ার জন্য একটি প্ল্যাটফর্ম প্রদান করে এবং ব্যবহারকারীদের মধ্যকার কোনো লেনদেনের নিরাপত্তার গ্যারান্টি দেয় না।
-৮.২ যেকোনো লেনদেনে জড়িত হওয়ার আগে সমস্ত তথ্য যাচাই করার জন্য ব্যবহারকারীরা এককভাবে দায়ী।
-৮.৩ নিরাপত্তা উন্নত করার জন্য আমরা যথাযথ পদক্ষেপ নিলেও, ব্যবহারকারীদের পারস্পরিক যোগাযোগের ফলে কোনো ক্ষতি, প্রতারণা বা লোকসানের জন্য আমরা দায়ী নই।
-৮.৪ সন্দেহজনক অবৈধ কার্যকলাপের ক্ষেত্রে, আমরা আইন অনুযায়ী আইন প্রয়োগকারী সংস্থাকে সহযোগিতা করতে পারি।`
+- প্রাথমিক কথোপকথন প্ল্যাটফর্মের মধ্যেই সীমাবদ্ধ রাখুন; দ্রুত বাহ্যিক চ্যানেলে (হোয়াটসঅ্যাপ, টেলিগ্রাম) স্থানান্তরিত হওয়ার জন্য চাপ থাকলে সতর্ক থাকুন।
+- যাচাইকৃত (Verified) ব্যাজ থাকার অর্থ হলো পরিচয়/নথিপত্র পর্যালোচনা করা হয়েছে—এটি আর্থিক নিরাপত্তার কোনো গ্যারান্টি নয়।
+- যদি আপনি সন্দেহজনক আচরণ বা প্রতারণার সন্দেহ করেন, তবে "Report" ফিচারটি ব্যবহার করে অবিলম্বে আমাদের জানান।`
     }),
     contact: makeInfoItem({
         slug: 'contact-us',
@@ -485,46 +369,108 @@ Address: Rampura, Dhaka, Bangladesh.`,
     }),
     return: makeInfoItem({
         slug: 'return-refund-policy',
-        titleBn: 'রিটার্ন & রিফান্ড পলিসি',
-        titleEn: 'Return & Refund Policy',
-        contentEn: `Shadamon.com aims to ensure that users have a simple, secure, and effective experience. In the case of promotional activities, certain important aspects regarding payments and the nature of promotional results should be considered.
+        titleBn: 'Shadamon Invest – রিটার্ন & রিফান্ড পলিসি',
+        titleEn: 'Shadamon Invest – Returns & Refund Policy',
+        contentEn: `Returns & Refund Policy
+Last Updated: September 17, 2026
 
-Performance & Nature of Results:
-Promotional results are estimate-based. Our automated system will make its best effort to deliver your post to relevant audiences. However, audience reach, interest, or outcomes are not guaranteed at a 100% level. This is a probability-based process that depends on the status of the promotional activity, timing, and audience response.
+This policy applies to both types of paid promotions: View Promotion (View-Boost) and Connect Access Promotion (Only Me Connect / Shared Connect).
+
+Nature and Effectiveness of Results:
+
+Promotion results (number of views, invites/interest, connections) are estimation-based. Our system tries to deliver your post to the maximum number of relevant viewers, but no guarantees are made regarding audience reach, viewer interest, or a specific number of invites/responses. This is a probability-based process dependent entirely on the promotion type, timing, category, and audience reactions.
+
+- View Promotion: In exchange for paid amounts (specific views per 100 Taka), views distributed evenly and priority ranking are provided for a specified duration.
+- Connect Access Promotion: Purchasing "Only Me Connect" or "Shared Connect" packages unlocks specific quantities/durations of Chat, Call, Send Proposal access—however, the platform provides no assurance regarding how many users will use this access or whether it will result in actual investments/deals.
 
 User Responsibility:
-Before promoting, ensure that the information provided in your post is accurate, effective, and up to date. Shadamon.com shall not be responsible for any loss or refund due to incorrect or incomplete information affecting promotional results. If a live promotion is stopped due to incorrect or incomplete information, the payment will not be refundable.
 
-Result Tracking & Transparency:
-Once promoted, you can directly see how many viewers or customers have shown interest in your post. This information can help you improve future promotional planning more effectively.
+Ensure your post data is accurate, relevant, and up-to-date before promoting. If promotion results fall short of expectations due to incorrect or incomplete information, Shadamon Invest will not provide any compensation or refund. If an active promotion is terminated due to incorrect or policy-violating information, the payment will be non-refundable.
 
-Automated and Simple Usage:
-Shadamon.com's promotional system operates automatically. No complex setup or additional feature selection is required. Once the promote button is clicked, the process begins immediately and results are displayed automatically.
+Result Tracking and Transparency:
 
-Use of Promotional Payment:
-Once processing begins, the payment is automatically activated. The amount is processed and moved into the system scheduling workflow, and is used to deliver the post or advertisement to targeted audiences based on different promotional stages. Therefore, once processing has started, the amount is generally non-refundable.
+After promoting, you can directly see how many viewers have viewed your post or shown interest (view counts for View Promotion, invite/response counts for Connect Access). This data helps you plan future promotions more effectively.
 
-In Summary:
-Shadamon.com's promotional system is simple, secure, and effective. Once the payment is processed, it automatically goes into the delivery system, and the system makes its best effort to show the post to maximum relevant visitors, allowing users to see direct results.`,
-        contentBn: `Shadamon.com ব্যবহারকারীদের জন্য একটি সহজ, নিরাপদ এবং কার্যকর অভিজ্ঞতা নিশ্চিত করার লক্ষ্য রাখে। প্রমোশনাল বা প্রচারমূলক কার্যক্রমের ক্ষেত্রে, পেমেন্ট এবং ফলাফলের ধরণ সংক্রান্ত কিছু গুরুত্বপূর্ণ বিষয় বিবেচনা করা প্রয়োজন।
+Automated Process:
 
-ফলাফলের ধরণ ও কার্যকারিতা:
-প্রমোশনের ফলাফলগুলো অনুমানের (estimate) ওপর ভিত্তি করে তৈরি করা হয়। আমাদের স্বয়ংক্রিয় সিস্টেম আপনার পোস্টটি প্রাসঙ্গিক দর্শকদের কাছে পৌঁছে দেওয়ার সর্বোচ্চ চেষ্টা করবে। তবে, অডিয়েন্স রিচ (কতজন দেখল), মানুষের আগ্রহ বা নির্দিষ্ট ফলাফলের ১০০% গ্যারান্টি দেওয়া সম্ভব নয়। এটি একটি সম্ভাবনা-ভিত্তিক প্রক্রিয়া যা প্রমোশনের ধরণ, সময় এবং দর্শকদের প্রতিক্রিয়ার ওপর নির্ভর করে।
+Both types of promotions work completely automatically—no complex setup required. Clicking 'Promote' or the respective 'Get Access' button starts the process instantly, and results are displayed automatically.
 
-ব্যবহারকারীর দায়িত্ব:
-প্রমোট করার আগে নিশ্চিত করুন যে আপনার পোস্টে দেওয়া তথ্য সঠিক, কার্যকর এবং আপ-টু-ডেট। ভুল বা অসম্পূর্ণ তথ্যের কারণে প্রমোশনের ফলাফল আশানুরূপ না হলে তার জন্য কোনো ক্ষতিপূরণ বা রিফান্ড Shadamon.com প্রদান করবে না। যদি ভুল তথ্যের কারণে কোনো চলমান প্রমোশন বন্ধ করে দেওয়া হয়, তবে সেই পেমেন্ট অফেরতযোগ্য হবে।
+Utilization of Payment:
+
+Upon initiation, payments become active and are utilized via system scheduling workflows to reach the target audience or unlock Connect Access.
+
+Cases Eligible for Full Refund:
+
+Failure to launch the service within a specified timeframe (e.g., within 24 hours of payment)—strictly due to technical errors (payment deducted but promotion/access not activated). In such cases, contact us via the Contact Us page with proof of transaction.
+
+Cases Eligible for Partial Refund (with Deductions):
+
+If Shadamon Invest determines in its sole discretion that a post/profile needs to be cancelled or rejected in the interest of maintaining platform standards—the unused portion of the active promotion will be refunded on a pro-rata basis after a 5% transaction fee deduction.
+
+Cases Where Refunds Are Not Applicable:
+
+- Shadamon Invest does not guarantee a specific number of views, invites, responses, or deal-closures; hence, failure to achieve expected results does not qualify for a refund.
+- Refunds do not apply if a user changes their mind, fails to use the promotion, or fails to submit required verification documents.
+- Payments for promotions stopped due to incorrect or policy-violating information are completely non-refundable.
+- If an account is terminated due to misuse or false information, previously paid fees will be retained as compensation, and refunds cannot be claimed.
+
+Refund Request Process:
+
+If eligible under the above terms, submit a request via the Contact Us page using your registered email/number within 3 months of payment, including invoice number, payment date, amount, and reason. We will review and process eligible refunds within 3 working days. Refunds will be returned to the original payment method and may take 5–15 working days to reflect.
+
+Summary:
+
+Shadamon Invest's promotion system is simple, transparent, and automated. Once payment is complete, it immediately activates to reach the maximum number of relevant viewers/potential connections, the results of which can be tracked directly by the user.`,
+        contentBn: `রিটার্ন & রিফান্ড পলিসি (Returns & Refund Policy)
+সর্বশেষ সংস্করণ: ১৭ সেপ্টেম্বর, ২০২৬
+
+এই পলিসি উভয় ধরনের পেইড প্রমোশনের জন্য প্রযোজ্য: ভিউ প্রমোশন (View-Boost) এবং কানেক্ট অ্যাক্সেস প্রমোশন (Only Me Connect / Shared Connect)।
+
+ফলাফলের প্রকৃতি ও কার্যকারিতা:
+
+প্রমোশনের ফলাফল (ভিউ সংখ্যা, ইনভাইট/আগ্রহ, কানেকশন) অনুমানের ওপর ভিত্তি করে তৈরি। আমাদের সিস্টেম আপনার পোস্টটি সর্বোচ্চ সংখ্যক প্রাসঙ্গিক দর্শকদের কাছে পৌঁছে দেওয়ার চেষ্টা করে, তবে অডিয়েন্স রিচ, দর্শকদের আগ্রহ বা নির্দিষ্ট সংখ্যক ইনভাইট/সাড়ার কোনো গ্যারান্টি দেওয়া হয় না। এটি প্রমোশনের ধরন, সময়, ক্যাটাগরি এবং দর্শকদের প্রতিক্রিয়ার ওপর নির্ভরশীল একটি সম্ভাবনা-ভিত্তিক প্রক্রিয়া।
+
+- ভিউ প্রমোশন: নির্ধারিত পরিশোধিত অর্থের বিনিময়ে (প্রতি ১০০ টাকায় নির্দিষ্ট ভিউ), নির্দিষ্ট মেয়াদের জন্য সমানভাবে বণ্টনকৃত ভিউ এবং অগ্রাধিকার র্যাঙ্কিং প্রদান করা হয়।
+- কানেক্ট অ্যাক্সেস প্রমোশন: "Only Me Connect" বা "Shared Connect" প্যাকেজ কেনার মাধ্যমে নির্দিষ্ট পরিমাণ/মেয়াদের চ্যাট, কল, প্রস্তাব পাঠানোর অ্যাক্সেস আনলক হয়—তবে কতজন ব্যবহারকারী এই অ্যাক্সেস ব্যবহার করবেন বা এটি প্রকৃত বিনিয়োগ/চুক্তিতে পরিণত হবে কিনা সে বিষয়ে প্ল্যাটফর্ম কোনো নিশ্চয়তা দেয় না।
+
+ব্যবহারকারীর দায়িত্ব:
+
+প্রমোট করার আগে আপনার পোস্টের তথ্য সঠিক, প্রাসঙ্গিক এবং হালনাগাদ নিশ্চিত করুন। ভুল বা অসম্পূর্ণ তথ্যের কারণে প্রমোশনের ফলাফল প্রত্যাশার চেয়ে কম হলে Shadamon Invest কোনো ক্ষতিপূরণ বা রিফান্ড প্রদান করবে না। যদি ভুল বা নীতি-লঙ্ঘনকারী তথ্যের কারণে কোনো চলমান প্রমোশন বন্ধ করে দেওয়া হয়, তবে সেই পেমেন্ট অফেরতযোগ্য হবে।
 
 ফলাফল ট্র্যাকিং এবং স্বচ্ছতা:
-প্রমোট করার পর, কতজন দর্শক বা ক্রেতা আপনার পোস্টে আগ্রহ দেখিয়েছেন তা আপনি সরাসরি দেখতে পাবেন। এই তথ্যগুলো আপনাকে ভবিষ্যতে আরও কার্যকরভাবে প্রমোশন পরিকল্পনা করতে সাহায্য করবে।
 
-স্বয়ংক্রিয় এবং সহজ ব্যবহার:
-Shadamon.com-এর প্রমোশন সিস্টেমটি সম্পূর্ণ স্বয়ংক্রিয়ভাবে কাজ করে। এর জন্য কোনো জটিল সেটআপ বা অতিরিক্ত ফিচার নির্বাচনের প্রয়োজন নেই। একবার 'Promote' বাটনে ক্লিক করলে প্রক্রিয়াটি তাৎক্ষণিকভাবে শুরু হয় এবং ফলাফল স্বয়ংক্রিয়ভাবে প্রদর্শিত হয়।
+প্রমোট করার পর, কতজন দর্শক আপনার পোস্ট দেখেছেন বা আগ্রহ প্রকাশ করেছেন তা আপনি সরাসরি দেখতে পাবেন (ভিউ প্রমোশনের জন্য ভিউ সংখ্যা, কানেক্ট অ্যাক্সেসের জন্য ইনভাইট/সাড়া সংখ্যা)। এই তথ্য আপনাকে ভবিষ্যতে আরও কার্যকরভাবে প্রমোশন পরিকল্পনা করতে সাহায্য করবে।
 
-প্রমোশন পেমেন্টের ব্যবহার:
-একবার প্রসেসিং শুরু হয়ে গেলে পেমেন্টটি স্বয়ংক্রিয়ভাবে সক্রিয় হয়ে যায়। পেমেন্টের অর্থটি সিস্টেমের শিডিউলিং ওয়ার্কফ্লোতে চলে যায় এবং প্রমোশনের বিভিন্ন ধাপ অনুযায়ী টার্গেটেড অডিয়েন্সের কাছে বিজ্ঞাপনটি পৌঁছে দিতে ব্যবহৃত হয়। তাই, প্রসেসিং শুরু হওয়ার পর পেমেন্টকৃত অর্থ সাধারণত অফেরতযোগ্য।
+স্বয়ংক্রিয় প্রক্রিয়া:
+
+উভয় ধরনের প্রমোশন সম্পূর্ণ স্বয়ংক্রিয়ভাবে কাজ করে—কোনো জটিল সেটআপের প্রয়োজন নেই। 'Promote' বা সংশ্লিষ্ট 'Get Access' বাটনে ক্লিক করলে প্রক্রিয়াটি তাৎক্ষণিকভাবে শুরু হয় এবং ফলাফল স্বয়ংক্রিয়ভাবে প্রদর্শিত হয়।
+
+পেমেন্টের ব্যবহার:
+
+পেমেন্ট সম্পন্ন হওয়ার সাথে সাথেই তা সক্রিয় হয় এবং লক্ষ্যযুক্ত দর্শকদের কাছে পৌঁছাতে বা কানেক্ট অ্যাক্সেস আনলক করতে সিস্টেমের শিডিউলিং ওয়ার্কফ্লোর মাধ্যমে ব্যবহৃত হয়।
+
+পূর্ণাঙ্গ রিফান্ডের যোগ্য ক্ষেত্রসমূহ:
+
+নির্ধারিত সময়সীমার মধ্যে (যেমন, পেমেন্টের ২৪ ঘণ্টার মধ্যে) পরিষেবা চালু করতে ব্যর্থ হওয়া—কঠোরভাবে প্রযুক্তিগত ত্রুটির কারণে (পেমেন্ট কেটে নেওয়া হয়েছে কিন্তু প্রমোশন/অ্যাক্সেস সক্রিয় হয়নি)। এই ধরনের ক্ষেত্রে, লেনদেনের প্রমাণসহ 'Contact Us' পেজের মাধ্যমে আমাদের সাথে যোগাযোগ করুন।
+
+আংশিক রিফান্ডের যোগ্য ক্ষেত্রসমূহ (কর্তন সাপেক্ষে):
+
+যদি Shadamon Invest তার একক বিবেচনায় নির্ধারণ করে যে প্ল্যাটফর্মের মান বজায় রাখার স্বার্থে কোনো পোস্ট/প্রোফাইল বাতিল বা প্রত্যাখ্যান করা প্রয়োজন—তবে সক্রিয় প্রমোশনের অব্যবহৃত অংশ ৫% ট্রানজেকশন ফি কাটার পর প্রোরোটা (Pro-rata) ভিত্তিতে ফেরত দেওয়া হবে।
+
+যেসব ক্ষেত্রে রিফান্ড প্রযোজ্য নয়:
+
+- Shadamon Invest নির্দিষ্ট সংখ্যক ভিউ, ইনভাইট, সাড়া বা চুক্তি সম্পাদনের গ্যারান্টি দেয় না; তাই প্রত্যাশিত ফলাফল অর্জনে ব্যর্থতা রিফান্ডের জন্য গ্রহণযোগ্য নয়।
+- ব্যবহারকারী তাদের সিদ্ধান্ত পরিবর্তন করলে, প্রমোশন ব্যবহার করতে ব্যর্থ হলে, বা প্রয়োজনীয় যাচাইকরণ নথি জমা দিতে ব্যর্থ হলে রিফান্ড প্রযোজ্য হবে না।
+- ভুল বা নীতি-লঙ্ঘনকারী তথ্যের কারণে বন্ধ করা প্রমোশনের পেমেন্ট সম্পূর্ণ অফেরতযোগ্য।
+- অপব্যবহার বা মিথ্যা তথ্যের কারণে অ্যাকাউন্ট বন্ধ করা হলে, পূর্বে পরিশোধিত ফি ক্ষতিপূরণ হিসেবে রেখে দেওয়া হবে এবং রিফান্ড দাবি করা যাবে না।
+
+রিফান্ড অনুরোধের প্রক্রিয়া:
+
+উপরোক্ত শর্তানুসারে যোগ্য হলে, পেমেন্টের ৩ মাসের মধ্যে ইনভয়েস নম্বর, পেমেন্টের তারিখ, পরিমাণ এবং কারণ উল্লেখ করে আপনার নিবন্ধিত ইমেইল/নম্বর ব্যবহার করে 'Contact Us' পেজের মাধ্যমে একটি অনুরোধ জমা দিন। আমরা ৩ কর্মদিবসের মধ্যে যোগ্য রিফান্ড পর্যালোচনা ও প্রক্রিয়া করব। রিফান্ড মূল পেমেন্ট মেথডে ফেরত দেওয়া হবে এবং তা প্রতিফলিত হতে ৫-১৫ কর্মদিবস সময় লাগতে পারে।
 
 সারসংক্ষেপ:
-Shadamon.com-এর প্রমোশন সিস্টেম সহজ, নিরাপদ এবং কার্যকর। পেমেন্ট সম্পন্ন হওয়ার পর এটি স্বয়ংক্রিয়ভাবে ডেলিভারি সিস্টেমে চলে যায় এবং সিস্টেম আপনার পোস্টটি সর্বোচ্চ সংখ্যক প্রাসঙ্গিক ভিজিটরের কাছে পৌঁছে দেওয়ার চেষ্টা করে, যার ফলাফল ব্যবহারকারী সরাসরি দেখতে পান।`
+
+Shadamon Invest-এর প্রমোশন সিস্টেম সহজ, স্বচ্ছ এবং স্বয়ংক্রিয়। পেমেন্ট সম্পন্ন হলে, এটি সর্বোচ্চ সংখ্যক প্রাসঙ্গিক দর্শক/সম্ভাব্য কানেকশনের কাছে পৌঁছানোর জন্য অবিলম্বে সক্রিয় হয়, যার ফলাফল ব্যবহারকারী সরাসরি ট্র্যাক করতে পারেন।`
     })
 };
 
