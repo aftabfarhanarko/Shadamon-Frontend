@@ -137,7 +137,7 @@ export default function Home() {
                 transition={{ duration: 0.5 }}
                 className="sticky top-0 z-50 w-full bg-[#0B071E]/95 backdrop-blur-md py-3.5 px-4 md:px-8 border-b border-purple-950/40 shadow-lg"
             >
-                <div className="max-w-7xl mx-auto flex items-center justify-between">
+                <div className="max-w-5xl mx-auto flex items-center justify-between">
                     {/* Brand Logo */}
                     <div className="flex items-center gap-3">
                         <Link href="/" className="flex items-center gap-3 group">
@@ -176,10 +176,10 @@ export default function Home() {
             </motion.header>
 
             {/* Hero Section */}
-            <section className="relative w-full bg-gradient-to-r from-[#0C081F] via-[#140E33] to-[#251949] text-white pt-10 pb-16 md:pt-16 md:pb-24 px-4 sm:px-8 overflow-hidden">
+            <section className="relative w-full bg-gradient-to-r from-[#0C081F] via-[#140E33] to-[#251949] text-white pt-10 pb-16 md:pt-16 md:pb-24 px-5 sm:px-8 overflow-hidden">
                 <div className="absolute top-1/2 right-0 -translate-y-1/2 w-[350px] md:w-[600px] h-[350px] bg-purple-600/20 rounded-full blur-[120px] pointer-events-none" />
 
-                <div className="relative max-w-7xl mx-auto flex flex-col items-start text-left">
+                <div className="relative max-w-5xl mx-auto flex flex-col items-center text-center">
                     <motion.div 
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -194,7 +194,7 @@ export default function Home() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.1 }}
-                        className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-[1.2] sm:leading-[1.25] tracking-tight mb-4"
+                        className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white leading-[1.25] sm:leading-[1.25] tracking-tight mb-4 text-center px-2 sm:px-0"
                     >
                         বিনিয়োগ নিয়ে বা দিয়ে,<br />
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-100 to-purple-300">লাভের পথে এগিয়ে যান</span>
@@ -204,7 +204,7 @@ export default function Home() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.2 }}
-                        className="text-purple-100/90 text-xs sm:text-sm md:text-base font-normal mb-8 sm:mb-10 max-w-xl opacity-90"
+                        className="text-purple-100/90 text-xs sm:text-sm md:text-base font-normal mb-6 sm:mb-8 max-w-xl opacity-90 text-center px-2 sm:px-0"
                     >
                         আপনি যা খুঁজছেন, তা পোস্ট করুন — সুযোগ আসুক আপনার কাছে
                     </motion.p>
@@ -213,7 +213,7 @@ export default function Home() {
                         initial={{ opacity: 0, y: 25 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.7, delay: 0.3 }}
-                        className="grid grid-cols-2 sm:flex sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 w-full sm:w-auto"
+                        className="flex flex-row items-center justify-center gap-1.5 sm:gap-3.5 w-full max-w-full px-1 sm:px-0"
                     >
                         <motion.button 
                             whileHover={{ scale: 1.04, y: -2 }}
@@ -221,12 +221,12 @@ export default function Home() {
                             onClick={() => {
                                 window.location.href = '/dashboard/post-ad?autoSelect=invest';
                             }}
-                            className="bg-white text-slate-900 rounded-xl sm:rounded-2xl px-2.5 py-2.5 sm:px-5 sm:py-3.5 flex items-center justify-start gap-2 sm:gap-3.5 shadow-xl hover:shadow-2xl shadow-purple-950/20 transition-all border border-white/40 text-left min-w-0 sm:min-w-[220px] group cursor-pointer"
+                            className="bg-white text-slate-900 rounded-xl px-2.5 py-2 sm:px-4 sm:py-2.5 flex items-center justify-center gap-1.5 sm:gap-2 shadow-md hover:shadow-xl transition-all border border-white/40 cursor-pointer group shrink"
                         >
-                            <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-purple-100 text-[#7C3AED] flex items-center justify-center shrink-0 group-hover:bg-[#7C3AED] group-hover:text-white transition-colors">
-                                <Sparkles className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                            <div className="w-5 h-5 sm:w-7 sm:h-7 rounded-lg bg-purple-100 text-[#7C3AED] flex items-center justify-center shrink-0 group-hover:bg-[#7C3AED] group-hover:text-white transition-colors">
+                                <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
                             </div>
-                            <span className="font-bold text-[11px] sm:text-base text-slate-900 leading-tight">
+                            <span className="font-bold text-[11px] sm:text-sm text-slate-900 leading-tight whitespace-nowrap">
                                 বিনিয়োগ করতে চাই
                             </span>
                         </motion.button>
@@ -237,12 +237,12 @@ export default function Home() {
                             onClick={() => {
                                 window.location.href = '/dashboard/post-ad?autoSelect=seek';
                             }}
-                            className="bg-gradient-to-r from-[#7C3AED] to-[#6D28D9] text-white rounded-xl sm:rounded-2xl px-2.5 py-2.5 sm:px-5 sm:py-3.5 flex items-center justify-start gap-2 sm:gap-3.5 shadow-xl shadow-purple-900/40 transition-all border border-purple-400/30 text-left min-w-0 sm:min-w-[220px] cursor-pointer"
+                            className="bg-gradient-to-r from-[#7C3AED] to-[#6D28D9] text-white rounded-xl px-2.5 py-2 sm:px-4 sm:py-2.5 flex items-center justify-center gap-1.5 sm:gap-2 shadow-md hover:shadow-xl transition-all border border-purple-400/30 cursor-pointer shrink"
                         >
-                            <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-white/20 text-white flex items-center justify-center shrink-0">
-                                <Grid className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                            <div className="w-5 h-5 sm:w-7 sm:h-7 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
+                                <Grid className="w-3 h-3 sm:w-4 sm:h-4" />
                             </div>
-                            <span className="font-bold text-[11px] sm:text-base text-white leading-tight">
+                            <span className="font-bold text-[11px] sm:text-sm text-white leading-tight whitespace-nowrap">
                                 ব্যবসার জন্য টাকা দরকার
                             </span>
                         </motion.button>
@@ -252,7 +252,7 @@ export default function Home() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.5, delay: 0.5 }}
-                        className="flex items-center gap-1.5 text-xs text-purple-200/80 mt-4 pl-1"
+                        className="flex items-center justify-center gap-1.5 text-xs text-purple-200/80 mt-4"
                     >
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 inline" />
                         <span>✓ সম্পূর্ণ ফ্রিতে পোস্ট করুন</span>
@@ -261,7 +261,7 @@ export default function Home() {
             </section>
 
             {/* Featured / Recent Posts Section */}
-            <section className="w-full max-w-7xl mx-auto px-4 md:px-6 py-10 sm:py-16">
+            <section className="w-full max-w-5xl mx-auto px-5 sm:px-6 py-10 sm:py-16">
                 <motion.div 
                     initial={{ opacity: 0, y: 15 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -298,7 +298,7 @@ export default function Home() {
                         viewport={{ amount: 0.15 }}
                         className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6"
                     >
-                        {displayAds.map((ad: any, index: number) => {
+                        {displayAds.slice(0, 4).map((ad: any, index: number) => {
                             const isPurpleBadge = ad.badgeType ? ad.badgeType === 'purple' : (index % 2 === 0);
                             return (
                                 <motion.div 
@@ -306,20 +306,20 @@ export default function Home() {
                                     variants={cardVariants}
                                     whileHover={{ y: -6, scale: 1.015 }}
                                     whileTap={{ scale: 0.98 }}
-                                    className="h-full"
+                                    className={`h-full ${index >= 2 ? 'hidden sm:block' : ''}`}
                                 >
                                     <Link 
                                         href={ad._id && !ad._id.startsWith('sample') ? `/dashboard?ad=${ad._id}` : '/dashboard'} 
                                         className="block h-full group"
                                     >
-                                        <div className="relative bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/90 shadow-sm hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 h-full flex flex-col justify-between hover:border-purple-300 overflow-hidden">
+                                        <div className="relative bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/90 shadow-sm hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 h-full flex flex-col justify-between hover:border-purple-300 overflow-hidden">
                                             {/* Top accent bar on hover */}
                                             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                             
                                             <div>
                                                 {/* Category Tag */}
-                                                <div className="flex items-center justify-between mb-2 sm:mb-3">
-                                                    <span className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold tracking-wide ${
+                                                <div className="flex items-center justify-between mb-1.5 sm:mb-2.5">
+                                                    <span className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 rounded-full text-[9.5px] sm:text-[11px] font-semibold tracking-wide ${
                                                         isPurpleBadge 
                                                             ? 'bg-purple-50 text-purple-700 border border-purple-200/60' 
                                                             : 'bg-emerald-50 text-emerald-800 border border-emerald-200/60'
@@ -330,27 +330,27 @@ export default function Home() {
                                                 </div>
 
                                                 {/* Title */}
-                                                <h3 className="font-bold text-slate-900 text-xs sm:text-base md:text-lg mb-1.5 line-clamp-2 group-hover:text-[#7C3AED] transition-colors leading-snug">
+                                                <h3 className="font-bold text-slate-900 text-[11px] sm:text-sm md:text-base mb-1 line-clamp-2 group-hover:text-[#7C3AED] transition-colors leading-snug">
                                                     {ad.title || ad.headline}
                                                 </h3>
 
                                                 {/* Location */}
-                                                <p className="text-[10px] sm:text-xs text-slate-500 font-medium mb-3 sm:mb-4 flex items-center gap-1">
+                                                <p className="text-[9.5px] sm:text-[11px] text-slate-500 font-medium mb-2.5 sm:mb-3 flex items-center gap-1">
                                                     <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400 shrink-0" />
                                                     <span className="truncate">{ad.location || 'ঢাকা • বাংলাদেশ'}</span>
                                                 </p>
                                             </div>
 
                                             {/* Bottom Price / Return Rate */}
-                                            <div className="pt-2.5 sm:pt-3.5 border-t border-slate-100 flex items-center justify-between">
+                                            <div className="pt-2 sm:pt-3 border-t border-slate-100 flex items-center justify-between">
                                                 <div className="flex flex-col">
-                                                    <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium uppercase tracking-wider">অফার / রিটার্ন</span>
-                                                    <span className="text-xs sm:text-base font-bold text-purple-700 group-hover:text-purple-900 transition-colors">
+                                                    <span className="text-[8.5px] sm:text-[9.5px] text-slate-400 font-medium uppercase tracking-wider">অফার / রিটার্ন</span>
+                                                    <span className="text-[11px] sm:text-sm md:text-base font-bold text-purple-700 group-hover:text-purple-900 transition-colors">
                                                         {ad.returnRate || formatAdPrice(ad) || 'আলোচনা সাপেক্ষে'}
                                                     </span>
                                                 </div>
-                                                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-purple-50 group-hover:bg-[#7C3AED] text-[#7C3AED] group-hover:text-white flex items-center justify-center transition-all duration-300 shadow-sm shrink-0">
-                                                    <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-0.5 transition-transform" />
+                                                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl bg-purple-50 group-hover:bg-[#7C3AED] text-[#7C3AED] group-hover:text-white flex items-center justify-center transition-all duration-300 shadow-sm shrink-0">
+                                                    <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:translate-x-0.5 transition-transform" />
                                                 </div>
                                             </div>
                                         </div>
@@ -364,7 +364,7 @@ export default function Home() {
 
             {/* Why Search Here Section */}
             <section className="w-full py-10 sm:py-16 px-4">
-                <div className="max-w-7xl mx-auto">
+                <div className="max-w-5xl mx-auto">
                     <motion.h2 
                         initial={{ opacity: 0, y: 15 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -455,7 +455,7 @@ export default function Home() {
 
             {/* Footer */}
             <footer className="w-full bg-[#EFF1F9] text-slate-600 py-5 px-4 mt-auto border-t border-slate-200/60 text-[11px] sm:text-xs">
-                <div className="max-w-7xl mx-auto flex flex-wrap justify-center items-center gap-x-3 gap-y-2 text-slate-600 font-medium">
+                <div className="max-w-5xl mx-auto flex flex-wrap justify-center items-center gap-x-3 gap-y-2 text-slate-600 font-medium">
                     <button onClick={() => openInfoModal('about')} className="hover:text-purple-700 transition-colors cursor-pointer">About</button>
                     <span>|</span>
                     <button onClick={() => openInfoModal('privacy')} className="hover:text-purple-700 transition-colors cursor-pointer">Privacy & Policy</button>
