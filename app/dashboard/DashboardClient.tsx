@@ -1075,307 +1075,11 @@ export default function DashboardClient() {
   };
 
   return (
-    <div className="w-full max-w-[1320px] mx-auto px-0 lg:px-4 xl:px-0 flex flex-col lg:flex-row items-start justify-center">
-      {/* Left Sidebar - 300px */}
-      <div className="hidden lg:block w-[300px] flex-none sticky top-4 h-[calc(100vh-32px)] overflow-y-auto no-scrollbar pb-10">
-        <div className="flex flex-col min-h-full space-y-4">
-          <div className="flex-1 space-y-4">
-            {/* 1. All Categories & Locations Card */}
-            <div className="bg-white rounded-lg overflow-hidden">
-              <div className="p-2 space-y-2">
-                {/* Categories Section */}
-                <div className="space-y-1">
-                  <div
-                    className="flex items-center justify-between group cursor-pointer"
-                    onClick={() =>
-                      setExpandedCategory(
-                        expandedCategory === "main" ? null : "main",
-                      )
-                    }
-                  >
-                    <h3 className="text-[13px] text-black">{t("category")}</h3>
-                    <ChevronDown
-                      className={cn(
-                        "w-5 h-5 text-black group-hover:text-black transition-all",
-                        (expandedCategory === "main" ||
-                          expandedCategory !== null) &&
-                          "rotate-180",
-                      )}
-                    />
-                  </div>
-
-                  {expandedCategory !== null && (
-                    <div className="pl-1 space-y-1">
-                      <Link
-                        href={getCategoryUrl("")}
-                        scroll={false}
-                        className="block text-[13px] text-black ml-4 tracking-wider cursor-pointer hover:text-[#0088cc] transition-colors"
-                        onClick={() => {
-                          setFilters({
-                            ...filters,
-                            category: "",
-                            subCategory: "",
-                          });
-                          // handleResetSavedSearch();
-                        }}
-                      >
-                        {t("all_categories")}
-                      </Link>
-
-                      {categories.map((cat, idx) => {
-                        // Assign icons based on name or index to match image
-                        const CategoryIcon =
-                          idx === 0 ? Smartphone : idx === 1 ? Grid : Package;
-
-                        return (
-                          <div key={cat._id} className="space-y-0.5">
-                            <Link
-                              href={getCategoryUrl(cat.name)}
-                              scroll={false}
-                              className="flex items-center justify-between group cursor-pointer"
-                              onClick={() => {
-                                toggleCategory(cat._id);
-                                setFilters({
-                                  ...filters,
-                                  category: cat.name,
-                                  subCategory: "",
-                                });
-                                setActiveSelectorTab("category");
-                              }}
-                            >
-                              <div className="flex items-center gap-1 text-[15px] text-[#0088cc] font-medium hover:underline">
-                                {cat.icon && getImageUrl(cat.icon) ? (
-                                  <img
-                                    src={getImageUrl(cat.icon) || undefined}
-                                    className="w-4 h-4 object-contain shrink-0"
-                                    alt=""
-                                    loading="lazy"
-                                  />
-                                ) : (
-                                  <CategoryIcon className="w-4 h-4 text-black shrink-0" />
-                                )}
-                                <span
-                                  className={cn(
-                                    (expandedCategory === cat._id ||
-                                      filters.category === cat.name) &&
-                                      "text-black",
-                                  )}
-                                >
-                                  {getLocalizedCategoryName(
-                                    cat.name,
-                                    cat.categoryNameBn,
-                                  )}
-                                </span>
-                                <span className="text-black font-normal ml-0.5">
-                                  (
-                                  {totalAds
-                                    .filter((ad) => ad.category === cat.name)
-                                    .length.toLocaleString()}
-                                  )
-                                </span>
-                              </div>
-                              {cat.subcategories.length > 0 && (
-                                <ChevronDown
-                                  className={cn(
-                                    "w-3.5 h-3.5 text-black transition-all",
-                                    expandedCategory === cat._id &&
-                                      "rotate-180",
-                                  )}
-                                />
-                              )}
-                            </Link>
-
-                            {/* Subcategories with correct indentation and bullet points */}
-                            {expandedCategory === cat._id &&
-                              cat.subcategories.length > 0 && (
-                                <div className="pl-6 space-y-0.5 border-l border-slate-100 ml-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                                  {cat.subcategories.map((sub) => (
-                                    <Link
-                                      key={sub._id}
-                                      href={getCategoryUrl(cat.name, sub.name)}
-                                      scroll={false}
-                                      className="flex items-center gap-1 text-[13px] text-[#0088cc] hover:underline cursor-pointer group"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setFilters({
-                                          ...filters,
-                                          category: cat.name,
-                                          subCategory: sub.name,
-                                        });
-                                        setActiveSelectorTab("category");
-                                      }}
-                                    >
-                                      {sub.image && getImageUrl(sub.image) ? (
-                                        <img
-                                          src={
-                                            getImageUrl(sub.image) || undefined
-                                          }
-                                          className="w-4 h-4 object-contain shrink-0"
-                                          alt=""
-                                          loading="lazy"
-                                        />
-                                      ) : (
-                                        <div
-                                          className={cn(
-                                            "w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-[#0088cc] transition-colors",
-                                            filters.subCategory === sub.name &&
-                                              "bg-[#0088cc]",
-                                          )}
-                                        />
-                                      )}
-                                      <span
-                                        className={cn(
-                                          filters.subCategory === sub.name &&
-                                            "text-black",
-                                        )}
-                                      >
-                                        {getLocalizedCategoryName(
-                                          sub.name,
-                                          sub.subCategoryNameBn,
-                                        )}
-                                      </span>
-                                      <span className="text-black">
-                                        (
-                                        {totalAds
-                                          .filter(
-                                            (ad) => ad.subCategory === sub.name,
-                                          )
-                                          .length.toLocaleString()}
-                                        )
-                                      </span>
-                                    </Link>
-                                  ))}
-                                </div>
-                              )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                <div className="h-[1px] bg-slate-100 w-full" />
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Footer Links & Apps Card */}
-          <div className="bg-white rounded-lg p-3 space-y-4 mt-auto shadow-sm border border-slate-50">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-black font-medium">
-              <Link
-                href={INFO_PAGE_ROUTES.about}
-                className="hover:text-black transition-colors"
-              >
-                {t("about_us")}
-              </Link>
-              <span>•</span>
-              <Link
-                href={INFO_PAGE_ROUTES.terms}
-                className="hover:text-black transition-colors"
-              >
-                {t("terms_and_con")}
-              </Link>
-              <span>•</span>
-              <Link
-                href={INFO_PAGE_ROUTES.privacy}
-                className="hover:text-black transition-colors"
-              >
-                {t("privacy_policy")}
-              </Link>
-              <span>•</span>
-              <Link
-                href={INFO_PAGE_ROUTES.contact}
-                className="hover:text-black transition-colors"
-              >
-                {t("contact_us")}
-              </Link>
-              <span>•</span>
-              <Link
-                href={INFO_PAGE_ROUTES.safety}
-                className="hover:text-black transition-colors"
-              >
-                {language === "bn" ? "Safety Tips" : "Safety Tips"}
-              </Link>
-              <span>•</span>
-              <button
-                onClick={handleFooterPromoteClick}
-                className="hover:text-black transition-colors"
-              >
-                {t("promote")}
-              </button>
-            </div>
-
-            <div className="space-y-2.5">
-              <p className="text-[12px] text-black font-semibold">
-                {t("follow_us")}
-              </p>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() =>
-                    window.open(
-                      "https://www.facebook.com/ShadamonDotCom",
-                      "_blank",
-                    )
-                  }
-                  className="w-7 h-7 bg-[#1877F2] rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity"
-                >
-                  <FaFacebookF className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() =>
-                    window.open(
-                      "https://www.tiktok.com/@shadamondotcom",
-                      "_blank",
-                    )
-                  }
-                  className="w-7 h-7 bg-black rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity"
-                >
-                  <FaTiktok className="w-3 h-3" />
-                </button>
-                <button
-                  onClick={() =>
-                    window.open(
-                      "https://www.instagram.com/shadamondotcom/",
-                      "_blank",
-                    )
-                  }
-                  className="w-7 h-7 bg-gradient-to-tr from-[#FFB344] via-[#F43C78] to-[#9932CC] rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity"
-                >
-                  <FaInstagram className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() =>
-                    window.open(
-                      "https://www.youtube.com/@ShadaMondotcom",
-                      "_blank",
-                    )
-                  }
-                  className="w-7 h-7 bg-[#FF0000] rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity"
-                >
-                  <FaYoutube className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="pt-2 flex flex-col gap-0.5 border-t border-slate-100">
-              <p className="text-[11px] text-slate-500 font-medium tracking-tight">
-                &copy; {new Date().getFullYear()} shadamon.com
-              </p>
-              <p className="text-[11px] text-slate-500 leading-tight">
-                Manage by Shadamon
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Gap 1: 50px */}
-      <div className="hidden lg:block w-[50px] flex-none"></div>
-
-      {/* Center Content - Feed / Ads: 565px */}
+    <div className="w-full max-w-[1030px] mx-auto px-0 lg:px-4 xl:px-0 flex flex-col lg:flex-row items-start justify-center">
+      {/* Center Content - Feed / Ads: 785px */}
       <div
         id="center-feed-container"
-        className="w-full lg:w-[565px] flex-none space-y-4 pb-32 lg:pb-20"
+        className="w-full lg:w-[785px] flex-none space-y-4 pb-32 lg:pb-20"
       >
         {/* Modern Hero Section */}
         {!filters.category && !filters.location && !filters.search && (
@@ -1730,7 +1434,7 @@ export default function DashboardClient() {
                                   }
                                 }}
                                 className={cn(
-                                  "relative bg-gradient-to-r from-purple-100/90 via-pink-100/70 to-purple-50/60 rounded-2xl lg:rounded-3xl p-3 lg:p-4 border shadow-sm cursor-pointer group hover:shadow-md transition-all flex flex-col md:flex-row gap-4 lg:gap-5 mx-[5px] lg:mx-0 overflow-hidden",
+                                  "relative bg-gradient-to-r from-purple-100/90 via-pink-100/80 to-pink-200/90 rounded-2xl lg:rounded-3xl p-3 lg:p-4 border shadow-sm cursor-pointer group hover:shadow-md transition-all flex flex-col md:flex-row gap-4 lg:gap-5 mx-[5px] lg:mx-0 overflow-hidden",
                                   hasHighlightLabel(block.bigAd)
                                     ? "border-orange-500 shadow-[0_12px_30px_rgba(249,115,22,0.25)] ring-2 ring-orange-400/40"
                                     : "border-purple-200/60",
@@ -1912,7 +1616,7 @@ export default function DashboardClient() {
                                       openAdFromFeed(ad);
                                     }}
                                     className={cn(
-                                      "relative bg-gradient-to-r from-purple-100/90 via-pink-100/70 to-purple-50/60 rounded-2xl border cursor-pointer group flex flex-col overflow-hidden shadow-xs hover:shadow-md transition-all justify-between border-purple-200/60",
+                                      "relative bg-gradient-to-r from-purple-100/90 via-pink-100/80 to-pink-200/90 rounded-2xl border cursor-pointer group flex flex-col overflow-hidden shadow-xs hover:shadow-md transition-all justify-between border-purple-200/60",
                                       hasHighlightLabel(ad)
                                         ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-2 ring-orange-400/30"
                                         : "border-purple-200/60",
@@ -2349,8 +2053,8 @@ export default function DashboardClient() {
         </button>
       </div>
 
-      {/* Gap 2: 50px */}
-      <div className="hidden xl:block w-[50px] flex-none relative self-stretch">
+      {/* Gap 2: 45px */}
+      <div className="hidden lg:block w-[45px] flex-none relative self-stretch">
         <div className="sticky top-[90vh] pl-1">
           <button
             onClick={() =>
@@ -2365,92 +2069,127 @@ export default function DashboardClient() {
         </div>
       </div>
 
-      {/* Right Sidebar - Popular Seller: 230px */}
-      <div className="hidden xl:block w-[230px] flex-none sticky top-4 h-[calc(100vh-32px)] overflow-y-auto no-scrollbar pb-10 z-40">
-        <div className="bg-white rounded-lg w-full">
-          <div className="p-3 pb-1">
-            <h3 className="text-[13px] text-black">{t("popular_seller")}</h3>
+      {/* Right Sidebar - Promotions Column & Footer Links: 200px */}
+      <div className="hidden lg:block w-[200px] flex-none sticky top-4 h-[calc(100vh-32px)] overflow-y-auto no-scrollbar pb-10 z-40 space-y-4">
+        <div 
+          onClick={handleFooterPromoteClick}
+          className="w-full bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer group"
+        >
+          <img
+            src="/promet.png"
+            alt="Promote"
+            className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        </div>
+
+        {/* Footer Links & Social Media Card */}
+        <div className="bg-white rounded-xl p-3.5 space-y-3.5 shadow-sm border border-slate-200/80">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-black font-medium leading-snug">
+            <Link
+              href={INFO_PAGE_ROUTES.about}
+              className="hover:text-[#0088cc] transition-colors"
+            >
+              About Us
+            </Link>
+            <span>•</span>
+            <Link
+              href={INFO_PAGE_ROUTES.terms}
+              className="hover:text-[#0088cc] transition-colors"
+            >
+              Term & Con
+            </Link>
+            <span>•</span>
+            <Link
+              href={INFO_PAGE_ROUTES.privacy}
+              className="hover:text-[#0088cc] transition-colors"
+            >
+              Privacy Policy
+            </Link>
+            <span>•</span>
+            <Link
+              href={INFO_PAGE_ROUTES.contact}
+              className="hover:text-[#0088cc] transition-colors"
+            >
+              Contact Us
+            </Link>
+            <span>•</span>
+            <Link
+              href={INFO_PAGE_ROUTES.safety}
+              className="hover:text-[#0088cc] transition-colors"
+            >
+              Safety Tips
+            </Link>
+            <span>•</span>
+            <button
+              onClick={handleFooterPromoteClick}
+              className="hover:text-[#0088cc] transition-colors"
+            >
+              Promote
+            </button>
           </div>
 
-          <div className="space-y-3.5 px-3 pb-3">
-            {premiumUsers.length === 0 ? (
-              <div className="py-8 text-center text-black text-sm italic">
-                <p>{t("no_premium_merchants")}</p>
-              </div>
-            ) : (
-              premiumUsers.slice(0,9).map((user) => (
-                <div key={user._id} className="flex gap-3">
-                  <div
-                    className="shrink-0 cursor-pointer"
-                    onClick={() => handleProfileClick(user._id)}
-                  >
-                    <div className="w-14 h-14 rounded-full overflow-hidden border border-slate-100 bg-slate-200 relative group">
-                      {user.photo ? (
-                        <img
-                          src={getImageUrl(user.photo) || undefined}
-                          alt={user.storeName || user.name}
-                          className="w-full h-full object-contain group-hover:scale-110 transition-transform"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-black font-bold text-xl uppercase">
-                          {(user.storeName || user.name).charAt(0)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0 h-14 flex flex-col justify-between py-0.5">
-                    <div className="flex flex-col">
-                      <div
-                        className="flex items-center gap-1.5 leading-tight cursor-pointer group/name"
-                        onClick={() => handleProfileClick(user._id)}
-                      >
-                        <h4 className=" text-black text-[15px] truncate group-hover/name:text-[#0088cc] transition-colors">
-                          {user.storeName || user.name}
-                        </h4>
-                        {user.mVerified && (
-                          <VerifiedBadge className="translate-y-[0.5px]" />
-                        )}
-                      </div>
-                      <p className="text-[10px] text-slate-500 -mt-0.5">
-                        {user.followers?.length || 0} {t("follower")}
-                      </p>
-                    </div>
-                    <button
-                      onClick={(e) => handleFollowUser(e, user._id)}
-                      className={cn(
-                        "flex items-center justify-center gap-1 px-2.5 h-5 border rounded-full text-[10px] font-bold transition-all w-fit",
-                        user.isFollowing
-                          ? "bg-slate-100 text-slate-500 border-slate-300"
-                          : "border-slate-300 text-slate-500 hover:bg-slate-50 hover:border-slate-400",
-                      )}
-                    >
-                      {!user.isFollowing && (
-                        <span className="text-sm leading-none -mt-0.5">+</span>
-                      )}
-                      {user.isFollowing ? t("Unfollow") : t("Follow")}
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-            {!premiumUsers.length ? "" : (
-              <div className="flex justify-center pt-2">
-  <button
-    onClick={() => setIsMerchantsModalOpen(true)}
-    className="flex items-center justify-center w-full gap-1 px-4 py-2 border border-slate-300 rounded-full text-[11px] font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-400 transition-all"
-  >
-    {language === "bn" ? "আরও বিক্রেতা" : "More Merchant"}
-    <ChevronRight className = "w-3.5 h-3.5 text-black"/>
-  </button>
-</div>
-            )  }
+          <div className="space-y-2 pt-1 border-t border-slate-100">
+            <p className="text-[12px] text-black font-bold">
+              ফলো করুন
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() =>
+                  window.open(
+                    "https://www.facebook.com/ShadamonDotCom",
+                    "_blank",
+                  )
+                }
+                className="w-7 h-7 bg-[#1877F2] rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity"
+              >
+                <FaFacebookF className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() =>
+                  window.open(
+                    "https://www.tiktok.com/@shadamondotcom",
+                    "_blank",
+                  )
+                }
+                className="w-7 h-7 bg-black rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity"
+              >
+                <FaTiktok className="w-3 h-3" />
+              </button>
+              <button
+                onClick={() =>
+                  window.open(
+                    "https://www.instagram.com/shadamondotcom/",
+                    "_blank",
+                  )
+                }
+                className="w-7 h-7 bg-gradient-to-tr from-[#FFB344] via-[#F43C78] to-[#9932CC] rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity"
+              >
+                <FaInstagram className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() =>
+                  window.open(
+                    "https://www.youtube.com/@ShadaMondotcom",
+                    "_blank",
+                  )
+                }
+                className="w-7 h-7 bg-[#FF0000] rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity"
+              >
+                <FaYoutube className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="pt-2 flex flex-col gap-0.5 border-t border-slate-100">
+            <p className="text-[11px] text-slate-600 font-medium tracking-tight">
+              &copy; {new Date().getFullYear()} shadamon.com
+            </p>
+            <p className="text-[11px] text-slate-500 leading-tight">
+              Manage by Shadamon
+            </p>
           </div>
         </div>
       </div>
-
-      {/* Balancing Spacer: 70px,, */}
-      <div className="hidden xl:block w-[70px] flex-none" />
 
       <InfoModal
         isOpen={showFooterPromoteModal}

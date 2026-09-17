@@ -975,10 +975,7 @@ export default function DashboardLayoutClient({
     <div className="h-screen bg-[#F1F5F9] font-sans overflow-hidden flex flex-col relative">
       <AdPopup />
       <nav
-        className={cn(
-          "md:hidden fixed bottom-0 inset-x-0 z-[60] h-[52px] pb-[max(1px,env(safe-area-inset-bottom))] transition-transform duration-300",
-          !isNavbarVisible && "translate-y-[115%]",
-        )}
+        className="md:hidden fixed bottom-0 inset-x-0 z-[60] h-[52px] pb-[max(1px,env(safe-area-inset-bottom))]"
       >
         <div className="absolute inset-x-0 top-0 bottom-0 rounded-t-[22px] rounded-b-none bg-gradient-to-b from-white to-[#F6FAFF] border-t border-slate-200 shadow-[0_-12px_24px_-10px_rgba(15,23,42,0.45)]" />
 
@@ -1175,17 +1172,12 @@ export default function DashboardLayoutClient({
         )}
 
         {/* Header Wrapper */}
-        <div
-          className={cn(
-            "z-50 sticky top-0 transition-transform duration-300",
-            !isNavbarVisible && "-translate-y-full",
-          )}
-        >
+        <div className="z-50 sticky top-0">
           <header className="bg-white border-b border-slate-200 h-14 md:h-16 w-full">
-            <div className="max-w-[1320px] mx-auto px-2.5 md:px-4 h-full flex items-center justify-between md:justify-center">
+            <div className="max-w-[1030px] mx-auto px-2.5 md:px-4 xl:px-0 h-full flex items-center justify-between">
               <div
                 className={cn(
-                  "md:w-[300px] flex-none flex items-center gap-1.5 md:gap-2",
+                  "flex items-center gap-1.5 md:gap-2 shrink-0",
                   isMobileSearchOpen && "hidden md:flex",
                 )}
               >
@@ -1217,14 +1209,10 @@ export default function DashboardLayoutClient({
                 </Link>
               </div>
 
-              <div className="w-[50px] flex-none hidden md:block"></div>
-
               <div
                 className={cn(
-                  "md:w-[565px] flex-1 md:flex-none flex items-center gap-1.5 md:gap-4 relative",
-                  !isMobileSearchOpen
-                    ? "flex justify-end md:justify-center"
-                    : "flex",
+                  "flex-1 flex items-center justify-end gap-2 md:gap-4 relative ml-4",
+                  !isMobileSearchOpen ? "flex" : "flex",
                 )}
                 ref={searchRef}
               >
