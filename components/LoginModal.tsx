@@ -203,7 +203,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegis
 
             // @ts-ignore
             const client = window.google.accounts.oauth2.initTokenClient({
-                client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+                client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "412572339719-kt7g5pr4v92qr4akahbeev84g6l0artr.apps.googleusercontent.com",
                 scope: 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
                 callback: (response: any) => {
                     if (response.access_token) {
