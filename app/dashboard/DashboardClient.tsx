@@ -1499,7 +1499,7 @@ export default function DashboardClient() {
                             )}
 
                             {block.smallAds.length > 0 && (
-                              <div className="grid grid-cols-2 gap-3 lg:gap-4 bg-transparent pb-2 mx-[5px] lg:mx-0">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4 bg-transparent pb-2 mx-[5px] lg:mx-0">
                                 {block.smallAds.map((ad) => (
                                   <div
                                     key={ad._id}
@@ -1509,7 +1509,7 @@ export default function DashboardClient() {
                                     className="relative bg-white rounded-2xl border border-slate-200/80 cursor-pointer group flex flex-col overflow-hidden shadow-none transition-all justify-between"
                                   >
                                     {/* Card Image Header - Compact Image */}
-                                    <div className="relative w-full aspect-[16/10] bg-slate-100 overflow-hidden shrink-0">
+                                    <div className="relative w-full h-[140px] sm:h-[150px] md:h-[160px] bg-slate-100 overflow-hidden shrink-0">
                                       {getImageUrl(ad.images?.[0]) ? (
                                         <>
                                           <img
