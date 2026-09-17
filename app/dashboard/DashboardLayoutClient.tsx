@@ -26,6 +26,7 @@ import {
   ChevronRight,
   ChevronDown,
   Megaphone,
+  Sparkles,
 } from "lucide-react";
 import {
   RiMailFill,
@@ -166,6 +167,7 @@ export default function DashboardLayoutClient({
     string | undefined
   >(undefined);
   const [user, setUser] = useState<any>(null);
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState<boolean>(() => typeof window !== 'undefined' && !!Cookies.get("token"));
 
   const [mobileEntryReason, setMobileEntryReason] = useState<
     "post_ad" | "account" | "message" | "report" | "promote" | "send_cv"
@@ -573,6 +575,7 @@ export default function DashboardLayoutClient({
   useEffect(() => {
     const fetchUserAndSetupSocket = async () => {
       const token = Cookies.get("token");
+      setIsUserLoggedIn(!!token);
       if (!token) {
         setUser(null);
         setUnreadCount(0);
@@ -618,6 +621,7 @@ export default function DashboardLayoutClient({
     fetchUserAndSetupSocket();
 
     const handleAuthChange = () => {
+      setIsUserLoggedIn(!!Cookies.get("token"));
       fetchUserAndSetupSocket();
       fetchUnreadCount();
     };
@@ -1474,7 +1478,17 @@ export default function DashboardLayoutClient({
         )}
 
         <div className="max-w-[1320px] mx-auto px-0 lg:px-4 pt-0 lg:pt-4">
-          {children}
+          {(pathname === "/dashboard/post-ad" || pathname === "/d/post-ad") && !isUserLoggedIn ? (
+            <div className="min-h-[calc(100vh-140px)] w-full bg-gradient-to-b from-slate-50 via-purple-50/20 to-slate-50 rounded-2xl border border-slate-200/60 shadow-sm flex flex-col items-center justify-center p-8 my-4 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-purple-100 text-[#7C3AED] flex items-center justify-center mb-4 shadow-sm border border-purple-200/50 animate-pulse">
+                <Sparkles className="w-8 h-8 text-[#7C3AED]" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">বিজ্ঞাপন পোস্ট করার জন্য মোডালটি ব্যবহার করুন</h3>
+              <p className="text-sm text-slate-500 max-w-md">লগইন বা রেজিস্ট্রেশন সম্পন্ন করলে আপনার বিজ্ঞাপনের বিস্তারিত ড্যাশবোর্ডে দেখতে পাবেন।</p>
+            </div>
+          ) : (
+            children
+          )}
         </div>
       </main>
 

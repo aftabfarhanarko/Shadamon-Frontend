@@ -785,6 +785,10 @@ I have sent my CV for your review.`;
             if (initialTab) {
                 setActiveTab(initialTab);
             }
+            const token = Cookies.get('token');
+            if (token) {
+                setIsOwnAccount(true);
+            }
             fetchUserData();
         } else {
             // Aggressively reset all states when closed to prevent stale data
@@ -815,11 +819,13 @@ I have sent my CV for your review.`;
 
     const fetchUserData = async () => {
         setLoading(true);
-        setUserData(null); // Clear previous data to avoid flickering
         setUserAds([]); // Clear previous ads
-        setIsOwnAccount(false); // Reset account ownership status
+        const token = Cookies.get('token');
+        if (token && (!userId || userId === 'me')) {
+            setIsOwnAccount(true);
+        }
+
         try {
-            const token = Cookies.get('token');
             let currentUser = null;
 
             // 1. Determine if viewing own account
@@ -829,7 +835,7 @@ I have sent my CV for your review.`;
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    currentUser = data;
+                    currentUser = data?.data || data;
                 }
             }
 
@@ -840,23 +846,36 @@ I have sent my CV for your review.`;
             if (!targetUserId && currentUser) {
                 targetUserId = currentUser._id;
                 own = true;
-            } else if (targetUserId && currentUser && targetUserId === currentUser._id) {
+            } else if (targetUserId && currentUser && (
+                String(targetUserId) === String(currentUser._id) || 
+                (currentUser.sellerPageUrl && String(targetUserId).toLowerCase() === String(currentUser.sellerPageUrl).toLowerCase())
+            )) {
+                own = true;
+            } else if (!targetUserId && token) {
                 own = true;
             }
 
-            setIsOwnAccount(own);
-
             let finalUser = null;
-            if (targetUserId) {
-                if (own && currentUser) {
-                    finalUser = currentUser;
-                    setUserData(currentUser);
-                } else {
-                    // Fetch fresh public profile for target user
-                    try {
-                        const profileRes = await fetch(`${API_BASE_URL}/api/user/profile/${targetUserId}`);
-                        if (profileRes.ok) {
-                            const profileData = await profileRes.json();
+            if (targetUserId && currentUser && (String(targetUserId) === String(currentUser._id) || (currentUser.sellerPageUrl && String(targetUserId).toLowerCase() === String(currentUser.sellerPageUrl).toLowerCase()))) {
+                own = true;
+                finalUser = currentUser;
+                setUserData(currentUser);
+            } else if (targetUserId) {
+                // Fetch fresh public profile for target user
+                try {
+                    const profileRes = await fetch(`${API_BASE_URL}/api/user/profile/${targetUserId}`);
+                    if (profileRes.ok) {
+                        const rawData = await profileRes.json();
+                        const profileData = rawData?.data || rawData;
+                        if (currentUser && profileData && (
+                            String(profileData._id) === String(currentUser._id) || 
+                            (currentUser.sellerPageUrl && String(profileData.sellerPageUrl || profileData._id).toLowerCase() === String(currentUser.sellerPageUrl).toLowerCase())
+                        )) {
+                            own = true;
+                            finalUser = currentUser;
+                            setUserData(currentUser);
+                        } else {
+                            own = false;
                             finalUser = profileData;
                             setUserData(profileData);
 
@@ -864,60 +883,48 @@ I have sent my CV for your review.`;
                             const actualId = profileData._id;
                             if (currentUser && currentUser.following && currentUser.following.includes(actualId)) {
                                 setIsFollowing(true);
-                            } else {
-                                setIsFollowing(false);
                             }
                         }
-                    } catch (err) {
-                        console.error("Failed to fetch public profile", err);
                     }
+                } catch (err) {
+                    console.error("Error fetching target user profile:", err);
                 }
-
-                // Update URL if missing or different
-                const currentPath = window.location.pathname;
-                const searchStr = window.location.search;
-                const resolvedUser = finalUser || userData || (own ? currentUser : null);
-
-                if (isOpen && resolvedUser) {
-                    const userIdVal = resolvedUser._id;
-                    const params = new URLSearchParams(searchStr);
-                    if (params.get('profile') !== userIdVal && (currentPath === '/dashboard' || currentPath === '/d' || currentPath === '/')) {
-                        params.set('profile', userIdVal);
-                        router.push(`/d?${params.toString()}`, { scroll: false });
-                    }
-                }
-
-                if (own) {
-                    const adsRes = await fetch(`${API_BASE_URL}/api/ads/me`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    const adsData = await adsRes.json();
-                    if (adsData.success) setUserAds(adsData.data);
-                } else {
-                    const adsRes = await fetch(`${API_BASE_URL}/api/ads/public/all`);
-                    const adsData = await adsRes.json();
-                    if (adsData.success) {
-                        const userPublicAds = adsData.data.filter((ad: any) => {
-                            const adUser = ad.user || {};
-                            const adUserId = adUser._id || ad.user;
-                            const adUserUrl = adUser.sellerPageUrl;
-
-                            // If we have resolved user data, use the unique _id
-                            if (userData?._id) return adUserId === userData._id;
-
-                            // Otherwise fallback to targetUserId which might be ID or username
-                            if (targetUserId.match(/^[0-9a-fA-F]{24}$/)) {
-                                return adUserId === targetUserId;
-                            } else {
-                                return adUserUrl === targetUserId;
-                            }
-                        });
-                        setUserAds(userPublicAds);
-                    }
-                }
+            } else if (currentUser) {
+                own = true;
+                finalUser = currentUser;
+                setUserData(currentUser);
+            } else if (token) {
+                own = true;
             }
 
+            setIsOwnAccount(own);
 
+            if (own && token) {
+                const adsRes = await fetch(`${API_BASE_URL}/api/ads/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const adsData = await adsRes.json();
+                if (adsData.success) setUserAds(adsData.data);
+            } else if (targetUserId) {
+                const adsRes = await fetch(`${API_BASE_URL}/api/ads/public/all`);
+                const adsData = await adsRes.json();
+                if (adsData.success) {
+                    const userPublicAds = adsData.data.filter((ad: any) => {
+                        const adUser = ad.user || {};
+                        const adUserId = adUser._id || ad.user;
+                        const adUserUrl = adUser.sellerPageUrl;
+
+                        if (userData?._id) return adUserId === userData._id;
+
+                        if (targetUserId && targetUserId.match(/^[0-9a-fA-F]{24}$/)) {
+                            return adUserId === targetUserId;
+                        } else {
+                            return adUserUrl === targetUserId;
+                        }
+                    });
+                    setUserAds(userPublicAds);
+                }
+            }
         } catch (error) {
             console.error("Error fetching account activity", error);
         } finally {
@@ -1253,9 +1260,21 @@ I have sent my CV for your review.`;
                             </button>
                             <h2 className="text-[16px] text-black font-medium">Account Activity</h2>
                         </div>
-                        <button onClick={onClose} className="p-1 hover:bg-slate-50 rounded-full">
-                            <X className="w-5 h-5 text-black" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                            {isOwnAccount && (
+                                <button 
+                                    onClick={handleLogout}
+                                    className="flex items-center gap-1.5 px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-sm"
+                                    title="সাইন আউট"
+                                >
+                                    <LogOut className="w-3.5 h-3.5 text-red-600" />
+                                    <span>সাইন আউট</span>
+                                </button>
+                            )}
+                            <button onClick={onClose} className="p-1 hover:bg-slate-50 rounded-full">
+                                <X className="w-5 h-5 text-black" />
+                            </button>
+                        </div>
                     </div>
 
                     {/* Tabs */}

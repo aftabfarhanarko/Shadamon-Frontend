@@ -699,6 +699,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 token = authData.token || Cookies.get('token');
                 if (authData.token) {
                     Cookies.set('token', token as string, { expires: 7 });
+                    window.dispatchEvent(new Event('auth-change'));
                 }
                 setIsUserLoggedIn(true);
                 setUserData(authData.user);
@@ -972,6 +973,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 const token = loginData.token;
                 const user = loginData.user;
                 Cookies.set('token', token, { expires: 7 });
+                window.dispatchEvent(new Event('auth-change'));
                 setIsUserLoggedIn(true);
                 setUserData(user);
 
@@ -1001,6 +1003,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 // Ownership verified, now proceed to OTP for the NEW number
                 const token = loginData.token;
                 Cookies.set('token', token, { expires: 7 });
+                window.dispatchEvent(new Event('auth-change'));
                 setIsUserLoggedIn(true);
                 setUserData(loginData.user);
 

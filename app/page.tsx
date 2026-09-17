@@ -13,10 +13,14 @@ import {
     ArrowRight,
     TrendingUp,
     CheckCircle2,
-    Compass
+    Compass,
+    User,
+    LayoutDashboard
 } from 'lucide-react';
+import Cookies from 'js-cookie';
 import { API_BASE_URL } from '../utils/apiConfig';
 import { formatAdPrice } from '../utils/formatPrice';
+import { getImageUrl } from '../utils/imageUrl';
 import AuthModal from '../components/AuthModal';
 import RoleSelectModal from '../components/RoleSelectModal';
 import InfoModal from '../components/InfoModal';
@@ -49,6 +53,37 @@ export default function Home() {
             });
         }
     };
+
+    // Auth State for Header
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [userData, setUserData] = useState<any>(null);
+
+    useEffect(() => {
+        const checkAuth = async () => {
+            const token = Cookies.get('token');
+            if (!token) {
+                setIsLoggedIn(false);
+                setUserData(null);
+                return;
+            }
+            setIsLoggedIn(true);
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/user/me`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setUserData(data);
+                }
+            } catch (e) {
+                console.error("Auth fetch error on landing:", e);
+            }
+        };
+
+        checkAuth();
+        window.addEventListener('auth-change', checkAuth);
+        return () => window.removeEventListener('auth-change', checkAuth);
+    }, []);
 
     useEffect(() => {
         const fetchRecentAds = async () => {
@@ -206,22 +241,45 @@ export default function Home() {
                     </div>
 
                     {/* Right Items */}
-                    <div className="flex items-center gap-4 sm:gap-6">
-                        <Link 
-                            href="/info/blog" 
-                            className="text-white text-sm font-medium hover:text-purple-200 transition-colors"
-                        >
-                            বাংলা
-                        </Link>
+                    <div className="flex items-center gap-3 sm:gap-4">
+                        {isLoggedIn ? (
+                            <div className="flex items-center gap-2.5 sm:gap-3">
+                                <Link 
+                                    href="/dashboard" 
+                                    className="bg-purple-900/60 hover:bg-purple-900 text-white px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all border border-purple-400/30 flex items-center gap-1.5 shadow-md hover:border-purple-300"
+                                >
+                                    <LayoutDashboard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-300" />
+                                    <span>ড্যাশবোর্ড</span>
+                                </Link>
 
-                        <motion.button 
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => setIsAuthModalOpen(true)}
-                            className="bg-gradient-to-r from-[#7C3AED] to-[#6D28D9] hover:from-[#6D28D9] hover:to-[#5B21B6] text-white px-5 py-2 rounded-xl text-sm font-semibold transition-all shadow-md shadow-purple-600/30 border border-purple-400/20"
-                        >
-                            লগইন
-                        </motion.button>
+                                <Link 
+                                    href={userData?.sellerPageUrl ? `/dashboard?profile=${userData.sellerPageUrl}` : '/dashboard?openUsersProfile=true'}
+                                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-[#6D28D9] to-[#8B5CF6] p-0.5 shadow-md flex items-center justify-center group overflow-hidden border border-purple-400/40 shrink-0 hover:scale-105 transition-transform"
+                                    title={userData?.name || "প্রোফাইল"}
+                                >
+                                    {userData?.avatar ? (
+                                        <img 
+                                            src={getImageUrl(userData.avatar)} 
+                                            alt={userData?.name || "Profile"} 
+                                            className="w-full h-full object-cover rounded-full"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full rounded-full bg-[#6D28D9] flex items-center justify-center text-white text-xs font-bold uppercase">
+                                            {userData?.name ? userData.name.charAt(0) : <User className="w-4 h-4 text-white" />}
+                                        </div>
+                                    )}
+                                </Link>
+                            </div>
+                        ) : (
+                            <motion.button 
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => setIsAuthModalOpen(true)}
+                                className="bg-gradient-to-r from-[#7C3AED] to-[#6D28D9] hover:from-[#6D28D9] hover:to-[#5B21B6] text-white px-5 py-2 rounded-xl text-sm font-semibold transition-all shadow-md shadow-purple-600/30 border border-purple-400/20 cursor-pointer"
+                            >
+                                লগইন
+                            </motion.button>
+                        )}
                     </div>
                 </div>
             </motion.header>
