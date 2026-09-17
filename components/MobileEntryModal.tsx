@@ -184,7 +184,7 @@ export default function MobileEntryModal({ isOpen, onClose, onUserExists, onUser
     return (
         <div className="fixed inset-0 z-[1500] flex items-start justify-center pt-20">
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
 
             {/* Modal Container */}
             <div className="relative bg-[#F8F9FA] w-full max-w-[565px] rounded-t-lg rounded-b-none overflow-hidden shadow-2xl flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300 h-[calc(100vh-20px)]">

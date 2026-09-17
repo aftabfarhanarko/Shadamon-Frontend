@@ -1652,8 +1652,13 @@ export default function DashboardLayoutClient({
         onClose={() => {
           setIsPostAdModalOpen(false);
           setAdToEdit(null);
-          if (pathname === "/dashboard/post-ad" || pathname === "/dashboard/post-ad") {
-            router.push("/dashboard");
+          if (pathname === "/dashboard/post-ad" || pathname === "/d/post-ad") {
+            const token = Cookies.get("token");
+            if (!token) {
+              window.location.href = "/";
+            } else {
+              router.push("/dashboard");
+            }
           }
         }}
         editAd={adToEdit}
@@ -1664,7 +1669,7 @@ export default function DashboardLayoutClient({
           setAccountModalInitialTab("Post");
           setIsAccountModalOpen(true);
 
-          if (pathname === "/dashboard/post-ad" || pathname === "/dashboard/post-ad") {
+          if (pathname === "/dashboard/post-ad" || pathname === "/d/post-ad") {
             router.replace("/dashboard");
           }
         }}
@@ -1682,7 +1687,15 @@ export default function DashboardLayoutClient({
       <AuthModal
         isOpen={isAuthModalOpen}
         initialMode={authModalInitialMode}
-        onClose={() => setIsAuthModalOpen(false)}
+        onClose={() => {
+          setIsAuthModalOpen(false);
+          if (pathname === "/dashboard/post-ad" || pathname === "/d/post-ad") {
+            const token = Cookies.get("token");
+            if (!token) {
+              window.location.href = "/";
+            }
+          }
+        }}
         initialMobile={initialMobile}
         onSuccess={(needsVerification = false, token?: string) => {
           setIsAuthModalOpen(false);
@@ -1711,8 +1724,13 @@ export default function DashboardLayoutClient({
         isOpen={isMobileEntryModalOpen}
         onClose={() => {
           setIsMobileEntryModalOpen(false);
-          if (pathname === "/dashboard/post-ad" || pathname === "/dashboard/post-ad") {
-            router.push("/dashboard");
+          if (pathname === "/dashboard/post-ad" || pathname === "/d/post-ad") {
+            const token = Cookies.get("token");
+            if (!token) {
+              window.location.href = "/";
+            } else {
+              router.push("/dashboard");
+            }
           }
         }}
         onUserExists={(mobile) => {

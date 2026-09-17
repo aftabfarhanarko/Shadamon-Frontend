@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     const authRoutes = ['/login', '/register'];
-    const publicRoutes = ['/', '/dashboard', '/dashboard/post-ad'];
+    const publicRoutes = ['/', '/dashboard/post-ad'];
     const isInfoRoute = pathname === '/info' || pathname.startsWith('/info/');
     const slug = pathname.replace(/^\/+|\/+$/g, '');
     const isSingleSegmentRoute = slug.length > 0 && !slug.includes('/');
@@ -29,7 +29,7 @@ export function middleware(request: NextRequest) {
     // If user is NOT logged in and tries to access a protected route
     // Protected routes are any route that is NOT an auth route AND NOT a public route
     if (!token && !authRoutes.includes(pathname) && !publicRoutes.includes(pathname) && !isInfoRoute) {
-        return NextResponse.redirect(new URL('/dashboard', request.url));
+        return NextResponse.redirect(new URL('/', request.url));
     }
 
     return NextResponse.next();

@@ -1028,6 +1028,12 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
     const selectedLocationMeta = locations.find((l) => l.name === selectedLocation);
     const selectedSubLocationMeta = selectedLocationMeta?.subLocations.find((s) => s.name === selectedSubLocation);
     const tempLocationMeta = locations.find((l) => l.name === tempLocation);
+    const handleModalClose = () => {
+        onClose();
+        if (!isUserLoggedIn && typeof window !== 'undefined' && window.location.pathname.includes('/post-ad')) {
+            window.location.href = '/';
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -1038,7 +1044,7 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                 onClose={() => setShowPackageUpgrade(false)} 
             />
         <div className="fixed inset-0 z-[1500] flex items-start justify-center pt-20">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
 
             <div className="relative bg-[#F4F6F8] w-full max-w-[565px] rounded-t-lg rounded-b-none overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-full duration-300 shadow-2xl h-[calc(100vh-80px)]">
 
@@ -1357,12 +1363,12 @@ export default function PostAdModal({ isOpen, onClose, editAd, onSuccess, initia
                     <>
                         <div className="flex items-center justify-between p-2 px-4 border-b border-slate-200 bg-white shrink-0">
                             <div className="flex items-center gap-3">
-                                <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-black hover:bg-slate-50 rounded-full transition-colors">
+                                <button onClick={handleModalClose} className="w-8 h-8 flex items-center justify-center text-black hover:bg-slate-50 rounded-full transition-colors">
                                     <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
                                 </button>
                                 <h2 className="text-[16px] text-black font-medium">{editAd ? t('edit_your_ad') : t('post_your_ad')}</h2>
                             </div>
-                            <button onClick={onClose} className="p-1 hover:bg-slate-50 rounded-full">
+                            <button onClick={handleModalClose} className="p-1 hover:bg-slate-50 rounded-full">
                                 <X className="w-5 h-5 text-black" />
                             </button>
                         </div>
