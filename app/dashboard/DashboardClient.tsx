@@ -1378,7 +1378,7 @@ export default function DashboardClient() {
                                       Active Business
                                     </div>
                                     <span className="bg-white/90 backdrop-blur-sm text-slate-800 text-xs font-bold px-3 py-0.5 rounded-full shadow-2xs border border-white/80">
-                                      {block.bigAd.subCategory || block.bigAd.category || "Investor"}
+                                      Investor
                                     </span>
                                   </div>
 
@@ -1552,7 +1552,7 @@ export default function DashboardClient() {
                                             {ad.user?.mVerified && <VerifiedBadge className="translate-y-[0.5px] shrink-0" />}
                                           </div>
                                           <span className="bg-slate-50 text-slate-700 text-[9px] font-bold px-2 py-0.5 rounded-full border border-slate-200 truncate shrink-0 max-w-[75px]">
-                                            {ad.subCategory || ad.category || "Investor"}
+                                            Investor
                                           </span>
                                         </div>
 

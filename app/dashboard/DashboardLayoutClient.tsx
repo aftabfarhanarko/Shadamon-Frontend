@@ -1222,7 +1222,7 @@ export default function DashboardLayoutClient({
               >
                 <div
                   className={cn(
-                    "flex-1 flex bg-[#EDF2F7] rounded relative",
+                    "w-full max-w-[240px] md:max-w-[280px] lg:max-w-[320px] flex bg-[#EDF2F7] rounded-lg relative border border-slate-200/80 overflow-hidden shadow-2xs",
                     !isMobileSearchOpen && "hidden md:flex",
                   )}
                 >
@@ -1243,7 +1243,7 @@ export default function DashboardLayoutClient({
                         )
                           setShowSuggestions(true);
                       }}
-                      className="flex-1 bg-transparent px-4 py-2 pr-10 outline-none text-sm text-black placeholder-slate-400"
+                      className="flex-1 bg-transparent px-3 py-1.5 pr-8 outline-none text-xs md:text-sm text-black placeholder-slate-400"
                     />
 
                     {searchQuery && (
@@ -1336,7 +1336,7 @@ export default function DashboardLayoutClient({
                   </div>
                   <button
                     onClick={handleSearchExecution}
-                    className="bg-[#1A202C] text-white px-6 py-2 text-xs hover:bg-slate-800 transition-colors tracking-wider rounded-r"
+                    className="bg-[#1A202C] text-white px-3.5 py-1.5 text-xs hover:bg-slate-800 transition-colors tracking-wider shrink-0"
                   >
                     {language === "bn" ? "সার্চ" : "Search"}
                   </button>
