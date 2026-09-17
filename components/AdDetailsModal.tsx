@@ -74,6 +74,19 @@ function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
 }
 
+function formatInvestmentDisplay(amount?: number): string {
+  if (amount === undefined || amount === null) return "";
+  if (amount >= 10000000) {
+    const cr = amount / 10000000;
+    return `৳ ${cr % 1 === 0 ? cr.toFixed(0) : cr.toFixed(2)} Cr`;
+  }
+  if (amount >= 100000) {
+    const lac = amount / 100000;
+    return `৳ ${lac % 1 === 0 ? lac.toFixed(0) : lac.toFixed(1)} Lac`;
+  }
+  return `৳ ${amount.toLocaleString()}`;
+}
+
 interface AdDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -1439,95 +1452,74 @@ I have sent my CV for your review.`;
 
             {/* Divider */}
             <div className="h-px bg-slate-200 w-full mb-1" />
-
             {/* 8. Promoted Section */}
             {promotedAds.length > 0 && (
-              <div className="mb-2 relative group/promoted">
-                <h3 className="text-black text-sm mb-2">Promoted</h3>
+              <div className="mb-4 relative group/promoted">
+                <h3 className="text-black font-bold text-base mb-2 px-1">Promoted</h3>
                 <div
-                  className="flex gap-3 overflow-x-auto no-scrollbar pb-2 scroll-smooth px-0.5"
+                  className="flex gap-3 overflow-x-auto no-scrollbar pb-2 scroll-smooth px-1"
                   id="promoted-scroll"
                 >
-                  {promotedAds.map((pad) => (
-                    <div
-                      key={pad._id}
-                      className="min-w-[260px] max-w-[260px] bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm flex flex-col cursor-pointer shrink-0 snap-center"
-                      onClick={() => {
-                        if (
-                          pad.adType === "Promoted" &&
-                          pad.promoteType === "traffic" &&
-                          pad.trafficLink
-                        ) {
-                          window.open(pad.trafficLink, "_blank");
-                        } else {
-                          const params = new URLSearchParams(
-                            window.location.search,
-                          );
-                          params.set("ad", pad._id);
-                          router.push(`/d?${params.toString()}`, {
-                            scroll: false,
-                          });
-                        }
-                      }}
-                    >
-                      <div className="relative h-40 bg-slate-100 overflow-hidden">
-                        <img
-                          src={getImageUrl(pad.images?.[0] || "")}
-                          alt=""
-                          className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60"
-                        />
-                        <img
-                          src={getImageUrl(pad.images?.[0] || "")}
-                          alt={pad.headline}
-                          className="relative z-10 w-full h-full object-contain"
-                          loading="lazy"
-                        />
-                        {/* Top Left Badge */}
-                        {/* <div className="absolute top-2 left-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm shadow-sm">
-                                                    FEATURED
-                                                </div> */}
-                        {/* Top Right Star */}
-                        <button className="absolute top-2 right-2 p-1.5 bg-black/20 hover:bg-black/40 rounded-full text-white backdrop-blur-[2px] transition-colors">
-                          <Star className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                      <div className="p-2">
-                        <h4 className="text-sm text-black truncate mb-1.5">
-                          {pad.headline}
-                        </h4>
-                        <div className="flex items-center gap-2 text-[11px] text-slate-500 mb-1.5">
-                          <div className="flex items-center gap-1 min-w-0">
-                            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                            <span className="truncate max-w-[100px]">
-                              {pad.location}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1 min-w-0">
-                            <Grid className="w-3 h-3 text-slate-400 shrink-0" />
-                            <span className="truncate max-w-[100px]">
-                              {pad.category}
-                            </span>
-                          </div>
+                  {promotedAds.map((pad) => {
+                    const dynamicMinInv = pad.minInvestment;
+                    const dynamicMaxInv = pad.maxInvestment;
+                    const dynamicInvRange =
+                      dynamicMinInv || dynamicMaxInv
+                        ? `${formatInvestmentDisplay(dynamicMinInv)} - ${formatInvestmentDisplay(dynamicMaxInv)}`
+                        : null;
+
+                    return (
+                      <div
+                        key={pad._id}
+                        className="min-w-[260px] max-w-[260px] bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col cursor-pointer shrink-0 snap-center"
+                        onClick={() => {
+                          if (
+                            pad.adType === "Promoted" &&
+                            pad.promoteType === "traffic" &&
+                            pad.trafficLink
+                          ) {
+                            window.open(pad.trafficLink, "_blank");
+                          } else {
+                            const params = new URLSearchParams(
+                              window.location.search,
+                            );
+                            params.set("ad", pad._id);
+                            router.push(`/d?${params.toString()}`, {
+                              scroll: false,
+                            });
+                          }
+                        }}
+                      >
+                        <div className="relative h-44 bg-slate-50/80 p-2 flex items-center justify-center overflow-hidden border-b border-slate-100">
+                          {getImageUrl(pad.images?.[0] || "") && (
+                            <img
+                              src={getImageUrl(pad.images?.[0] || "")}
+                              alt={pad.headline}
+                              className="w-full h-full object-contain"
+                              loading="lazy"
+                            />
+                          )}
+                          <button className="absolute top-2 right-2 p-1.5 bg-black/20 hover:bg-black/40 rounded-full text-white backdrop-blur-[2px] transition-colors">
+                            <Star className="w-3.5 h-3.5" />
+                          </button>
                         </div>
-                        <div className="text-sm text-black flex items-center justify-between gap-1.5 flex-wrap">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span>
-                              {formatAdPrice(pad) || t("price_on_ask")}
-                            </span>
-                            {pad.price && (
-                              <span className="text-[10px] text-slate-500 font-normal">
-                                (
-                                {pad.priceType === "Negotiable"
-                                  ? t("price_negotiable")
-                                  : t("price_fixed")}
-                                )
-                              </span>
-                            )}
+                        <div className="p-3 flex flex-col flex-1 justify-between gap-1.5">
+                          <div>
+                            <h4 className="text-sm font-semibold text-slate-900 line-clamp-2 leading-snug mb-1">
+                              {pad.headline}
+                            </h4>
+                            <p className="text-xs font-bold text-slate-900">
+                              {dynamicInvRange || formatAdPrice(pad) || t("price_on_ask")}
+                            </p>
+                          </div>
+                          <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100 mt-auto">
+                            <span className="truncate max-w-[120px]">{pad.location}</span>
+                            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {promotedAds.length > 1 && (
@@ -1543,7 +1535,7 @@ I have sent my CV for your review.`;
                 )}
               </div>
             )}
-            <div className="h-px bg-slate-200 w-full mb-1" />
+            <div className="h-px bg-slate-200 w-full mb-3" />
             {/* 9. Seller Information */}
             <div className="border-t border-b border-slate-100 py-3">
               <div className="flex items-center gap-4">
@@ -1636,95 +1628,87 @@ I have sent my CV for your review.`;
                 </button>
               </div>
             </div>
-            <div className="h-px bg-slate-200 w-full mb-1" />
+            <div className="h-px bg-slate-200 w-full mb-3" />
 
             {/* 10. Similar Product */}
             {similarAds.length > 0 && (
-              <div className="">
-                <h3 className="text-black text-sm mb-1">Similar Product</h3>
-                <div className="space-y-3">
-                  {similarAds.slice(0, 5).map((sad) => (
-                    <div
-                      key={sad._id}
-                      className={cn(
-                        "bg-white rounded-lg lg:rounded-lg p-0.5 lg:p-3 flex gap-2 cursor-pointer transition-colors hover:bg-slate-50 border mx-[5px] lg:mx-0",
-                        hasHighlightLabel(sad)
-                          ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-2 ring-orange-400/30"
-                          : "border-transparent",
-                      )}
-                      onClick={() => {
-                        if (
-                          sad.adType === "Promoted" &&
-                          sad.promoteType === "traffic" &&
-                          sad.trafficLink
-                        ) {
-                          window.open(sad.trafficLink, "_blank");
-                        } else {
-                          const params = new URLSearchParams(
-                            window.location.search,
-                          );
-                          params.set("ad", sad._id);
-                          router.push(`/d?${params.toString()}`, {
-                            scroll: false,
-                          });
-                        }
-                      }}
-                    >
-                      <div className="w-[120px] h-[90px] lg:w-[160px] lg:h-[130px] rounded-lg overflow-hidden shrink-0 relative group-hover:scale-[1.02] transition-transform">
-                        {getImageUrl(sad.images?.[0]) && (
-                          <>
-                            <img
-                              src={getImageUrl(sad.images?.[0]) || ""}
-                              alt=""
-                              className="absolute inset-0 w-full h-full object-contain blur scale-140 opacity-80"
-                            />
+              <div className="my-2">
+                <h3 className="text-black font-bold text-base mb-3 px-1">Similar Product</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {similarAds.slice(0, 6).map((sad) => {
+                    const dynamicMinInv = sad.minInvestment;
+                    const dynamicMaxInv = sad.maxInvestment;
+                    const dynamicInvRange =
+                      dynamicMinInv || dynamicMaxInv
+                        ? `${formatInvestmentDisplay(dynamicMinInv)} - ${formatInvestmentDisplay(dynamicMaxInv)}`
+                        : null;
+
+                    return (
+                      <div
+                        key={sad._id}
+                        className={cn(
+                          "bg-white rounded-2xl p-2.5 flex flex-col justify-between cursor-pointer transition-all hover:shadow-md border border-slate-200/80 shadow-sm min-h-[220px]",
+                          hasHighlightLabel(sad)
+                            ? "border-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.18)] ring-2 ring-orange-400/30"
+                            : "",
+                        )}
+                        onClick={() => {
+                          if (
+                            sad.adType === "Promoted" &&
+                            sad.promoteType === "traffic" &&
+                            sad.trafficLink
+                          ) {
+                            window.open(sad.trafficLink, "_blank");
+                          } else {
+                            const params = new URLSearchParams(
+                              window.location.search,
+                            );
+                            params.set("ad", sad._id);
+                            router.push(`/d?${params.toString()}`, {
+                              scroll: false,
+                            });
+                          }
+                        }}
+                      >
+                        <div className="w-full h-32 rounded-xl bg-slate-50/80 p-2 overflow-hidden shrink-0 relative flex items-center justify-center border border-slate-100">
+                          {getImageUrl(sad.images?.[0]) && (
                             <img
                               src={getImageUrl(sad.images?.[0]) || ""}
                               alt={sad.headline}
-                              className="relative z-10 w-full h-full object-contain"
+                              className="w-full h-full object-contain"
                               loading="lazy"
                             />
-                          </>
-                        )}
-                        {getNonHighlightLabels(sad).length > 0 && (
-                          <div className="absolute top-2 left-2 z-20 flex flex-col gap-1">
-                            {getNonHighlightLabels(sad).map((label: string) => (
-                              <span
-                                key={label}
-                                className="bg-white/90 text-[10px] font-bold text-slate-800 px-2 py-0.5 rounded border border-slate-200 shadow-sm"
-                              >
-                                {label}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0 flex flex-col justify-center">
-                        <h4 className="text-[15px] text-black font-semibold line-clamp-1 leading-tight mb-0">
-                          {sad.headline}
-                        </h4>
-                        <div className="text-[15px] lg:text-sm text-black font-semibold leading-tight mb-1">
-                          {formatAdPrice(sad) || t("price_on_ask")}
+                          )}
+                          {getNonHighlightLabels(sad).length > 0 && (
+                            <div className="absolute top-2 left-2 z-20 flex flex-col gap-1">
+                              {getNonHighlightLabels(sad).map((label: string) => (
+                                <span
+                                  key={label}
+                                  className="bg-white/90 text-[10px] font-bold text-slate-800 px-2 py-0.5 rounded border border-slate-200 shadow-sm"
+                                >
+                                  {label}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        <div className="flex items-center gap-0 text-[9px] lg:text-[10px] text-black group-hover:text-black flex-wrap">
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-0.5 shrink-0">
-                              <MapPin className="w-2.5 h-2.5" />
-                              <span className="truncate max-w-[110px] md:max-w-[120px]">
-                                {sad.location}
-                              </span>
+                        <div className="flex-1 min-w-0 flex flex-col justify-between pt-2">
+                          <div>
+                            <h4 className="text-xs font-semibold text-slate-900 line-clamp-2 leading-snug mb-1">
+                              {sad.headline}
+                            </h4>
+                            <div className="text-xs font-bold text-slate-900 mb-1">
+                              {dynamicInvRange || formatAdPrice(sad) || t("price_on_ask")}
                             </div>
-                            <div className="flex items-center gap-0.5 shrink-0">
-                              <Grid className="w-2.5 h-2.5" />
-                              <span className="truncate max-w-[110px] md:max-w-[120px]">
-                                {sad.category}
-                              </span>
-                            </div>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100 mt-1">
+                            <span className="truncate max-w-[90px]">{sad.location}</span>
+                            <ExternalLink className="w-3 h-3 text-slate-400" />
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
